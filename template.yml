@@ -35,14 +35,21 @@ Globals:
     Timeout: 30
     MemorySize: 128
     ReservedConcurrentExecutions: 1
+    DeadLetterQueue:
+      Type: SNS
+      TargetArn:
+        Ref: ErrorNotification
+
     Environment:
       Variables:
         TASK_NOTIFICATION:
           Ref: TaskNotification
         REPORT_NOTIFICATION:
           Ref: ReportNotification
-        ERROR_NOTIFICATION:
-          Ref: ErrorNotification
+        LOG_GROUP:
+          Ref: LogStore
+        ALERT_TABLE:
+          Ref: AlertTable
 
 Resources:
   # --------------------------------------------------------
@@ -107,7 +114,7 @@ Resources:
           publisherArn:
             Fn::GetAtt: PublishReport.Arn
           errorHandlerArn:
-            Fn::GetAtt: ErrorHandler.Arn
+            Fn::GetAtt: StepFunctionError.Arn
 
   # --------------------------------------------------------
   # Lambda functions
@@ -122,14 +129,10 @@ Resources:
           - { Ref: LambdaRoleArn }
       Environment:
         Variables:
-          ALERT_TABLE:
-            Ref: AlertTable
           DISPATCH_MACHINE:
             Ref: DelayDispatcher
           REVIEW_MACHINE:
             Ref: ReviewInvoker
-          REPORT_NOTIFICATION:
-            Ref: ReportNotification
       Events:
         NotifyTopic:
           Type: SNS
@@ -140,12 +143,7 @@ Resources:
   DispatchInspection:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: build
       Handler: DispatchInspection
-      Environment:
-        Variables:
-          TASK_NOTIFICATION:
-            Ref: TaskNotification
       Role:
         Fn::If:
           - LambdaRoleRequired
@@ -155,12 +153,7 @@ Resources:
   SubmitReport:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: build
       Handler: SubmitReport
-      Environment:
-        Variables:
-          ALERT_TABLE:
-            Ref: AlertTable
       Role:
         Fn::If:
           - LambdaRoleRequired
@@ -170,12 +163,7 @@ Resources:
   CompileReport:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: build
       Handler: CompileReport
-      Environment:
-        Variables:
-          ALERT_TABLE:
-            Ref: AlertTable
       Role:
         Fn::If:
           - LambdaRoleRequired
@@ -185,23 +173,7 @@ Resources:
   PublishReport:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: build
       Handler: PublishReport
-      Environment:
-        Variables:
-          REPORT_NOTIFICATION:
-            Ref: ReportNotification
-      Role:
-        Fn::If:
-          - LambdaRoleRequired
-          - { "Fn::GetAtt": LambdaRole.Arn }
-          - { Ref: LambdaRoleArn }
-
-  ErrorHandler:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: build
-      Handler: ErrorHandler
       Role:
         Fn::If:
           - LambdaRoleRequired
@@ -211,7 +183,6 @@ Resources:
   StepFunctionError:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: build
       Handler: StepFunctionError
       Role:
         Fn::If:
@@ -222,7 +193,6 @@ Resources:
   DummyReviewer:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: build
       Handler: DummyReviewer
       Role:
         Fn::If:
@@ -254,13 +224,6 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: "/DeepAlert/${AWS::StackName}"
-
-  LogStream:
-    Type: AWS::Logs::LogStream
-    Properties:
-      LogGroupName:
-        Ref: LogStore
-      LogStreamName: FlowLogs
 
   # --------------------------------------------------------
   # IAM Roles
@@ -317,17 +280,6 @@ Resources:
                       - StackName: { "Ref": "AWS::StackName" }
                         Region: { "Ref": "AWS::Region" }
                         Account: { "Ref": "AWS::AccountId" }
-        - PolicyName: "LogOutput"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - logs:DescribeLogStreams
-                  - logs:PutLogEvents
-                Resource:
-                  - Fn::Sub: "arn:aws:logs:${AWS::Region}:*:log-group:${LogStore}"
-                  - Fn::Sub: "arn:aws:logs:${AWS::Region}:*:log-group:${LogStore}:*:*"
 
   StepFunctionRole:
     Type: AWS::IAM::Role
