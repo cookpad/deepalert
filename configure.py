@@ -42,17 +42,17 @@ clean:
 	rm $(FUNCTIONS)
 
 $(OUTPUT_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
-	aws cloudformation package \
-		--template-file $(TEMPLATE_FILE) \
-		--s3-bucket $(CodeS3Bucket) \
-		--s3-prefix $(CodeS3Prefix) \
+	aws cloudformation package \\
+		--template-file $(TEMPLATE_FILE) \\
+		--s3-bucket $(CodeS3Bucket) \\
+		--s3-prefix $(CodeS3Prefix) \\
 		--output-template-file $(OUTPUT_FILE)
 
 deploy: $(OUTPUT_FILE)
-	aws cloudformation deploy \
-		--region $(Region) \
-		--template-file $(OUTPUT_FILE) \
-		--stack-name $(StackName) \
+	aws cloudformation deploy \\
+		--region $(Region) \\
+		--template-file $(OUTPUT_FILE) \\
+		--stack-name $(StackName) \\
 		--capabilities CAPABILITY_IAM
 '''
     functions = map(lambda f: os.path.join('build', f), get_functions())

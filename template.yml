@@ -248,6 +248,21 @@ Resources:
     Type: AWS::SNS::Topic
 
   # --------------------------------------------------------
+  # CloudWatch Logs for logging
+  LogStore:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: "/DeepAlert/${AWS::StackName}"
+
+  LogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName:
+        Ref: LogStore
+      LogStreamName: FlowLogs
+
+  # --------------------------------------------------------
   # IAM Roles
   LambdaRole:
     Type: AWS::IAM::Role
@@ -302,6 +317,17 @@ Resources:
                       - StackName: { "Ref": "AWS::StackName" }
                         Region: { "Ref": "AWS::Region" }
                         Account: { "Ref": "AWS::AccountId" }
+        - PolicyName: "LogOutput"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                Resource:
+                  - Fn::Sub: "arn:aws:logs:${AWS::Region}:*:log-group:${LogStore}"
+                  - Fn::Sub: "arn:aws:logs:${AWS::Region}:*:log-group:${LogStore}:*:*"
 
   StepFunctionRole:
     Type: AWS::IAM::Role

@@ -21,10 +21,18 @@ clean:
 	rm $(FUNCTIONS)
 
 $(OUTPUT_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
-	aws cloudformation package 		--template-file $(TEMPLATE_FILE) 		--s3-bucket $(CodeS3Bucket) 		--s3-prefix $(CodeS3Prefix) 		--output-template-file $(OUTPUT_FILE)
+	aws cloudformation package \
+		--template-file $(TEMPLATE_FILE) \
+		--s3-bucket $(CodeS3Bucket) \
+		--s3-prefix $(CodeS3Prefix) \
+		--output-template-file $(OUTPUT_FILE)
 
 deploy: $(OUTPUT_FILE)
-	aws cloudformation deploy 		--region $(Region) 		--template-file $(OUTPUT_FILE) 		--stack-name $(StackName) 		--capabilities CAPABILITY_IAM
+	aws cloudformation deploy \
+		--region $(Region) \
+		--template-file $(OUTPUT_FILE) \
+		--stack-name $(StackName) \
+		--capabilities CAPABILITY_IAM
 
 build/DummyReviewer: ./functions/DummyReviewer/*.go $(COMMON)
 	env GOARCH=amd64 GOOS=linux go build -o build/DummyReviewer ./functions/DummyReviewer/
