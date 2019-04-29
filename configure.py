@@ -21,15 +21,9 @@ def gen_functions_section():
 
 def gen_header():
     template = '''
-DEEPALERT_CONFIG ?= config.json
-
-ifeq (,$(wildcard $(DEEPALERT_CONFIG)))
-    $(error $(DEEPALERT_CONFIG) is not found)
-endif
-
 TEMPLATE_FILE=template.yml
 OUTPUT_FILE=sam.yml
-COMMON=functions/*.go
+COMMON=functions/*.go *.go
 FUNCTIONS={0}
 '''
     functions = map(lambda f: os.path.join('build', f), get_functions())
