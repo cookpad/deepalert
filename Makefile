@@ -10,10 +10,12 @@ OUTPUT_FILE=sam.yml
 COMMON=functions/*.go
 FUNCTIONS=build/DummyReviewer build/DispatchInspection build/CompileReport build/SubmitReport build/ReceptAlert build/StepFunctionError build/PublishReport
 
-StackName    := $(shell cat $(DEEPALERT_CONFIG) | jq '.["StackName"]' -r)
-Region       := $(shell cat $(DEEPALERT_CONFIG) | jq '.["Region"]' -r)
-CodeS3Bucket := $(shell cat $(DEEPALERT_CONFIG) | jq '.["CodeS3Bucket"]' -r)
-CodeS3Prefix := $(shell cat $(DEEPALERT_CONFIG) | jq '.["CodeS3Prefix"]' -r)
+StackName="deepalert-test"
+Region="ap-northeast-1"
+CodeS3Bucket="mizutani-security-log.mgmt"
+CodeS3Prefix="functions"
+PARAMETERS=
+
 
 functions: $(FUNCTIONS)
 
@@ -32,7 +34,7 @@ deploy: $(OUTPUT_FILE)
 		--region $(Region) \
 		--template-file $(OUTPUT_FILE) \
 		--stack-name $(StackName) \
-		--capabilities CAPABILITY_IAM
+		--capabilities CAPABILITY_IAM $(PARAMETERS)
 
 build/DummyReviewer: ./functions/DummyReviewer/*.go $(COMMON)
 	env GOARCH=amd64 GOOS=linux go build -o build/DummyReviewer ./functions/DummyReviewer/
