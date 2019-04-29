@@ -1,6 +1,18 @@
 package deepalert
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/guregu/dynamo"
+	"github.com/pkg/errors"
+
+	"github.com/m-mizutani/deepalert/functions"
+)
 
 type ReportID string
 type ReportStatus string
@@ -29,6 +41,15 @@ type ReportEntityBase struct {
 // GetAttr of ReportEntity returns a target attribute.
 func (x *ReportEntityBase) GetAttr() Attribute {
 	return x.Attribute
+}
+
+// Submit of ReportRecord sends record to SNS
+func (x *ReportEntityBase) Submit(topicArn, region string) error {
+	if err := functions.PublishSNS(topicArn, region, x); err != nil {
+		return errors.Wrapf(err, "Fail to publish ReportEntity: %v", *x)
+	}
+
+	return nil
 }
 
 // ReportResult shows output of Reviewer invoked to evaluate risk of the alert.
@@ -139,9 +160,55 @@ type EntitySoftware struct {
 // ReportRecord is a format to store a report to DynamoDB
 type ReportRecord struct {
 	ReportID   ReportID  `dynamo:"report_id"`
-	DataID     string    `dynamo:"data_id"`
+	AttrID     string    `dynamo:"attr_id"`
 	Data       []byte    `dynamo:"data"`
 	TimeToLive time.Time `dynamo:"ttl"`
+}
+
+// NewReportRecord is a constructor of ReportRecord
+func NewReportRecord(id ReportID, entity ReportEntity) *ReportRecord {
+	raw, err := json.Marshal(entity)
+	if err != nil {
+		// Must success
+		log.Fatal("Fail to unmarshal ReportEntity.", err)
+	}
+
+	rec := ReportRecord{
+		ReportID: id,
+		AttrID:   entity.GetAttr().Hash(),
+		Data:     raw,
+	}
+
+	return &rec
+}
+
+func (x *ReportRecord) Save(tableName, region string) error {
+	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
+	table := db.Table(tableName)
+
+	x.TimeToLive = time.Now().UTC().Add(time.Hour * 24)
+	if err := table.Put(x).Run(); err != nil {
+		return errors.Wrap(err, "Fail to put report record")
+	}
+
+	return nil
+}
+
+func reportIDtoRecordKey(reportID ReportID) string {
+	return fmt.Sprintf("%s/record", reportID)
+}
+
+func FetchReportRecords(tableName, region string, reportID ReportID) ([]ReportRecord, error) {
+	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
+	table := db.Table(tableName)
+
+	var records []ReportRecord
+	pk := reportIDtoRecordKey(reportID)
+	if err := table.Get("pk", pk).All(&records); err != nil {
+		return nil, errors.Wrap(err, "Fail to fetch report records")
+	}
+
+	return records, nil
 }
 
 /*

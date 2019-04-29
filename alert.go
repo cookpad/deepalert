@@ -1,6 +1,11 @@
 package deepalert
 
 import (
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"log"
+	"sort"
 	"time"
 )
 
@@ -25,9 +30,14 @@ const (
 
 // Attribute is element of alert
 type Attribute struct {
-	Type    AttrType      `json:"type"`
-	Value   string        `json:"value"`
-	Key     string        `json:"key"`
+	Type AttrType `json:"type"`
+
+	// Key should be unique in alert.Attributes, but not must.
+	Key string `json:"key"`
+
+	// Value is main value of attribute.
+	Value string `json:"value"`
+
 	Context []AttrContext `json:"context"`
 }
 
@@ -78,4 +88,21 @@ func (x *Attribute) Match(context AttrContext, attrType AttrType) bool {
 	}
 
 	return false
+}
+
+func (x Attribute) Hash() string {
+	sort.Slice(x.Context, func(i, j int) bool {
+		return x.Context[i] < x.Context[j]
+	})
+
+	raw, err := json.Marshal(x)
+	if err != nil {
+		// Must marshal
+		log.Fatal("Fail to unmarshal attribute", x, err)
+	}
+	hasher := sha256.New()
+	hasher.Write(raw)
+	sha := fmt.Sprintf("%x", hasher.Sum(nil))
+
+	return sha
 }

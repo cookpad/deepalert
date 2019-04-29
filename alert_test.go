@@ -31,3 +31,36 @@ func TestLookupAttribute(t *testing.T) {
 	attrs2 := alert.FindAttributes("invalid key")
 	assert.Equal(t, 0, len(attrs2))
 }
+
+func TestAttributeHash(t *testing.T) {
+	a1 := da.Attribute{
+		Key:  "myaddr",
+		Type: da.TypeIPAddr,
+		Context: []da.AttrContext{
+			da.CtxRemote,
+			da.CtxSubject,
+		},
+	}
+
+	a2 := da.Attribute{
+		Key:  "hoge",
+		Type: da.TypeIPAddr,
+		Context: []da.AttrContext{
+			da.CtxRemote,
+			da.CtxSubject,
+		},
+	}
+
+	a3 := da.Attribute{
+		Key:  "myaddr",
+		Type: da.TypeIPAddr,
+		Context: []da.AttrContext{
+			// Reversed
+			da.CtxSubject,
+			da.CtxRemote,
+		},
+	}
+	assert.NotEqual(t, a1.Hash(), "")
+	assert.NotEqual(t, a1.Hash(), a2.Hash())
+	assert.Equal(t, a1.Hash(), a3.Hash())
+}
