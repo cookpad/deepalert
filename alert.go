@@ -2,10 +2,12 @@ package deepalert
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -75,6 +77,18 @@ func (x *Alert) FindAttributes(key string) []Attribute {
 	return attrs
 }
 
+func (x *Alert) alertID() string {
+	key := strings.Join([]string{
+		base64.StdEncoding.EncodeToString([]byte(x.Detector)),
+		base64.StdEncoding.EncodeToString([]byte(x.RuleName)),
+		base64.StdEncoding.EncodeToString([]byte(x.AlertKey)),
+	}, ":")
+
+	hasher := sha256.New()
+	hasher.Write([]byte(key))
+	return fmt.Sprintf("alert/%x", hasher.Sum(nil))
+}
+
 // Match checks attribute type and context.
 func (x *Attribute) Match(context AttrContext, attrType AttrType) bool {
 	if x.Type != attrType {
@@ -90,6 +104,8 @@ func (x *Attribute) Match(context AttrContext, attrType AttrType) bool {
 	return false
 }
 
+// Hash provides an unique value for the Attribute.
+// Hash value must be same if it has same Type, Key, Value and Context.
 func (x Attribute) Hash() string {
 	sort.Slice(x.Context, func(i, j int) bool {
 		return x.Context[i] < x.Context[j]
@@ -105,4 +121,36 @@ func (x Attribute) Hash() string {
 	sha := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	return sha
+}
+
+// AlertRecord is a mapping entry of alertID and reportID
+
+type AlertCache struct {
+	AlertID    string    `dynamo:"pk"`
+	SortKey    string    `dynamo:"sk"`
+	ReportID   string    `dynamo:"report_id"`
+	TimeToLive time.Time `dynamo:"ttl"`
+}
+
+func SaveAlertCache(alertID, reportID string) error {
+	return nil
+}
+
+func LookupAlertCache(alertID string) (string, error) {
+	return "", nil
+}
+
+type ReportCache struct {
+	RecordID   string    `dynamo:"pk"`
+	Timestamp  time.Time `dynamo:"sk"`
+	AlertData  []byte    `dynamo:"alert_data"`
+	TimeToLive time.Time `dynamo:"ttl"`
+}
+
+func SaveAlertCache(alertID, reportID string) error {
+	return nil
+}
+
+func LookupAlertCache(alertID string) (string, error) {
+	return "", nil
 }

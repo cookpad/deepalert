@@ -195,7 +195,7 @@ func (x *ReportRecord) Save(tableName, region string) error {
 }
 
 func reportIDtoRecordKey(reportID ReportID) string {
-	return fmt.Sprintf("%s/record", reportID)
+	return fmt.Sprintf("record/%s", reportID)
 }
 
 func FetchReportRecords(tableName, region string, reportID ReportID) ([]ReportRecord, error) {
