@@ -4,12 +4,31 @@ import (
 	"time"
 )
 
+// AttrType shows type of alert attribute.
+type AttrType string
+
+const (
+	TypeIPAddr     AttrType = "ipaddr"
+	TypeDomainName          = "domain"
+	TypeUserName            = "username"
+)
+
+// AttrContext describes context of the attribute.
+type AttrContext string
+
+const (
+	CtxRemote  AttrContext = "remote"
+	CtxLocal               = "local"
+	CtxSubject             = "subject"
+	CtxObject              = "object"
+)
+
 // Attribute is element of alert
 type Attribute struct {
-	Type    string   `json:"type"`
-	Value   string   `json:"value"`
-	Key     string   `json:"key"`
-	Context []string `json:"context"`
+	Type    AttrType      `json:"type"`
+	Value   string        `json:"value"`
+	Key     string        `json:"key"`
+	Context []AttrContext `json:"context"`
 }
 
 // Alert is extranted data from KinesisStream
@@ -47,7 +66,7 @@ func (x *Alert) FindAttributes(key string) []Attribute {
 }
 
 // Match checks attribute type and context.
-func (x *Attribute) Match(context, attrType string) bool {
+func (x *Attribute) Match(context AttrContext, attrType AttrType) bool {
 	if x.Type != attrType {
 		return false
 	}
