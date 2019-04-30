@@ -49,12 +49,12 @@ Globals:
         LOG_GROUP:
           Ref: LogStore
         ALERT_TABLE:
-          Ref: AlertTable
+          Ref: CacheTable
 
 Resources:
   # --------------------------------------------------------
   # DynamoDBs
-  AlertTable:
+  CacheTable:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -71,7 +71,7 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
       TimeToLiveSpecification:
-        AttributeName: ttl
+        AttributeName: expires_at
         Enabled: true
 
   # --------------------------------------------------------
@@ -255,10 +255,10 @@ Resources:
                   - dynamodb:Scan
                   - dynamodb:UpdateItem
                 Resource:
-                  - Fn::GetAtt: AlertTable.Arn
+                  - Fn::GetAtt: CacheTable.Arn
                   - Fn::Sub:
                       - "${TableArn}/index/*"
-                      - { TableArn: { "Fn::GetAtt": AlertTable.Arn } }
+                      - { TableArn: { "Fn::GetAtt": CacheTable.Arn } }
               - Effect: "Allow"
                 Action:
                   - sns:Publish

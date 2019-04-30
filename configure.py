@@ -4,6 +4,35 @@ import os
 import argparse
 import json
 
+required_parameters = [
+    'StackName',
+    'Region',
+    'CodeS3Bucket',
+    'CodeS3Prefix',
+]
+optional_parameters = [
+    'LambdaRoleArn',
+    'StepFunctionRoleArn',
+    'ReviewerLambdaArn',
+    'InspectionDelay',
+    'ReviewDelay',
+]
+
+
+def args2config(args):
+    params = required_parameters + optional_parameters
+
+    if args.config:
+        config = dict([(k, v) for k, v in json.load(args.config).items()])
+    else:
+        config = {}
+
+    for k in params:
+        if hasattr(args, k) and getattr(args, k) is not None:
+            config[k] = getattr(args, k)
+
+    return config
+
 
 def get_functions():
     basedir = './functions'
@@ -22,7 +51,10 @@ def gen_functions_section():
 def gen_header():
     template = '''
 TEMPLATE_FILE=template.yml
-OUTPUT_FILE=sam.yml
+SAM_FILE=sam.yml
+OUTPUT_FILE=output.json
+TEST_FILE=test.json
+
 COMMON=functions/*.go *.go
 FUNCTIONS={0}
 '''
@@ -30,31 +62,7 @@ FUNCTIONS={0}
     return template.format(' '.join(functions))
 
 
-def gen_parameters(args):
-    required_parameters = [
-        'StackName',
-        'Region',
-        'CodeS3Bucket',
-        'CodeS3Prefix',
-    ]
-    optional_parameters = [
-        'LambdaRoleArn',
-        'StepFunctionRoleArn',
-        'ReviewerLambdaArn',
-        'InspectionDelay',
-        'ReviewDelay',
-    ]
-    params = required_parameters + optional_parameters
-
-    if args.config:
-        config = dict([(k, v) for k, v in json.load(args.config).items()])
-    else:
-        config = {}
-
-    for k in params:
-        if hasattr(args, k) and getattr(args, k) is not None:
-            config[k] = getattr(args, k)
-
+def gen_parameters(config):
     lines = []
 
     # Check required parameters
@@ -78,27 +86,34 @@ def gen_parameters(args):
     return '\n'.join(lines) + '\n'
 
 
-def gen_task_section():
+def gen_task_section(config):
     return '''
 functions: $(FUNCTIONS)
 
 clean:
 	rm $(FUNCTIONS)
 
-$(OUTPUT_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
+$(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
 	aws cloudformation package \\
 		--template-file $(TEMPLATE_FILE) \\
 		--s3-bucket $(CodeS3Bucket) \\
 		--s3-prefix $(CodeS3Prefix) \\
-		--output-template-file $(OUTPUT_FILE)
+		--output-template-file $(SAM_FILE)
 
-deploy: $(OUTPUT_FILE)
+$(OUTPUT_FILE): $(SAM_FILE)
 	aws cloudformation deploy \\
 		--region $(Region) \\
-		--template-file $(OUTPUT_FILE) \\
+		--template-file $(SAM_FILE) \\
 		--stack-name $(StackName) \\
 		--capabilities CAPABILITY_IAM $(PARAMETERS)
-'''
+	aws cloudformation describe-stack-resources --stack-name $(StackName) > output.json
+
+deploy: $(OUTPUT_FILE)
+
+$(TEST_FILE): $(OUTPUT_FILE)
+	$(eval TABLE_NAME := $(shell cat $(OUTPUT_FILE) | jq '.["StackResources"][]' | jq 'select(.LogicalResourceId == "CacheTable") | .PhysicalResourceId' -r))
+	echo '{{"TableName": "$(TABLE_NAME)", "Region": "{0}"}}' > $(TEST_FILE)
+'''.format(config['Region'])
 
 
 def main():
@@ -116,11 +131,12 @@ def main():
     psr.add_argument('--ReviewDelay', type=int)
 
     args = psr.parse_args()
+    config = args2config(args)
 
     body = [
         gen_header(),
-        gen_parameters(args),
-        gen_task_section(),
+        gen_parameters(config),
+        gen_task_section(config),
         gen_functions_section(),
     ]
 

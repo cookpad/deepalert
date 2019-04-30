@@ -6,9 +6,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/guregu/dynamo"
 	"github.com/pkg/errors"
 
 	"github.com/m-mizutani/deepalert/functions"
@@ -182,33 +179,8 @@ func NewReportRecord(id ReportID, entity ReportEntity) *ReportRecord {
 	return &rec
 }
 
-func (x *ReportRecord) Save(tableName, region string) error {
-	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
-	table := db.Table(tableName)
-
-	x.TimeToLive = time.Now().UTC().Add(time.Hour * 24)
-	if err := table.Put(x).Run(); err != nil {
-		return errors.Wrap(err, "Fail to put report record")
-	}
-
-	return nil
-}
-
 func reportIDtoRecordKey(reportID ReportID) string {
 	return fmt.Sprintf("record/%s", reportID)
-}
-
-func FetchReportRecords(tableName, region string, reportID ReportID) ([]ReportRecord, error) {
-	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
-	table := db.Table(tableName)
-
-	var records []ReportRecord
-	pk := reportIDtoRecordKey(reportID)
-	if err := table.Get("pk", pk).All(&records); err != nil {
-		return nil, errors.Wrap(err, "Fail to fetch report records")
-	}
-
-	return records, nil
 }
 
 /*

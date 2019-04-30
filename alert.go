@@ -124,33 +124,3 @@ func (x Attribute) Hash() string {
 }
 
 // AlertRecord is a mapping entry of alertID and reportID
-
-type AlertCache struct {
-	AlertID    string    `dynamo:"pk"`
-	SortKey    string    `dynamo:"sk"`
-	ReportID   string    `dynamo:"report_id"`
-	TimeToLive time.Time `dynamo:"ttl"`
-}
-
-func SaveAlertCache(alertID, reportID string) error {
-	return nil
-}
-
-func LookupAlertCache(alertID string) (string, error) {
-	return "", nil
-}
-
-type ReportCache struct {
-	RecordID   string    `dynamo:"pk"`
-	Timestamp  time.Time `dynamo:"sk"`
-	AlertData  []byte    `dynamo:"alert_data"`
-	TimeToLive time.Time `dynamo:"ttl"`
-}
-
-func SaveAlertCache(alertID, reportID string) error {
-	return nil
-}
-
-func LookupAlertCache(alertID string) (string, error) {
-	return "", nil
-}
