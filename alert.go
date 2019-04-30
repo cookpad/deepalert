@@ -122,5 +122,3 @@ func (x Attribute) Hash() string {
 
 	return sha
 }
-
-// AlertRecord is a mapping entry of alertID and reportID

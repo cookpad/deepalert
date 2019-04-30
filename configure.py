@@ -113,6 +113,9 @@ deploy: $(OUTPUT_FILE)
 $(TEST_FILE): $(OUTPUT_FILE)
 	$(eval TABLE_NAME := $(shell cat $(OUTPUT_FILE) | jq '.["StackResources"][]' | jq 'select(.LogicalResourceId == "CacheTable") | .PhysicalResourceId' -r))
 	echo '{{"TableName": "$(TABLE_NAME)", "Region": "{0}"}}' > $(TEST_FILE)
+
+test: $(TEST_FILE)
+	go test -v .
 '''.format(config['Region'])
 
 

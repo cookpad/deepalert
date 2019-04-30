@@ -1,9 +1,6 @@
 package deepalert
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,36 +11,35 @@ import (
 type ReportID string
 type ReportStatus string
 type ReportSeverity string
+type ReportContentType string
 
 // Report is a container to deliver contents and inspection results of the alert.
 type Report struct {
-	ID       ReportID       `json:"id"`
-	Alert    Alert          `json:"alert"`
-	Entities []ReportEntity `json:"entities"`
-	Result   ReportResult   `json:"result"`
-	Status   ReportStatus   `json:"status"`
+	ID       ReportID        `json:"id"`
+	Alert    Alert           `json:"alert"`
+	Contents []ReportContent `json:"entities"`
+	Result   ReportResult    `json:"result"`
+	Status   ReportStatus    `json:"status"`
 }
 
-// ReportEntity contians results of inspectors about user and host.
-type ReportEntity interface {
-	GetAttr() Attribute
+// ReportContent is base structure of report entity.
+type ReportContent struct {
+	Author    string            `json:"author"`
+	Attribute Attribute         `json:"attribute"`
+	Type      ReportContentType `json:"type"`
+	Content   interface{}       `json:"content"`
 }
 
-// ReportEntityBase is base structure of report entity.
-type ReportEntityBase struct {
-	Author    string    `json:"author"`
-	Attribute Attribute `json:"attribute"`
-}
+const (
+	ContentUser   ReportContentType = "user"
+	ContentHost                     = "host"
+	ContentBinary                   = "binary"
+)
 
-// GetAttr of ReportEntity returns a target attribute.
-func (x *ReportEntityBase) GetAttr() Attribute {
-	return x.Attribute
-}
-
-// Submit of ReportRecord sends record to SNS
-func (x *ReportEntityBase) Submit(topicArn, region string) error {
-	if err := functions.PublishSNS(topicArn, region, x); err != nil {
-		return errors.Wrapf(err, "Fail to publish ReportEntity: %v", *x)
+// SubmitReportContent sends record to SNS
+func SubmitReportContent(content ReportContent, topicArn, region string) error {
+	if err := functions.PublishSNS(topicArn, region, content); err != nil {
+		return errors.Wrapf(err, "Fail to publish ReportEntity: %v", content)
 	}
 
 	return nil
@@ -71,13 +67,11 @@ const (
 
 // ReportUser describes a user indicator on remote services.
 type ReportUser struct {
-	ReportEntityBase
 	Activities []EntityActivity `json:"activities"`
 }
 
 // ReportBinary describes a binary file indicator including executable format.
 type ReportBinary struct {
-	ReportEntityBase
 	RelatedMalware []EntityMalware  `json:"related_malware,omitempty"`
 	Software       []string         `json:"software,omitempty"`
 	OS             []string         `json:"os,omitempty"`
@@ -86,8 +80,6 @@ type ReportBinary struct {
 
 // ReportHost describes a host indicator binding IP address, domain name
 type ReportHost struct {
-	ReportEntityBase
-
 	// Network related entities
 	IPAddr         []string         `json:"ipaddr,omitempty"`
 	Country        []string         `json:"country,omitempty"`
@@ -150,122 +142,3 @@ type EntitySoftware struct {
 	Location string    `json:"location"`
 	LastSeen time.Time `json:"last_seen"`
 }
-
-// ---------------------------------------------
-// Component
-
-// ReportRecord is a format to store a report to DynamoDB
-type ReportRecord struct {
-	ReportID   ReportID  `dynamo:"report_id"`
-	AttrID     string    `dynamo:"attr_id"`
-	Data       []byte    `dynamo:"data"`
-	TimeToLive time.Time `dynamo:"ttl"`
-}
-
-// NewReportRecord is a constructor of ReportRecord
-func NewReportRecord(id ReportID, entity ReportEntity) *ReportRecord {
-	raw, err := json.Marshal(entity)
-	if err != nil {
-		// Must success
-		log.Fatal("Fail to unmarshal ReportEntity.", err)
-	}
-
-	rec := ReportRecord{
-		ReportID: id,
-		AttrID:   entity.GetAttr().Hash(),
-		Data:     raw,
-	}
-
-	return &rec
-}
-
-func reportIDtoRecordKey(reportID ReportID) string {
-	return fmt.Sprintf("record/%s", reportID)
-}
-
-/*
-// NewReportComponent is a constructor of ReportComponent
-func NewReportComponent(reportID ReportID) *ReportComponent {
-	data := ReportComponent{
-		ReportID: reportID,
-		DataID:   uuid.NewV4().String(),
-	}
-
-	return &data
-}
-
-// SetPage sets page data with serialization.
-func (x *ReportComponent) SetPage(page ReportPage) {
-	data, err := json.Marshal(&page)
-	if err != nil {
-		log.Println("Fail to marshal report page:", page)
-	}
-
-	x.Data = data
-}
-
-// Page returns deserialized page structure
-func (x *ReportComponent) Page() *ReportPage {
-	if len(x.Data) == 0 {
-		return nil
-	}
-
-	var page ReportPage
-	err := json.Unmarshal(x.Data, &page)
-	if err != nil {
-		log.Println("Invalid report page data foramt", string(x.Data))
-		return nil
-	}
-
-	return &page
-}
-
-func (x *ReportComponent) Submit(tableName, region string) error {
-	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
-	table := db.Table(tableName)
-
-	x.TimeToLive = time.Now().UTC().Add(time.Second * 864000)
-
-	log.WithFields(log.Fields{
-		"component": x,
-		"tableName": tableName,
-	}).Info("Put component")
-	err := table.Put(x).Run()
-	if err != nil {
-		return errors.Wrap(err, "Fail to put report data")
-	}
-
-	return nil
-}
-
-func FetchReportPages(tableName, region string, reportID ReportID) ([]*ReportPage, error) {
-	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
-	table := db.Table(tableName)
-
-	dataList := []ReportComponent{}
-	err := table.Get("report_id", reportID).All(&dataList)
-	if err != nil {
-		return nil, errors.Wrap(err, "Fail to fetch report data")
-	}
-
-	pages := []*ReportPage{}
-	for _, data := range dataList {
-		pages = append(pages, data.Page())
-	}
-	return pages, nil
-}
-
-func NewReport(reportID ReportID, alert Alert) Report {
-	report := Report{
-		ID:      reportID,
-		Alert:   alert,
-		Content: newReportContent(),
-	}
-
-	return report
-}
-
-func NewReportID() ReportID {
-	return ReportID(uuid.NewV4().String())
-}
-*/
