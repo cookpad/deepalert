@@ -18,3 +18,11 @@ func SaveAlertCache(x *reportCoordinator, reportID ReportID, alert Alert) error 
 func FetchAlertCache(x *reportCoordinator, reportID ReportID) ([]Alert, error) {
 	return x.fetchAlertCache(reportID)
 }
+
+func SaveReportContent(x *reportCoordinator, content ReportContent) error {
+	return x.saveReportContent(content)
+}
+
+func FetchReportContent(x *reportCoordinator, reportID ReportID) ([]ReportContent, error) {
+	return x.fetchReportContent(reportID)
+}

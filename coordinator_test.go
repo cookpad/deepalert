@@ -102,3 +102,37 @@ func TestCoordinatorAlertCache(t *testing.T) {
 	assert.True(t, alerts[0].Detector == "me" || alerts[1].Detector == "me")
 	assert.True(t, alerts[0].Detector == "you" || alerts[1].Detector == "you")
 }
+
+func TestCoordinatorReportContent(t *testing.T) {
+	cfg := loadTestConfig()
+	c := da.NewReportCoordinator(cfg.TableName, cfg.Region)
+
+	rID1 := da.NewReportID()
+	content1 := da.ReportContent{
+		ReportID: rID1,
+		Author:   "blue",
+		Attribute: da.Attribute{
+			Type:  da.TypeIPAddr,
+			Key:   "Remote host",
+			Value: "10.1.2.3",
+		},
+	}
+	content2 := da.ReportContent{
+		ReportID: rID1,
+		Author:   "orange",
+		Attribute: da.Attribute{
+			Type:  da.TypeIPAddr,
+			Key:   "Remote host",
+			Value: "10.1.2.3",
+		},
+	}
+
+	err := da.SaveReportContent(c, content1)
+	require.NoError(t, err)
+	err = da.SaveReportContent(c, content2)
+	require.NoError(t, err)
+
+	contents, err := da.FetchReportContent(c, rID1)
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(contents))
+}

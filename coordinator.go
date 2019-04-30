@@ -156,14 +156,20 @@ func toReportContentRecord(reportID ReportID, content *ReportContent) (string, s
 	return pk, sk
 }
 
-func (x *reportCoordinator) saveReportContent(reportID ReportID, content ReportContent) error {
-	pk, sk := toReportContentRecord(reportID, &content)
+func (x *reportCoordinator) saveReportContent(content ReportContent) error {
+	raw, err := json.Marshal(content)
+	if err != nil {
+		return errors.Wrapf(err, "Fail to marshal ReportContent: %v", content)
+	}
+
+	pk, sk := toReportContentRecord(content.ReportID, &content)
 	record := reportContentRecord{
 		recordBase: recordBase{
 			PKey:      pk,
 			SKey:      sk,
 			ExpiresAt: time.Now().UTC().Add(time.Hour * 24),
 		},
+		Data: raw,
 	}
 
 	if err := x.table.Put(record).Run(); err != nil {
@@ -173,7 +179,7 @@ func (x *reportCoordinator) saveReportContent(reportID ReportID, content ReportC
 	return nil
 }
 
-func (x *reportCoordinator) fetchReportRecords(reportID ReportID) ([]ReportContent, error) {
+func (x *reportCoordinator) fetchReportContent(reportID ReportID) ([]ReportContent, error) {
 	var records []reportContentRecord
 	pk, _ := toReportContentRecord(reportID, nil)
 

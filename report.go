@@ -24,6 +24,7 @@ type Report struct {
 
 // ReportContent is base structure of report entity.
 type ReportContent struct {
+	ReportID  ReportID          `json:"report_id"`
 	Author    string            `json:"author"`
 	Attribute Attribute         `json:"attribute"`
 	Type      ReportContentType `json:"type"`
