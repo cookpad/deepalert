@@ -8,9 +8,9 @@ required_parameters = [
     'StackName',
     'Region',
     'CodeS3Bucket',
-    'CodeS3Prefix',
 ]
 optional_parameters = [
+    'CodeS3Prefix',
     'LambdaRoleArn',
     'StepFunctionRoleArn',
     'ReviewerLambdaArn',
@@ -48,18 +48,22 @@ def gen_functions_section():
     return '\n'.join(lines) + '\n'
 
 
-def gen_header():
+def gen_header(args):
     template = '''
 TEMPLATE_FILE=template.yml
-SAM_FILE=sam.yml
-OUTPUT_FILE=output.json
-TEST_FILE=test.json
+SAM_FILE={1}
+OUTPUT_FILE={2}
+TEST_FILE={3}
 
 COMMON=functions/*.go *.go
 FUNCTIONS={0}
 '''
+    sam_file = os.path.join(args.workdir, 'sam.yml')
+    output_file = os.path.join(args.workdir, 'output.json')
+    test_file = os.path.join(args.workdir, 'test.json')
+
     functions = map(lambda f: os.path.join('build', f), get_functions())
-    return template.format(' '.join(functions))
+    return template.format(' '.join(functions), sam_file, output_file, test_file)
 
 
 def gen_parameters(config):
@@ -94,6 +98,7 @@ clean:
 	rm $(FUNCTIONS)
 
 $(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
+	mkdir -p `dirname $(SAM_FILE)`
 	aws cloudformation package \\
 		--template-file $(TEMPLATE_FILE) \\
 		--s3-bucket $(CodeS3Bucket) \\
@@ -115,7 +120,7 @@ $(TEST_FILE): $(OUTPUT_FILE)
 	echo '{{"TableName": "$(TABLE_NAME)", "Region": "{0}"}}' > $(TEST_FILE)
 
 test: $(TEST_FILE)
-	go test -v .
+	env DEEPALERT_TEST_CONFIG=$(TEST_FILE) go test -v .
 '''.format(config['Region'])
 
 
@@ -123,6 +128,8 @@ def main():
     psr = argparse.ArgumentParser()
     psr.add_argument('-o', '--output', default="Makefile")
     psr.add_argument('-c', '--config', type=argparse.FileType('rt'))
+    psr.add_argument('-w', '--workdir', default=".")
+
     psr.add_argument('--StackName')
     psr.add_argument('--Region')
     psr.add_argument('--CodeS3Bucket')
@@ -137,7 +144,7 @@ def main():
     config = args2config(args)
 
     body = [
-        gen_header(),
+        gen_header(args),
         gen_parameters(config),
         gen_task_section(config),
         gen_functions_section(),
