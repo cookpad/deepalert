@@ -3,26 +3,26 @@ package deepalert
 import "time"
 
 var (
-	NewReportCoordinator = newReportCoordinator
-	NewReportID          = newReportID
+	NewDataStoreService = newDataStoreService
+	NewReportID         = newReportID
 )
 
-func TakeReportID(x *reportCoordinator, alertID string, ts time.Time) (ReportID, error) {
+func TakeReportID(x *dataStoreService, alertID string, ts time.Time) (ReportID, error) {
 	return x.takeReportID(alertID, ts)
 }
 
-func SaveAlertCache(x *reportCoordinator, reportID ReportID, alert Alert) error {
+func SaveAlertCache(x *dataStoreService, reportID ReportID, alert Alert) error {
 	return x.saveAlertCache(reportID, alert)
 }
 
-func FetchAlertCache(x *reportCoordinator, reportID ReportID) ([]Alert, error) {
+func FetchAlertCache(x *dataStoreService, reportID ReportID) ([]Alert, error) {
 	return x.fetchAlertCache(reportID)
 }
 
-func SaveReportContent(x *reportCoordinator, content ReportContent) error {
+func SaveReportContent(x *dataStoreService, content ReportContent) error {
 	return x.saveReportContent(content)
 }
 
-func FetchReportContent(x *reportCoordinator, reportID ReportID) ([]ReportContent, error) {
+func FetchReportContent(x *dataStoreService, reportID ReportID) ([]ReportContent, error) {
 	return x.fetchReportContent(reportID)
 }

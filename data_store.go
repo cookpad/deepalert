@@ -13,16 +13,16 @@ import (
 	"github.com/pkg/errors"
 )
 
-type reportCoordinator struct {
+type dataStoreService struct {
 	tableName  string
 	region     string
 	table      dynamo.Table
 	timeToLive time.Duration
 }
 
-func newReportCoordinator(tableName, region string) *reportCoordinator {
+func newDataStoreService(tableName, region string) *dataStoreService {
 	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
-	x := reportCoordinator{
+	x := dataStoreService{
 		tableName:  tableName,
 		region:     region,
 		table:      db.Table(tableName),
@@ -57,7 +57,7 @@ func newReportID() ReportID {
 	return ReportID(uuid.New().String())
 }
 
-func (x *reportCoordinator) takeReportID(alertID string, ts time.Time) (ReportID, error) {
+func (x *dataStoreService) takeReportID(alertID string, ts time.Time) (ReportID, error) {
 	fixedKey := "Fixed"
 	cache := alertEntry{
 		recordBase: recordBase{
@@ -98,7 +98,7 @@ func toAlertCacheKey(reportID ReportID) (string, string) {
 	return fmt.Sprintf("alert/%s", reportID), "cache/" + uuid.New().String()
 }
 
-func (x *reportCoordinator) saveAlertCache(reportID ReportID, alert Alert) error {
+func (x *dataStoreService) saveAlertCache(reportID ReportID, alert Alert) error {
 	raw, err := json.Marshal(alert)
 	if err != nil {
 		return errors.Wrapf(err, "Fail to marshal alert: %v", alert)
@@ -119,7 +119,7 @@ func (x *reportCoordinator) saveAlertCache(reportID ReportID, alert Alert) error
 	return nil
 }
 
-func (x *reportCoordinator) fetchAlertCache(reportID ReportID) ([]Alert, error) {
+func (x *dataStoreService) fetchAlertCache(reportID ReportID) ([]Alert, error) {
 	pk, _ := toAlertCacheKey(reportID)
 	var caches []alertCache
 	var alerts []Alert
@@ -156,7 +156,7 @@ func toReportContentRecord(reportID ReportID, content *ReportContent) (string, s
 	return pk, sk
 }
 
-func (x *reportCoordinator) saveReportContent(content ReportContent) error {
+func (x *dataStoreService) saveReportContent(content ReportContent) error {
 	raw, err := json.Marshal(content)
 	if err != nil {
 		return errors.Wrapf(err, "Fail to marshal ReportContent: %v", content)
@@ -179,7 +179,7 @@ func (x *reportCoordinator) saveReportContent(content ReportContent) error {
 	return nil
 }
 
-func (x *reportCoordinator) fetchReportContent(reportID ReportID) ([]ReportContent, error) {
+func (x *dataStoreService) fetchReportContent(reportID ReportID) ([]ReportContent, error) {
 	var records []reportContentRecord
 	pk, _ := toReportContentRecord(reportID, nil)
 

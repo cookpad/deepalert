@@ -45,7 +45,7 @@ func TestCoordinatorTakeReportID(t *testing.T) {
 	ts := time.Now()
 	alertID := uuid.New().String()
 
-	c := da.NewReportCoordinator(cfg.TableName, cfg.Region)
+	c := da.NewDataStoreService(cfg.TableName, cfg.Region)
 	id1, err := da.TakeReportID(c, alertID, ts)
 	require.NoError(t, err)
 	assert.NotEqual(t, "", id1)
@@ -63,7 +63,7 @@ func TestCoordinatorTakeReportID(t *testing.T) {
 
 func TestCoordinatorAlertCache(t *testing.T) {
 	cfg := loadTestConfig()
-	c := da.NewReportCoordinator(cfg.TableName, cfg.Region)
+	c := da.NewDataStoreService(cfg.TableName, cfg.Region)
 
 	alert1 := da.Alert{
 		Detector:  "me",
@@ -105,7 +105,7 @@ func TestCoordinatorAlertCache(t *testing.T) {
 
 func TestCoordinatorReportContent(t *testing.T) {
 	cfg := loadTestConfig()
-	c := da.NewReportCoordinator(cfg.TableName, cfg.Region)
+	c := da.NewDataStoreService(cfg.TableName, cfg.Region)
 
 	rID1 := da.NewReportID()
 	content1 := da.ReportContent{
