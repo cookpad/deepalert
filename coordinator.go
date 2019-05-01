@@ -61,7 +61,7 @@ func (x *reportCoordinator) takeReportID(alertID string, ts time.Time) (ReportID
 	fixedKey := "Fixed"
 	cache := alertEntry{
 		recordBase: recordBase{
-			PKey:      "alert/" + alertID,
+			PKey:      "alertmap/" + alertID,
 			SKey:      fixedKey,
 			ExpiresAt: ts.Add(time.Hour * 3),
 		},
@@ -95,7 +95,7 @@ type alertCache struct {
 }
 
 func toAlertCacheKey(reportID ReportID) (string, string) {
-	return fmt.Sprintf("report/%s", reportID), "cache/" + uuid.New().String()
+	return fmt.Sprintf("alert/%s", reportID), "cache/" + uuid.New().String()
 }
 
 func (x *reportCoordinator) saveAlertCache(reportID ReportID, alert Alert) error {
