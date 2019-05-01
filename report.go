@@ -8,9 +8,26 @@ import (
 	"github.com/m-mizutani/deepalert/functions"
 )
 
+// ReportID is a unique ID of a report. Multiple alerts can be aggregated to
+// one report by same Detector, RuleName and AlertKey.
 type ReportID string
+
+// ReportStatus shows "new" or "published". "new" means that the report have
+// not been reviewed by Reviewer and inspection may be still ongoing.
+// "publihsed" means that the report is already submitted to ReportNotification
+// as a reviwed report.
 type ReportStatus string
+
+// ReportSeverity has three statuses: "safe", "unclassified", "urgent".
+// - "safe": Reviewer determined the alert has no or minimal risk.
+//           E.g. Win32 malware is detected in a host, but the host's OS is MacOS.
+// - "unclassified": Reviewer has no suitable policy or can not determine risk.
+// - "urgent": The alert has a big impact and a security operator must
+//             respond it immediately.
 type ReportSeverity string
+
+// ReportContentType shows "user", "host" or "binary". It helps to parse
+// Content field in ReportContnet.
 type ReportContentType string
 
 // Report is a container to deliver contents and inspection results of the alert.
@@ -32,9 +49,12 @@ type ReportContent struct {
 }
 
 const (
-	ContentUser   ReportContentType = "user"
-	ContentHost                     = "host"
-	ContentBinary                   = "binary"
+	// ContentUser means Content field is ReportUser.
+	ContentUser ReportContentType = "user"
+	// ContentHost means Content field is ReportHost.
+	ContentHost = "host"
+	// ContentBinary means Content field is ReportBinary.
+	ContentBinary = "binary"
 )
 
 // SubmitReportContent sends record to SNS
@@ -102,6 +122,7 @@ type ReportHost struct {
 // -----------------------------------------------
 // Entity Objects
 
+// EntityActivity shows history of user/host activity such as accessing a cloud service.
 type EntityActivity struct {
 	ServiceName string    `json:"service_name"`
 	RemoteAddr  string    `json:"remote_addr"`
@@ -111,6 +132,7 @@ type EntityActivity struct {
 	LastSeen    time.Time `json:"last_seen"`
 }
 
+// EntityMalware shows set of malware scan result by AntiVirus software.
 type EntityMalware struct {
 	SHA256    string              `json:"sha256"`
 	Timestamp time.Time           `json:"timestamp"`
@@ -118,6 +140,7 @@ type EntityMalware struct {
 	Relation  string              `json:"relation"`
 }
 
+// EntityMalwareScan shows a result of malware scan.
 type EntityMalwareScan struct {
 	Vendor   string `json:"vendor"`
 	Name     string `json:"name"`
@@ -125,12 +148,14 @@ type EntityMalwareScan struct {
 	Source   string `json:"source"`
 }
 
+// EntityDomain shows a related domain to the host.
 type EntityDomain struct {
 	Name      string    `json:"name"`
 	Timestamp time.Time `json:"timestamp"`
 	Source    string    `json:"source"`
 }
 
+// EntityURL shows a related URL to the host.
 type EntityURL struct {
 	URL       string    `json:"url"`
 	Reference string    `json:"reference"`
@@ -138,6 +163,7 @@ type EntityURL struct {
 	Source    string    `json:"source"`
 }
 
+// EntitySoftware shows installed software to the host.
 type EntitySoftware struct {
 	Name     string    `json:"name"`
 	Location string    `json:"location"`
