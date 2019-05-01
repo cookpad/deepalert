@@ -200,6 +200,20 @@ Resources:
           - { "Fn::GetAtt": LambdaRole.Arn }
           - { Ref: LambdaRoleArn }
 
+  ErrorHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: ErrorHandler
+      Role:
+        Fn::If:
+          - LambdaRoleRequired
+          - { "Fn::GetAtt": LambdaRole.Arn }
+          - { Ref: LambdaRoleArn }
+      DeadLetterQueue:
+        Type: SNS
+        TargetArn:
+          Ref: NullNotification
+
   # --------------------------------------------------------
   # SNS topics
   AlertNotification:
@@ -212,6 +226,9 @@ Resources:
     Type: AWS::SNS::Topic
 
   ErrorNotification:
+    Type: AWS::SNS::Topic
+
+  NullNotification:
     Type: AWS::SNS::Topic
 
   ReportNotification:
@@ -266,6 +283,7 @@ Resources:
                   - Ref: ReportNotification
                   - Ref: TaskNotification
                   - Ref: ErrorNotification
+                  - Ref: NullNotification
               - Effect: "Allow"
                 Action:
                   - states:StartExecution
