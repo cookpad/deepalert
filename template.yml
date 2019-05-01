@@ -48,7 +48,7 @@ Globals:
           Ref: ReportNotification
         LOG_GROUP:
           Ref: LogStore
-        ALERT_TABLE:
+        CACHE_TABLE:
           Ref: CacheTable
 
 Resources:

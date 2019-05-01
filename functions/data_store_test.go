@@ -1,18 +1,19 @@
-package deepalert_test
+package functions_test
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/google/uuid"
+	// "github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	da "github.com/m-mizutani/deepalert"
+	f "github.com/m-mizutani/deepalert/functions"
 )
 
 type testConfig struct {
@@ -26,44 +27,63 @@ func loadTestConfig() testConfig {
 		testConfigPath = envvar
 	}
 
-	raw, err := ioutil.ReadFile(testConfigPath)
+	actualPath := filepath.Join("..", testConfigPath)
+	raw, err := ioutil.ReadFile(actualPath)
 	if err != nil {
-		log.Fatalf("Fail to read testConfigFile: %s, %s", testConfigPath, err)
+		log.Fatalf("Fail to read testConfigFile: %s, %s", actualPath, err)
 	}
 
 	var conf testConfig
 	if err := json.Unmarshal(raw, &conf); err != nil {
-		log.Fatalf("Fail to unmarshal testConfigFile: %s, %s", testConfigPath, err)
+		log.Fatalf("Fail to unmarshal testConfigFile: %s, %s", actualPath, err)
 	}
 
 	return conf
 }
 
-func TestCoordinatorTakeReportID(t *testing.T) {
+func TestDataStoreTakeReportID(t *testing.T) {
 	cfg := loadTestConfig()
+	ts := time.Now().UTC()
 
-	ts := time.Now()
-	alertID := uuid.New().String()
+	alert1 := da.Alert{
+		Detector:  "me",
+		RuleName:  "myRule",
+		AlertKey:  "blue",
+		Timestamp: ts,
+	}
+	alert2 := da.Alert{
+		Detector:  "me",
+		RuleName:  "myRule",
+		AlertKey:  "blue",
+		Timestamp: ts.Add(time.Hour * 1),
+	}
+	alert3 := da.Alert{
+		Detector:  "me",
+		RuleName:  "myRule",
+		AlertKey:  "orange",
+		Timestamp: ts.Add(time.Hour * 4),
+	}
 
-	c := da.NewDataStoreService(cfg.TableName, cfg.Region)
-	id1, err := da.TakeReportID(c, alertID, ts)
+	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
+
+	id1, err := svc.TakeReportID(alert1)
 	require.NoError(t, err)
 	assert.NotEqual(t, "", id1)
 
-	id2, err := da.TakeReportID(c, alertID, ts.Add(time.Hour))
+	id2, err := svc.TakeReportID(alert2)
 	require.NoError(t, err)
 	// Another result of 1 hour later with same alertID should have same ReportID
 	assert.Equal(t, id1, id2)
 
-	id3, err := da.TakeReportID(c, alertID, ts.Add(time.Hour*4))
+	id3, err := svc.TakeReportID(alert3)
 	require.NoError(t, err)
 	// However result over 3 hour later with same alertID should have other ReportID
 	assert.NotEqual(t, id1, id3)
 }
 
-func TestCoordinatorAlertCache(t *testing.T) {
+func TestDataStoreAlertCache(t *testing.T) {
 	cfg := loadTestConfig()
-	c := da.NewDataStoreService(cfg.TableName, cfg.Region)
+	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
 	alert1 := da.Alert{
 		Detector:  "me",
@@ -85,17 +105,17 @@ func TestCoordinatorAlertCache(t *testing.T) {
 	}
 
 	var err error
-	reportID := da.NewReportID()
-	err = da.SaveAlertCache(c, reportID, alert1)
+	reportID := f.NewReportID()
+	err = svc.SaveAlertCache(reportID, alert1)
 	require.NoError(t, err)
-	err = da.SaveAlertCache(c, reportID, alert2)
-	require.NoError(t, err)
-
-	anotherReportID := da.NewReportID()
-	err = da.SaveAlertCache(c, anotherReportID, alert3)
+	err = svc.SaveAlertCache(reportID, alert2)
 	require.NoError(t, err)
 
-	alerts, err := da.FetchAlertCache(c, reportID)
+	anotherReportID := f.NewReportID()
+	err = svc.SaveAlertCache(anotherReportID, alert3)
+	require.NoError(t, err)
+
+	alerts, err := svc.FetchAlertCache(reportID)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(alerts))
 
@@ -103,12 +123,12 @@ func TestCoordinatorAlertCache(t *testing.T) {
 	assert.True(t, alerts[0].Detector == "you" || alerts[1].Detector == "you")
 }
 
-func TestCoordinatorReportContent(t *testing.T) {
+func TestDataStoreReportContent(t *testing.T) {
 	cfg := loadTestConfig()
-	c := da.NewDataStoreService(cfg.TableName, cfg.Region)
+	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
-	rID1 := da.NewReportID()
-	rID2 := da.NewReportID()
+	rID1 := f.NewReportID()
+	rID2 := f.NewReportID()
 
 	content1 := da.ReportContent{
 		ReportID: rID1,
@@ -138,14 +158,14 @@ func TestCoordinatorReportContent(t *testing.T) {
 		},
 	}
 
-	err := da.SaveReportContent(c, content1)
+	err := svc.SaveReportContent(content1)
 	require.NoError(t, err)
-	err = da.SaveReportContent(c, content2)
+	err = svc.SaveReportContent(content2)
 	require.NoError(t, err)
-	err = da.SaveReportContent(c, content3)
+	err = svc.SaveReportContent(content3)
 	require.NoError(t, err)
 
-	contents, err := da.FetchReportContent(c, rID1)
+	contents, err := svc.FetchReportContent(rID1)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(contents))
 	assert.Equal(t, rID1, contents[0].ReportID)

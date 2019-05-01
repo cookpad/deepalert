@@ -120,7 +120,7 @@ $(TEST_FILE): $(OUTPUT_FILE)
 	echo '{{"TableName": "$(TABLE_NAME)", "Region": "{0}"}}' > $(TEST_FILE)
 
 test: $(TEST_FILE)
-	env DEEPALERT_TEST_CONFIG=$(TEST_FILE) go test -v .
+	env DEEPALERT_TEST_CONFIG=$(TEST_FILE) go test -v ./...
 '''.format(config['Region'])
 
 

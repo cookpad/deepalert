@@ -2,10 +2,6 @@ package deepalert
 
 import (
 	"time"
-
-	"github.com/pkg/errors"
-
-	"github.com/m-mizutani/deepalert/functions"
 )
 
 // ReportID is a unique ID of a report. Multiple alerts can be aggregated to
@@ -56,15 +52,6 @@ const (
 	// ContentBinary means Content field is ReportBinary.
 	ContentBinary = "binary"
 )
-
-// SubmitReportContent sends record to SNS
-func SubmitReportContent(content ReportContent, topicArn, region string) error {
-	if err := functions.PublishSNS(topicArn, region, content); err != nil {
-		return errors.Wrapf(err, "Fail to publish ReportEntity: %v", content)
-	}
-
-	return nil
-}
 
 // ReportResult shows output of Reviewer invoked to evaluate risk of the alert.
 type ReportResult struct {

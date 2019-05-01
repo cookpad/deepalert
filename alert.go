@@ -77,7 +77,8 @@ func (x *Alert) FindAttributes(key string) []Attribute {
 	return attrs
 }
 
-func (x *Alert) alertID() string {
+// AlertID calculate ID of the alert from Detector, RuleName and AlertKey.
+func (x *Alert) AlertID() string {
 	key := strings.Join([]string{
 		base64.StdEncoding.EncodeToString([]byte(x.Detector)),
 		base64.StdEncoding.EncodeToString([]byte(x.RuleName)),

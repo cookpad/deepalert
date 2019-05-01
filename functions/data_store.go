@@ -1,4 +1,4 @@
-package deepalert
+package functions
 
 import (
 	"encoding/json"
@@ -11,18 +11,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/guregu/dynamo"
 	"github.com/pkg/errors"
+
+	"github.com/m-mizutani/deepalert"
 )
 
-type dataStoreService struct {
+type DataStoreService struct {
 	tableName  string
 	region     string
 	table      dynamo.Table
 	timeToLive time.Duration
 }
 
-func newDataStoreService(tableName, region string) *dataStoreService {
+func NewDataStoreService(tableName, region string) *DataStoreService {
 	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
-	x := dataStoreService{
+	x := DataStoreService{
 		tableName:  tableName,
 		region:     region,
 		table:      db.Table(tableName),
@@ -43,7 +45,7 @@ type recordBase struct {
 //
 type alertEntry struct {
 	recordBase
-	ReportID ReportID `dynamo:"report_id"`
+	ReportID deepalert.ReportID `dynamo:"report_id"`
 }
 
 func isConditionalCheckErr(err error) bool {
@@ -53,32 +55,36 @@ func isConditionalCheckErr(err error) bool {
 	return false
 }
 
-func newReportID() ReportID {
-	return ReportID(uuid.New().String())
+func NewReportID() deepalert.ReportID {
+	return deepalert.ReportID(uuid.New().String())
 }
 
-func (x *dataStoreService) takeReportID(alertID string, ts time.Time) (ReportID, error) {
+func (x *DataStoreService) TakeReportID(alert deepalert.Alert) (deepalert.ReportID, error) {
 	fixedKey := "Fixed"
+	nullID := deepalert.ReportID("")
+	alertID := alert.AlertID()
+	ts := alert.Timestamp
+
 	cache := alertEntry{
 		recordBase: recordBase{
 			PKey:      "alertmap/" + alertID,
 			SKey:      fixedKey,
 			ExpiresAt: ts.Add(time.Hour * 3),
 		},
-		ReportID: newReportID(),
+		ReportID: NewReportID(),
 	}
 
 	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", ts).Run(); err != nil {
 		if isConditionalCheckErr(err) {
 			var existedEntry alertEntry
 			if err := x.table.Get("pk", cache.PKey).Range("sk", dynamo.Equal, cache.SKey).One(&existedEntry); err != nil {
-				return ReportID(""), errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
+				return nullID, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
 			}
 
 			return existedEntry.ReportID, nil
 		}
 
-		return ReportID(""), errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
+		return nullID, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
 	}
 
 	return cache.ReportID, nil
@@ -94,11 +100,11 @@ type alertCache struct {
 	ExpiresAt time.Time `dynamo:"expires_at"`
 }
 
-func toAlertCacheKey(reportID ReportID) (string, string) {
+func toAlertCacheKey(reportID deepalert.ReportID) (string, string) {
 	return fmt.Sprintf("alert/%s", reportID), "cache/" + uuid.New().String()
 }
 
-func (x *dataStoreService) saveAlertCache(reportID ReportID, alert Alert) error {
+func (x *DataStoreService) SaveAlertCache(reportID deepalert.ReportID, alert deepalert.Alert) error {
 	raw, err := json.Marshal(alert)
 	if err != nil {
 		return errors.Wrapf(err, "Fail to marshal alert: %v", alert)
@@ -119,17 +125,17 @@ func (x *dataStoreService) saveAlertCache(reportID ReportID, alert Alert) error 
 	return nil
 }
 
-func (x *dataStoreService) fetchAlertCache(reportID ReportID) ([]Alert, error) {
+func (x *DataStoreService) FetchAlertCache(reportID deepalert.ReportID) ([]deepalert.Alert, error) {
 	pk, _ := toAlertCacheKey(reportID)
 	var caches []alertCache
-	var alerts []Alert
+	var alerts []deepalert.Alert
 
 	if err := x.table.Get("pk", pk).All(&caches); err != nil {
 		return nil, errors.Wrapf(err, "Fail to retrieve alertCache: %s", reportID)
 	}
 
 	for _, cache := range caches {
-		var alert Alert
+		var alert deepalert.Alert
 		if err := json.Unmarshal(cache.AlertData, &alert); err != nil {
 			return nil, errors.Wrapf(err, "Fail to unmarshal alert: %s", string(cache.AlertData))
 		}
@@ -147,7 +153,7 @@ type reportContentRecord struct {
 	Data []byte `dynamo:"data"`
 }
 
-func toReportContentRecord(reportID ReportID, content *ReportContent) (string, string) {
+func toReportContentRecord(reportID deepalert.ReportID, content *deepalert.ReportContent) (string, string) {
 	pk := fmt.Sprintf("content/%s", reportID)
 	sk := ""
 	if content != nil {
@@ -156,7 +162,7 @@ func toReportContentRecord(reportID ReportID, content *ReportContent) (string, s
 	return pk, sk
 }
 
-func (x *dataStoreService) saveReportContent(content ReportContent) error {
+func (x *DataStoreService) SaveReportContent(content deepalert.ReportContent) error {
 	raw, err := json.Marshal(content)
 	if err != nil {
 		return errors.Wrapf(err, "Fail to marshal ReportContent: %v", content)
@@ -179,7 +185,7 @@ func (x *dataStoreService) saveReportContent(content ReportContent) error {
 	return nil
 }
 
-func (x *dataStoreService) fetchReportContent(reportID ReportID) ([]ReportContent, error) {
+func (x *DataStoreService) FetchReportContent(reportID deepalert.ReportID) ([]deepalert.ReportContent, error) {
 	var records []reportContentRecord
 	pk, _ := toReportContentRecord(reportID, nil)
 
@@ -187,9 +193,9 @@ func (x *dataStoreService) fetchReportContent(reportID ReportID) ([]ReportConten
 		return nil, errors.Wrap(err, "Fail to fetch report records")
 	}
 
-	var contents []ReportContent
+	var contents []deepalert.ReportContent
 	for _, record := range records {
-		var content ReportContent
+		var content deepalert.ReportContent
 		if err := json.Unmarshal(record.Data, &content); err != nil {
 			return nil, errors.Wrapf(err, "Fail to unmarshal report content: %v %s", record, string(record.Data))
 		}
