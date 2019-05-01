@@ -159,6 +159,12 @@ Resources:
           - LambdaRoleRequired
           - { "Fn::GetAtt": LambdaRole.Arn }
           - { Ref: LambdaRoleArn }
+      Events:
+        SubmitNotification:
+          Type: SNS
+          Properties:
+            Topic:
+              Ref: AlertNotification
 
   CompileReport:
     Type: AWS::Serverless::Function
@@ -213,6 +219,12 @@ Resources:
         Type: SNS
         TargetArn:
           Ref: NullNotification
+      Events:
+        ErrorNotification:
+          Type: SNS
+          Properties:
+            Topic:
+              Ref: ErrorNotification
 
   # --------------------------------------------------------
   # SNS topics

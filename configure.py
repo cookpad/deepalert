@@ -8,9 +8,9 @@ required_parameters = [
     'StackName',
     'Region',
     'CodeS3Bucket',
+    'CodeS3Prefix',
 ]
 optional_parameters = [
-    'CodeS3Prefix',
     'LambdaRoleArn',
     'StepFunctionRoleArn',
     'ReviewerLambdaArn',

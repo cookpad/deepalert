@@ -31,7 +31,7 @@ Options of `configure.py` to generate `Makefile` is following.
   - `--StackName`: Required. Specify stack name of DeepAlert deployed by CloudFormation.
   - `--Region`: Required. Specify AWS region such as `ap-northeast-1` to deploy.
   - `--CodeS3Bucket`: Required. Specify S3 bucket name to store executable binary of DeepAlert.
-  - `--CodeS3Prefix`: Optional. Specify S3 key prefix to store executable binary of DeepAlert. NOTE: `/` at tail of prefix is not needed.
+  - `--CodeS3Prefix`: Required. Specify S3 key prefix to store executable binary of DeepAlert. NOTE: `/` at tail of prefix is not needed.
   - `--LambdaRoleArn`: Optional. Specify IAM Role ARN for Lambda functions of DeepAlert. If not specified, CloudFormation will create own IAM Role for Lambda as resource `LambdaRole`
   - `--StepFunctionRoleArn`: Optional. Specify IAM Role ARN for Lambda functions of DeepAlert. If not specified, CloudFormation will create own IAM Role for Lambda as resource `StepFunctionRole`
   - `--ReviewerLambdaArn`: Optional. Specify "Reviewer" Lambda ARN. If not specified, `DummyReviewer` that evaluates all alert as `Unclassified` will be set.
