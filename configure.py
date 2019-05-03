@@ -48,20 +48,46 @@ def gen_functions_section():
     return '\n'.join(lines) + '\n'
 
 
+def get_test_functions():
+    basedir = './test'
+    return filter(lambda x: os.path.isdir(os.path.join(basedir, x)),
+                  os.listdir(basedir))
+
+
+def gen_test_functions_section():
+    template = '''build/{0}: ./test/{0}/*.go
+	env GOARCH=amd64 GOOS=linux go build -o build/{0} ./test/{0}/'''
+
+    test_function_builds = [template.format(x) for x in get_test_functions()]
+
+    return '\n'.join(test_function_builds + [''])
+
+
 def gen_header(args):
     template = '''
 TEMPLATE_FILE=template.yml
-SAM_FILE={1}
-OUTPUT_FILE={2}
+TEST_TEMPLATE_FILE=test.yml
+SAM_FILE={2}
+OUTPUT_FILE={3}
+TEST_SAM_FILE={4}
+TEST_OUTPUT_FILE={5}
 
 COMMON=functions/*.go *.go
 FUNCTIONS={0}
+TEST_FUNCTIONS={1}
 '''
     sam_file = os.path.join(args.workdir, 'sam.yml')
     output_file = os.path.join(args.workdir, 'output.json')
+    test_sam_file = os.path.join(args.workdir, 'test_sam.yml')
+    test_output_file = os.path.join(args.workdir, 'test_output.json')
 
     functions = map(lambda f: os.path.join('build', f), get_functions())
-    return template.format(' '.join(functions), sam_file, output_file)
+    test_functions = map(lambda f: os.path.join(
+        'build', f), get_test_functions())
+
+    return template.format(' '.join(functions), ' '.join(test_functions),
+                           sam_file, output_file,
+                           test_sam_file, test_output_file)
 
 
 def gen_parameters(config):
@@ -109,12 +135,32 @@ $(OUTPUT_FILE): $(SAM_FILE)
 		--template-file $(SAM_FILE) \\
 		--stack-name $(StackName) \\
 		--capabilities CAPABILITY_IAM $(PARAMETERS)
-	aws cloudformation describe-stack-resources --stack-name $(StackName) > output.json
+	aws cloudformation describe-stack-resources --stack-name $(StackName) > $(OUTPUT_FILE)
 
 deploy: $(OUTPUT_FILE)
 
 test: $(OUTPUT_FILE)
 	env DEEPALERT_TEST_CONFIG=$(OUTPUT_FILE) go test -v ./...
+
+
+$(TEST_SAM_FILE): $(TEST_TEMPLATE_FILE) $(TEST_FUNCTIONS)
+	mkdir -p `dirname $(TEST_SAM_FILE)`
+	aws cloudformation package \\
+		--template-file $(TEST_TEMPLATE_FILE) \\
+		--s3-bucket $(CodeS3Bucket) \\
+		--s3-prefix $(CodeS3Prefix) \\
+		--output-template-file $(TEST_SAM_FILE)
+
+$(TEST_OUTPUT_FILE): $(TEST_SAM_FILE)
+	aws cloudformation deploy \\
+		--region $(Region) \\
+		--template-file $(TEST_SAM_FILE) \\
+		--stack-name $(StackName)-test \\
+		--capabilities CAPABILITY_IAM \\
+        --parameter-overrides ParentStackName=$(StackName)
+	aws cloudformation describe-stack-resources --stack-name $(StackName)-test > $(TEST_OUTPUT_FILE)
+
+setuptest: $(TEST_OUTPUT_FILE)
 '''
 
 
@@ -142,6 +188,7 @@ def main():
         gen_parameters(config),
         gen_task_section(config),
         gen_functions_section(),
+        gen_test_functions_section(),
     ]
 
     makefile = '\n'.join(body)

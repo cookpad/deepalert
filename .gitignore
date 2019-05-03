@@ -1,4 +1,5 @@
 *.json
 sam.yml
+test_sam.yml
 build
 Makefile
