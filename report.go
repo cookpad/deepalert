@@ -59,6 +59,16 @@ type ReportResult struct {
 	Reason   string         `json:"reason"`
 }
 
+const (
+	// SevSafe : Reviewer determined the alert has no or minimal risk.
+	// E.g. Win32 malware is detected in a host, but the host's OS is MacOS.
+	SevSafe ReportSeverity = "safe"
+	// SevUnclassified : Reviewer has no suitable policy or can not determine risk.
+	SevUnclassified = "unclassified"
+	// SevUrgent : The alert has a big impact and a security operator must respond it immediately.
+	SevUrgent = "urgent"
+)
+
 // IsNew returns status of the report
 func (x *Report) IsNew() bool { return x.Status == StatusNew }
 

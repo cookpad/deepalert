@@ -5,13 +5,18 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 
-	da "github.com/m-mizutani/deepalert/functions"
+	"github.com/m-mizutani/deepalert"
+	f "github.com/m-mizutani/deepalert/functions"
 )
 
-func handleRequest(ctx context.Context, event interface{}) error {
-	da.SetLoggerContext(ctx)
-	da.Logger.WithField("event", event).Info("Start")
-	return nil
+func handleRequest(ctx context.Context, event interface{}) (deepalert.ReportResult, error) {
+	f.SetLoggerContext(ctx)
+	f.Logger.WithField("event", event).Info("Start")
+
+	return deepalert.ReportResult{
+		Severity: deepalert.SevUnclassified,
+		Reason:   "I'm novice",
+	}, nil
 }
 
 func main() {
