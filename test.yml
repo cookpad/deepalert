@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "DeepAlert https://github.com/m-mizutani/deepalert"
+Description: "TestStack for DeepAlert https://github.com/m-mizutani/deepalert"
 Transform: AWS::Serverless-2016-10-31
 Parameters:
   # IAM Role ARNs
