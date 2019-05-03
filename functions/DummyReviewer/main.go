@@ -10,7 +10,7 @@ import (
 )
 
 func handleRequest(ctx context.Context, event interface{}) (deepalert.ReportResult, error) {
-	f.SetLoggerContext(ctx)
+	f.SetLoggerContext(ctx, "DummyReviewer", deepalert.NullReportID)
 	f.Logger.WithField("event", event).Info("Start")
 
 	return deepalert.ReportResult{

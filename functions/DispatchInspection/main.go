@@ -33,7 +33,7 @@ func mainHandler(args lambdaArguments) error {
 }
 
 func handleRequest(ctx context.Context, report deepalert.Report) error {
-	f.SetLoggerContext(ctx)
+	f.SetLoggerContext(ctx, "DispatchInspection", report.ID)
 	f.Logger.WithField("report", report).Info("Start")
 
 	args := lambdaArguments{

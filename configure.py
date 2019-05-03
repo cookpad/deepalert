@@ -53,17 +53,15 @@ def gen_header(args):
 TEMPLATE_FILE=template.yml
 SAM_FILE={1}
 OUTPUT_FILE={2}
-TEST_FILE={3}
 
 COMMON=functions/*.go *.go
 FUNCTIONS={0}
 '''
     sam_file = os.path.join(args.workdir, 'sam.yml')
     output_file = os.path.join(args.workdir, 'output.json')
-    test_file = os.path.join(args.workdir, 'test.json')
 
     functions = map(lambda f: os.path.join('build', f), get_functions())
-    return template.format(' '.join(functions), sam_file, output_file, test_file)
+    return template.format(' '.join(functions), sam_file, output_file)
 
 
 def gen_parameters(config):
@@ -115,13 +113,9 @@ $(OUTPUT_FILE): $(SAM_FILE)
 
 deploy: $(OUTPUT_FILE)
 
-$(TEST_FILE): $(OUTPUT_FILE)
-	$(eval TABLE_NAME := $(shell cat $(OUTPUT_FILE) | jq '.["StackResources"][]' | jq 'select(.LogicalResourceId == "CacheTable") | .PhysicalResourceId' -r))
-	echo '{{"TableName": "$(TABLE_NAME)", "Region": "{0}"}}' > $(TEST_FILE)
-
-test: $(TEST_FILE)
-	env DEEPALERT_TEST_CONFIG=$(TEST_FILE) go test -v ./...
-'''.format(config['Region'])
+test: $(OUTPUT_FILE)
+	env DEEPALERT_TEST_CONFIG=$(OUTPUT_FILE) go test -v ./...
+'''
 
 
 def main():

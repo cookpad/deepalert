@@ -8,6 +8,9 @@ import (
 // one report by same Detector, RuleName and AlertKey.
 type ReportID string
 
+// NullReportID means not available ID
+const NullReportID ReportID = ""
+
 // ReportStatus shows "new" or "published". "new" means that the report have
 // not been reviewed by Reviewer and inspection may be still ongoing.
 // "publihsed" means that the report is already submitted to ReportNotification
