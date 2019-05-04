@@ -1,12 +1,6 @@
 package functions_test
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -16,59 +10,11 @@ import (
 
 	da "github.com/m-mizutani/deepalert"
 	f "github.com/m-mizutani/deepalert/functions"
+	"github.com/m-mizutani/deepalert/test"
 )
 
-type testConfig struct {
-	TableName string
-	Region    string
-	LogGroup  string
-	LogStream string
-}
-
-func loadTestConfig() testConfig {
-	type Stack struct {
-		StackResources []struct {
-			StackId            string
-			LogicalResourceId  string
-			PhysicalResourceId string
-		}
-	}
-
-	testConfigPath := "output.json"
-	if envvar := os.Getenv("DEEPALERT_TEST_CONFIG"); envvar != "" {
-		testConfigPath = envvar
-	}
-
-	actualPath := filepath.Join("..", testConfigPath)
-	raw, err := ioutil.ReadFile(actualPath)
-	if err != nil {
-		log.Fatalf("Fail to read testConfigFile: %s, %s", actualPath, err)
-	}
-
-	var stack Stack
-	if err := json.Unmarshal(raw, &stack); err != nil {
-		log.Fatalf("Fail to unmarshal output file: %s, %s", actualPath, err)
-	}
-
-	var conf testConfig
-	for _, resource := range stack.StackResources {
-		switch resource.LogicalResourceId {
-		case "CacheTable":
-			conf.TableName = resource.PhysicalResourceId
-			conf.Region = strings.Split(resource.StackId, ":")[3]
-
-		case "LogStore":
-			conf.LogGroup = resource.PhysicalResourceId
-		case "LogStream":
-			conf.LogStream = resource.PhysicalResourceId
-		}
-	}
-
-	return conf
-}
-
 func TestDataStoreTakeReportID(t *testing.T) {
-	cfg := loadTestConfig()
+	cfg := test.LoadTestConfig("..")
 	ts := time.Now().UTC()
 
 	alert1 := da.Alert{
@@ -108,7 +54,7 @@ func TestDataStoreTakeReportID(t *testing.T) {
 }
 
 func TestDataStoreAlertCache(t *testing.T) {
-	cfg := loadTestConfig()
+	cfg := test.LoadTestConfig("..")
 	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
 	alert1 := da.Alert{
@@ -150,7 +96,7 @@ func TestDataStoreAlertCache(t *testing.T) {
 }
 
 func TestDataStoreReportContent(t *testing.T) {
-	cfg := loadTestConfig()
+	cfg := test.LoadTestConfig("..")
 	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
 	rID1 := f.NewReportID()

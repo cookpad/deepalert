@@ -75,6 +75,7 @@ TEST_OUTPUT_FILE={5}
 COMMON=functions/*.go *.go
 FUNCTIONS={0}
 TEST_FUNCTIONS={1}
+TEST_UTILS=test/*.go
 '''
     sam_file = os.path.join(args.workdir, 'sam.yml')
     output_file = os.path.join(args.workdir, 'output.json')
@@ -139,8 +140,8 @@ $(OUTPUT_FILE): $(SAM_FILE)
 
 deploy: $(OUTPUT_FILE)
 
-test: $(OUTPUT_FILE)
-	env DEEPALERT_TEST_CONFIG=$(OUTPUT_FILE) go test -v ./...
+test: $(OUTPUT_FILE) $(TEST_OUTPUT_FILE) $(TEST_UTILS)
+	env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v ./...
 
 
 $(TEST_SAM_FILE): $(TEST_TEMPLATE_FILE) $(TEST_FUNCTIONS)

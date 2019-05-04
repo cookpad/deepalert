@@ -14,10 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	f "github.com/m-mizutani/deepalert/functions"
+	"github.com/m-mizutani/deepalert/test"
 )
 
 func TestLoggerHook(t *testing.T) {
-	cfg := loadTestConfig()
+	cfg := test.LoadTestConfig("..")
 	testID1 := uuid.New().String()
 
 	reportID := f.NewReportID()
