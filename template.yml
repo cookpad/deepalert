@@ -31,7 +31,6 @@ Conditions:
 Globals:
   Function:
     Runtime: go1.x
-    CodeUri: build
     Timeout: 30
     MemorySize: 128
     ReservedConcurrentExecutions: 1
@@ -123,6 +122,7 @@ Resources:
   ReceptAlert:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: ReceptAlert
       Role:
         Fn::If:
@@ -145,6 +145,7 @@ Resources:
   DispatchInspection:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: DispatchInspection
       Role:
         Fn::If:
@@ -155,6 +156,7 @@ Resources:
   SubmitReport:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: SubmitReport
       Role:
         Fn::If:
@@ -166,11 +168,12 @@ Resources:
           Type: SNS
           Properties:
             Topic:
-              Ref: AlertNotification
+              Ref: SubmitNotification
 
   CompileReport:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: CompileReport
       Role:
         Fn::If:
@@ -181,6 +184,7 @@ Resources:
   PublishReport:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: PublishReport
       Role:
         Fn::If:
@@ -191,6 +195,7 @@ Resources:
   StepFunctionError:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: StepFunctionError
       Role:
         Fn::If:
@@ -201,6 +206,7 @@ Resources:
   DummyReviewer:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: DummyReviewer
       Role:
         Fn::If:
@@ -211,6 +217,7 @@ Resources:
   ErrorHandler:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: ErrorHandler
       Role:
         Fn::If:

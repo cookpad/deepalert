@@ -31,6 +31,7 @@ func mainHandler(args lambdaArguments) error {
 		if err := svc.SaveReportContent(content); err != nil {
 			return errors.Wrapf(err, "Fail to save ReportContent: %v", content)
 		}
+		f.Logger.WithField("content", content).Info("Saved content")
 	}
 
 	return nil

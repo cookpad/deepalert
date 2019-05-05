@@ -3,22 +3,16 @@ package main
 import (
 	"context"
 
-	"github.com/aws/aws-lambda-go/lambda"
-
 	"github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/functions"
 )
 
-func handleRequest(ctx context.Context, event interface{}) (deepalert.ReportResult, error) {
-	f.SetLoggerContext(ctx, "DummyReviewer", deepalert.NullReportID)
-	f.Logger.WithField("event", event).Info("Start")
-
-	return deepalert.ReportResult{
-		Severity: deepalert.SevUnclassified,
-		Reason:   "I'm novice",
-	}, nil
+func dummyHandler(ctx context.Context, attr deepalert.Attribute) (deepalert.ReportContentEntity, error) {
+	hostReport := deepalert.ReportHost{
+		IPAddr: []string{"10.1.2.3"},
+	}
+	return &hostReport, nil
 }
 
 func main() {
-	lambda.Start(handleRequest)
+	deepalert.StartInspector(dummyHandler, "dummyHandler")
 }

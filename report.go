@@ -86,9 +86,19 @@ const (
 // -----------------------------------------------
 // Entities
 
+// ReportContentEntity is interface of report entity.
+type ReportContentEntity interface {
+	Type() ReportContentType
+}
+
 // ReportUser describes a user indicator on remote services.
 type ReportUser struct {
 	Activities []EntityActivity `json:"activities"`
+}
+
+// Type of ReportUser returns ContentUser always
+func (x *ReportUser) Type() ReportContentType {
+	return ContentUser
 }
 
 // ReportBinary describes a binary file indicator including executable format.
@@ -97,6 +107,11 @@ type ReportBinary struct {
 	Software       []string         `json:"software,omitempty"`
 	OS             []string         `json:"os,omitempty"`
 	Activities     []EntityActivity `json:"activities,omitempty"`
+}
+
+// Type of ReportBinary returns ContentBinary always
+func (x *ReportBinary) Type() ReportContentType {
+	return ContentBinary
 }
 
 // ReportHost describes a host indicator binding IP address, domain name
@@ -117,6 +132,11 @@ type ReportHost struct {
 	MACAddr  []string         `json:"macaddr,omitempty"`
 	HostName []string         `json:"hostname,omitempty"`
 	Software []EntitySoftware `json:"software,omitempty"`
+}
+
+// Type of ReportHost returns ContentHost always
+func (x *ReportHost) Type() ReportContentType {
+	return ContentHost
 }
 
 // -----------------------------------------------

@@ -9,7 +9,6 @@ Parameters:
 Globals:
   Function:
     Runtime: go1.x
-    CodeUri: build
     Timeout: 30
     MemorySize: 128
     ReservedConcurrentExecutions: 1
@@ -20,6 +19,7 @@ Resources:
   TestInspector:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: TestInspector
       Role:
         Fn::GetAtt: LambdaRole.Arn
@@ -39,6 +39,7 @@ Resources:
   TestPublisher:
     Type: AWS::Serverless::Function
     Properties:
+      CodeUri: build
       Handler: TestPublisher
       Role:
         Fn::GetAtt: LambdaRole.Arn
