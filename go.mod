@@ -10,7 +10,7 @@ require (
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/m-mizutani/generalprobe v0.0.0-20190505092940-d90f47bc6b28
+	github.com/m-mizutani/generalprobe v0.0.0-20190506052343-cb3bcd359935
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/pkg/errors v0.8.1

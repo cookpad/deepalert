@@ -38,15 +38,14 @@ func TestNormalWorkFlow(t *testing.T) {
 
 	var reportID string
 
-	g := gp.New(cfg.Region, cfg.StackName)
-	g.AddScenes([]gp.Scene{
+	playbook := []gp.Scene{
 		// Send request
-		g.PublishSnsMessage(g.LogicalID("AlertNotification"), alertMsg),
-		g.GetLambdaLogs(g.LogicalID("ReceptAlert"), func(log gp.CloudWatchLog) bool {
+		gp.PublishSnsMessage(gp.LogicalID("AlertNotification"), alertMsg),
+		gp.GetLambdaLogs(gp.LogicalID("ReceptAlert"), func(log gp.CloudWatchLog) bool {
 			assert.Contains(t, log, alertKey)
 			return true
 		}).Filter(alertKey),
-		g.GetDynamoRecord(g.LogicalID("CacheTable"), func(table dynamo.Table) bool {
+		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
 			var entry struct {
 				ReportID string `dynamo:"report_id"`
 			}
@@ -60,14 +59,14 @@ func TestNormalWorkFlow(t *testing.T) {
 			reportID = entry.ReportID
 			return true
 		}),
-		g.GetLambdaLogs(g.LogicalID("DispatchInspection"), func(log gp.CloudWatchLog) bool {
+		gp.GetLambdaLogs(gp.LogicalID("DispatchInspection"), func(log gp.CloudWatchLog) bool {
 			return log.Contains(reportID)
 		}),
-		g.GetLambdaLogs(g.LogicalID("SubmitReport"), func(log gp.CloudWatchLog) bool {
+		gp.GetLambdaLogs(gp.LogicalID("SubmitReport"), func(log gp.CloudWatchLog) bool {
 			return log.Contains(reportID)
 		}),
 
-		g.GetDynamoRecord(g.LogicalID("CacheTable"), func(table dynamo.Table) bool {
+		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
 			var contents []struct {
 				Data []byte `dynamo:"data"`
 			}
@@ -83,16 +82,16 @@ func TestNormalWorkFlow(t *testing.T) {
 			return true
 		}),
 
-		g.Pause(10),
+		gp.Pause(10),
 
-		g.GetLambdaLogs(g.LogicalID("CompileReport"), func(log gp.CloudWatchLog) bool {
+		gp.GetLambdaLogs(gp.LogicalID("CompileReport"), func(log gp.CloudWatchLog) bool {
 			return log.Contains(reportID)
 		}),
-		g.GetLambdaLogs(g.LogicalID("PublishReport"), func(log gp.CloudWatchLog) bool {
+		gp.GetLambdaLogs(gp.LogicalID("PublishReport"), func(log gp.CloudWatchLog) bool {
 			return log.Contains(reportID)
 		}),
-	})
+	}
 
-	err = g.Run()
+	err = gp.New(cfg.Region, cfg.StackName).Play(playbook)
 	require.NoError(t, err)
 }

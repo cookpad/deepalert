@@ -52,6 +52,8 @@ github.com/m-mizutani/generalprobe v0.0.0-20190505091536-50530db5b470 h1:zeue0By
 github.com/m-mizutani/generalprobe v0.0.0-20190505091536-50530db5b470/go.mod h1:pLe/raOjkORpsGtKxDLER3U5vRdqshUEiXUoiBjtUzA=
 github.com/m-mizutani/generalprobe v0.0.0-20190505092940-d90f47bc6b28 h1:qmDpu2F67rvPvOMe1NrDz8wCDvQHthoTJzbVU+YvcUc=
 github.com/m-mizutani/generalprobe v0.0.0-20190505092940-d90f47bc6b28/go.mod h1:pLe/raOjkORpsGtKxDLER3U5vRdqshUEiXUoiBjtUzA=
+github.com/m-mizutani/generalprobe v0.0.0-20190506052343-cb3bcd359935 h1:Wyqxhj1L8hEfX/bP2pzKGMvMCzH70vxMAJj25/bsZ2w=
+github.com/m-mizutani/generalprobe v0.0.0-20190506052343-cb3bcd359935/go.mod h1:CuJ4AMonHoCfQcam3gni5BUzOSC06Ed7FhrPx6gDxYo=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.1 h1:G1f5SKeVxmagw/IyvzvtZE4Gybcc4Tr1tf7I8z0XgOg=
 github.com/mattn/go-colorable v0.1.1/go.mod h1:FuOcm+DKB9mbwrcAfNl7/TZVBZ6rcnceauSikq3lYCQ=
