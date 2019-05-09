@@ -30,6 +30,7 @@ const (
 	CtxObject              = "object"
 	CtxClient              = "client"
 	CtxServer              = "server"
+	CtxFile                = "file"
 )
 
 // Attribute is element of alert
