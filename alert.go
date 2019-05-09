@@ -28,6 +28,8 @@ const (
 	CtxLocal               = "local"
 	CtxSubject             = "subject"
 	CtxObject              = "object"
+	CtxClient              = "client"
+	CtxServer              = "server"
 )
 
 // Attribute is element of alert
