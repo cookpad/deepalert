@@ -45,7 +45,7 @@ CLI parameter (e.g. `--StackName`) overwrites same key parameter in config file 
 
 ### Architecture
 
-![Archtecture](https://user-images.githubusercontent.com/605953/57503427-ff445600-732a-11e9-8089-953bc9cd0711.png)
+![Archtecture](https://user-images.githubusercontent.com/605953/57503796-bc837d80-732c-11e9-9de3-cf077deb0f11.png)
 
 ### Test
 
