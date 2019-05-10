@@ -157,7 +157,7 @@ func toReportContentRecord(reportID deepalert.ReportID, content *deepalert.Repor
 	pk := fmt.Sprintf("content/%s", reportID)
 	sk := ""
 	if content != nil {
-		sk = fmt.Sprintf("%s/%s", content.Attribute.Hash(), content.Author)
+		sk = fmt.Sprintf("%s/%s", content.Attribute.Hash(), uuid.New().String())
 	}
 	return pk, sk
 }
@@ -204,4 +204,43 @@ func (x *DataStoreService) FetchReportContent(reportID deepalert.ReportID) ([]de
 	}
 
 	return contents, nil
+}
+
+// -----------------------------------------------------------
+// Control attribute cache to prevent duplicated invocation of Inspector with same attribute
+//
+type attributeCache struct {
+	recordBase
+	Timestamp time.Time `dynamo:"timestamp"`
+	AttrKey   string    `dynamo:"attr_key"`
+	AttrType  string    `dynamo:"attr_type"`
+	AttrValue string    `dynamo:"attr_value"`
+}
+
+// PutAttributeCache puts attributeCache to DB and returns true. If the attribute alrady exists,
+// it returns false.
+func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr deepalert.Attribute) (bool, error) {
+	now := time.Now().UTC()
+
+	cache := attributeCache{
+		recordBase: recordBase{
+			PKey:      "attribute/" + string(reportID),
+			SKey:      attr.Hash(),
+			ExpiresAt: now.Add(time.Hour * 3),
+		},
+		Timestamp: now,
+		AttrKey:   attr.Key,
+		AttrType:  string(attr.Type),
+		AttrValue: attr.Value,
+	}
+
+	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", now).Run(); err != nil {
+		if isConditionalCheckErr(err) {
+			return false, nil
+		}
+
+		return false, errors.Wrapf(err, "Fail to put attr cache reportID=%s, %v", reportID, attr)
+	}
+
+	return true, nil
 }

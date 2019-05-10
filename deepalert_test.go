@@ -65,6 +65,40 @@ func TestNormalWorkFlow(t *testing.T) {
 		gp.GetLambdaLogs(gp.LogicalID("SubmitReport"), func(log gp.CloudWatchLog) bool {
 			return log.Contains(reportID)
 		}),
+		gp.GetLambdaLogs(gp.LogicalID("FeedbackAttribute"), func(log gp.CloudWatchLog) bool {
+			return log.Contains(reportID)
+		}),
+		gp.GetLambdaLogs(gp.LogicalID("FeedbackAttribute"), func(log gp.CloudWatchLog) bool {
+			return log.Contains("mizutani")
+		}),
+		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
+			var caches []struct {
+				Key   string `dynamo:"attr_key"`
+				Value string `dynamo:"attr_value"`
+				Type  string `dynamo:"attr_type"`
+			}
+
+			pk := "attribute/" + reportID
+			if err := table.Get("pk", pk).All(&caches); err != nil {
+				return false
+			}
+
+			if len(caches) != 2 {
+				return false
+			}
+
+			var a1, a2 int
+			if caches[0].Type == "ipaddr" {
+				a1, a2 = 0, 1
+			} else {
+				a1, a2 = 1, 0
+			}
+
+			assert.Equal(t, "192.168.0.1", caches[a1].Value)
+			assert.Equal(t, "mizutani", caches[a2].Value)
+			assert.Equal(t, "username", caches[a2].Type)
+			return true
+		}),
 
 		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
 			var contents []struct {

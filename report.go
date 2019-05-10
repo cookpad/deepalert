@@ -189,3 +189,11 @@ type EntitySoftware struct {
 	Location string    `json:"location"`
 	LastSeen time.Time `json:"last_seen"`
 }
+
+// ReportAttribute has attribute(S) that are found newly by inspector.
+type ReportAttribute struct {
+	ReportID   ReportID    `json:"report_id"`
+	Author     string      `json:"author"`
+	Original   Attribute   `json:"original"`
+	Attributes []Attribute `json:"attributes"`
+}

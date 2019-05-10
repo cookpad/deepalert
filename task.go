@@ -3,7 +3,9 @@ package deepalert
 import (
 	"context"
 	"encoding/json"
-	"os"
+	"fmt"
+	"log"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -19,10 +21,25 @@ type Task struct {
 	Attribute Attribute `json:"attribute"`
 }
 
-// TaskHandler is a function type of callback of inspector.
-type TaskHandler func(ctx context.Context, attr Attribute) (ReportContentEntity, error)
+// InspectFunc is a function type of callback of inspector.
+type InspectFunc func(ctx context.Context, attr Attribute) (ReportContentEntity, error)
 
-func publishSNS(topicArn, region string, data interface{}) error {
+// SearchFunc is a function type of callback of search.
+type SearchFunc func(ctx context.Context, attr Attribute) ([]Attribute, error)
+
+func publishSNS(topicArn string, data interface{}) error {
+	// arn
+	// aws
+	// sns
+	// ap-northeast-1
+	// 789035092620
+	// xxxxxx
+	arr := strings.Split(topicArn, ":")
+	if len(arr) != 6 {
+		return fmt.Errorf("Invalid SNS ARN format: %s", topicArn)
+	}
+	region := arr[3]
+
 	msg, err := json.Marshal(data)
 	if err != nil {
 		return errors.Wrap(err, "Fail to marshal report data")
@@ -33,7 +50,7 @@ func publishSNS(topicArn, region string, data interface{}) error {
 	}))
 	snsService := sns.New(ssn)
 
-	_, err = snsService.Publish(&sns.PublishInput{
+	resp, err := snsService.Publish(&sns.PublishInput{
 		Message:  aws.String(string(msg)),
 		TopicArn: aws.String(topicArn),
 	})
@@ -41,22 +58,14 @@ func publishSNS(topicArn, region string, data interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "Fail to publish report")
 	}
+	log.Printf("Published SNS %v to %s: %v", data, topicArn, resp)
 
 	return nil
 }
 
 // StartInspector is a wrapper of Inspector.
-func StartInspector(handler TaskHandler, author string) {
+func StartInspector(handler InspectFunc, author, submitTopic string) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
-		submitTo := os.Getenv("SUBMIT_TOPIC")
-		if submitTo == "" {
-			return errors.New("SUBMIT_TOPIC is not set, no destination")
-		}
-		awsRegion := os.Getenv("AWS_REGION")
-		if awsRegion == "" {
-			return errors.New("AWS_REGION is not set")
-		}
-
 		for _, record := range event.Records {
 			var task Task
 			msg := record.SNS.Message
@@ -74,14 +83,50 @@ func StartInspector(handler TaskHandler, author string) {
 
 			content := ReportContent{
 				ReportID:  task.ReportID,
-				Author:    author,
 				Attribute: task.Attribute,
+				Author:    author,
 				Type:      entity.Type(),
 				Content:   entity,
 			}
 
-			if err := publishSNS(submitTo, awsRegion, content); err != nil {
-				return errors.Wrapf(err, "Fail to publish ReportContent to %s: %v", submitTo, content)
+			if err := publishSNS(submitTopic, content); err != nil {
+				return errors.Wrapf(err, "Fail to publish ReportContent to %s: %v", submitTopic, content)
+			}
+		}
+
+		return nil
+	})
+}
+
+// StartSearch is a wrapper of Inspector.
+func StartSearch(handler SearchFunc, author, attributeTopic string) {
+	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
+		log.Printf("(Search) SNS event: %v", event)
+		for _, record := range event.Records {
+			var task Task
+			msg := record.SNS.Message
+			if err := json.Unmarshal([]byte(msg), &task); err != nil {
+				return errors.Wrapf(err, "Fail to unmarshal task: %s", msg)
+			}
+			log.Printf("(Search) SNS message: %s", msg)
+
+			attributes, err := handler(ctx, task.Attribute)
+			if err != nil {
+				return errors.Wrapf(err, "Fail to handle task: %v", task)
+			}
+			if attributes == nil {
+				continue // No contents
+			}
+
+			attrReport := ReportAttribute{
+				ReportID:   task.ReportID,
+				Original:   task.Attribute,
+				Attributes: attributes,
+				Author:     author,
+			}
+
+			if err := publishSNS(attributeTopic, attrReport); err != nil {
+				return errors.Wrapf(err, "Fail to publish ReportAttribute to %s: %v", attributeTopic, attrReport)
 			}
 		}
 

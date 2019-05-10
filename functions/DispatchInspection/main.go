@@ -14,11 +14,23 @@ import (
 type lambdaArguments struct {
 	Report           deepalert.Report
 	TaskNotification string
+	CacheTable       string
 	Region           string
 }
 
 func mainHandler(args lambdaArguments) error {
+	svc := f.NewDataStoreService(args.CacheTable, args.Region)
+
 	for _, attr := range args.Report.Alert.Attributes {
+		sendable, err := svc.PutAttributeCache(args.Report.ID, attr)
+		if err != nil {
+			return errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
+		}
+
+		if !sendable {
+			continue
+		}
+
 		task := deepalert.Task{
 			ReportID:  args.Report.ID,
 			Attribute: attr,
@@ -40,6 +52,7 @@ func handleRequest(ctx context.Context, report deepalert.Report) error {
 		Report:           report,
 		TaskNotification: os.Getenv("TASK_NOTIFICATION"),
 		Region:           os.Getenv("AWS_REGION"),
+		CacheTable:       os.Getenv("CACHE_TABLE"),
 	}
 
 	if err := mainHandler(args); err != nil {

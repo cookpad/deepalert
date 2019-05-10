@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"os"
 
 	"github.com/m-mizutani/deepalert"
 )
 
-func dummyHandler(ctx context.Context, attr deepalert.Attribute) (deepalert.ReportContentEntity, error) {
+func dummyInspector(ctx context.Context, attr deepalert.Attribute) (deepalert.ReportContentEntity, error) {
 	hostReport := deepalert.ReportHost{
 		IPAddr: []string{"10.1.2.3"},
 	}
@@ -14,5 +15,5 @@ func dummyHandler(ctx context.Context, attr deepalert.Attribute) (deepalert.Repo
 }
 
 func main() {
-	deepalert.StartInspector(dummyHandler, "dummyHandler")
+	deepalert.StartInspector(dummyInspector, "dummyInspector", os.Getenv("SUBMIT_TOPIC"))
 }
