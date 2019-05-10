@@ -1,5 +1,6 @@
 # DeepAlert
 
+
 ## Prerequisite (deployment and test)
 
 - Tools
@@ -10,7 +11,7 @@
 - Credential
   - AWS CLI credential to deploy CloudFormation. See [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for more detail.
 
-## Deploy
+## How to use
 
 ### Getting Started
 
@@ -40,15 +41,16 @@ Options of `configure.py` to generate `Makefile` is following.
 
 CLI parameter (e.g. `--StackName`) overwrites same key parameter in config file specified by `--config` option.
 
-## Test
+## Development
 
-### Unit test
+### Architecture
+
+![Archtecture](https://user-images.githubusercontent.com/605953/57503427-ff445600-732a-11e9-8089-953bc9cd0711.png)
+
+### Test
 
 ```shell
-$ ./configure.py --StackName=your-deepalert-test --CodeS3Bucket=YOUR_BUCKET_TO_STORE_BINARY --CodeS3Prefix=functions --Region=ap-northeast-1 -o Makefile.test --workdir=test
+$ ./configure.py --StackName=your-deepalert-test --CodeS3Bucket=YOUR_BUCKET_TO_STORE_BINARY --CodeS3Prefix=functions --Region=ap-northeast-1 -o Makefile.test --workdir=testing
 $ make test -f Makefile.test
 ```
 
-### Integration test
-
-To be written
