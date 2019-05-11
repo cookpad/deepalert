@@ -68,9 +68,7 @@ Resources:
           KeyType: HASH
         - AttributeName: sk
           KeyType: RANGE
-      ProvisionedThroughput:
-        ReadCapacityUnits: 1
-        WriteCapacityUnits: 1
+      BillingMode: PAY_PER_REQUEST
       TimeToLiveSpecification:
         AttributeName: expires_at
         Enabled: true

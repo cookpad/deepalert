@@ -71,6 +71,7 @@ SAM_FILE={2}
 OUTPUT_FILE={3}
 TEST_SAM_FILE={4}
 TEST_OUTPUT_FILE={5}
+WORKDIR={6}
 
 COMMON=functions/*.go *.go
 FUNCTIONS={0}
@@ -88,7 +89,7 @@ TEST_UTILS=test/*.go
 
     return template.format(' '.join(functions), ' '.join(test_functions),
                            sam_file, output_file,
-                           test_sam_file, test_output_file)
+                           test_sam_file, test_output_file, args.workdir)
 
 
 def gen_parameters(config):
@@ -122,8 +123,10 @@ functions: $(FUNCTIONS)
 clean:
 	rm $(FUNCTIONS)
 
-$(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
-	mkdir -p `dirname $(SAM_FILE)`
+$(WORKDIR):
+	mkdir -p $(WORKDIR)
+
+$(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS) $(WORKDIR)
 	aws cloudformation package \\
 		--template-file $(TEMPLATE_FILE) \\
 		--s3-bucket $(CodeS3Bucket) \\
@@ -142,7 +145,6 @@ deploy: $(OUTPUT_FILE)
 
 test: $(OUTPUT_FILE) $(TEST_OUTPUT_FILE) $(TEST_UTILS)
 	env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v ./...
-
 
 $(TEST_SAM_FILE): $(TEST_TEMPLATE_FILE) $(TEST_FUNCTIONS)
 	mkdir -p `dirname $(TEST_SAM_FILE)`
