@@ -35,23 +35,6 @@ Resources:
           SUBMIT_TOPIC:
             Fn::ImportValue:
               Fn::Sub: ${ParentStackName}-SubmitTopic
-
-  TestSearcher:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: build
-      Handler: TestSearcher
-      Role:
-        Fn::GetAtt: LambdaRole.Arn
-      Events:
-        NotifyTopic:
-          Type: SNS
-          Properties:
-            Topic:
-              Fn::ImportValue:
-                Fn::Sub: ${ParentStackName}-TaskTopic
-      Environment:
-        Variables:
           ATTRIBUTE_TOPIC:
             Fn::ImportValue:
               Fn::Sub: ${ParentStackName}-AttributeTopic

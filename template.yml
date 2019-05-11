@@ -33,7 +33,7 @@ Globals:
     Runtime: go1.x
     Timeout: 30
     MemorySize: 128
-    ReservedConcurrentExecutions: 1
+    ReservedConcurrentExecutions: 2
     DeadLetterQueue:
       Type: SNS
       TargetArn:

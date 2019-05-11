@@ -7,13 +7,24 @@ import (
 	"github.com/m-mizutani/deepalert"
 )
 
-func dummyInspector(ctx context.Context, attr deepalert.Attribute) (deepalert.ReportContentEntity, error) {
+func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error) {
 	hostReport := deepalert.ReportHost{
 		IPAddr: []string{"10.1.2.3"},
 	}
-	return &hostReport, nil
+
+	newAttr := deepalert.Attribute{
+		Key:   "username",
+		Value: "mizutani",
+		Type:  deepalert.TypeUserName,
+	}
+
+	return &deepalert.TaskResult{
+		Contents:      []deepalert.ReportContentEntity{&hostReport},
+		NewAttributes: []deepalert.Attribute{newAttr},
+	}, nil
 }
 
 func main() {
-	deepalert.StartInspector(dummyInspector, "dummyInspector", os.Getenv("SUBMIT_TOPIC"))
+	deepalert.StartInspector(dummyInspector, "dummyInspector",
+		os.Getenv("SUBMIT_TOPIC"), os.Getenv("ATTRIBUTE_TOPIC"))
 }
