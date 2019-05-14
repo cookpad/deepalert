@@ -153,22 +153,22 @@ Resources:
           - { "Fn::GetAtt": LambdaRole.Arn }
           - { Ref: LambdaRoleArn }
 
-  SubmitReport:
+  SubmitContent:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: build
-      Handler: SubmitReport
+      Handler: SubmitContent
       Role:
         Fn::If:
           - LambdaRoleRequired
           - { "Fn::GetAtt": LambdaRole.Arn }
           - { Ref: LambdaRoleArn }
       Events:
-        SubmitNotification:
+        ContentNotification:
           Type: SNS
           Properties:
             Topic:
-              Ref: SubmitNotification
+              Ref: ContentNotification
 
   FeedbackAttribute:
     Type: AWS::Serverless::Function
@@ -260,7 +260,7 @@ Resources:
   TaskNotification:
     Type: AWS::SNS::Topic
 
-  SubmitNotification:
+  ContentNotification:
     Type: AWS::SNS::Topic
 
   AttributeNotification:
@@ -402,12 +402,12 @@ Outputs:
     Export:
       Name:
         Fn::Sub: "${AWS::StackName}-TaskTopic"
-  SubmitTopic:
+  ContentTopic:
     Value:
-      Ref: SubmitNotification
+      Ref: ContentNotification
     Export:
       Name:
-        Fn::Sub: "${AWS::StackName}-SubmitTopic"
+        Fn::Sub: "${AWS::StackName}-ContentTopic"
   AttributeTopic:
     Value:
       Ref: AttributeNotification
