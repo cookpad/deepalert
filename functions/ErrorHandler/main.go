@@ -13,7 +13,7 @@ import (
 )
 
 func handleRequest(ctx context.Context, event events.SNSEvent) error {
-	f.SetLoggerContext(ctx, "ErrorHandler", deepalert.NullReportID)
+	f.SetLoggerContext(ctx, deepalert.NullReportID)
 	f.Logger.WithField("event", event).Info("Catch error from ErrorNotification topic")
 
 	for _, record := range event.Records {

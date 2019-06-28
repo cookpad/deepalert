@@ -10,7 +10,7 @@ import (
 )
 
 func handleRequest(ctx context.Context, event interface{}) error {
-	f.SetLoggerContext(ctx, "StepFunctionError", deepalert.ReportID(""))
+	f.SetLoggerContext(ctx, deepalert.ReportID(""))
 	f.Logger.WithField("event", event).Info("Catch StepFunction error")
 	return nil
 }

@@ -31,7 +31,7 @@ func mainHandler(args lambdaArguments) (*deepalert.Report, error) {
 }
 
 func handleRequest(ctx context.Context, report deepalert.Report) (deepalert.Report, error) {
-	f.SetLoggerContext(ctx, "CompileReport", report.ID)
+	f.SetLoggerContext(ctx, report.ID)
 	f.Logger.WithField("report", report).Info("Start")
 
 	args := lambdaArguments{

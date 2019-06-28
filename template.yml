@@ -47,8 +47,6 @@ Globals:
           Ref: ReportNotification
         LOG_GROUP:
           Ref: LogStore
-        LOG_STREAM:
-          Ref: LogStream
         CACHE_TABLE:
           Ref: CacheTable
 
@@ -282,13 +280,6 @@ Resources:
     Properties:
       LogGroupName:
         Fn::Sub: "/DeepAlert/${AWS::StackName}"
-
-  LogStream:
-    Type: AWS::Logs::LogStream
-    Properties:
-      LogGroupName:
-        Ref: LogStore
-      LogStreamName: all
 
   # --------------------------------------------------------
   # IAM Roles

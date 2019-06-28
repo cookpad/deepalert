@@ -59,7 +59,7 @@ func mainHandler(args lambdaArguments) error {
 }
 
 func handleRequest(ctx context.Context, event events.SNSEvent) error {
-	f.SetLoggerContext(ctx, "FeedbackAttribute", deepalert.ReportID(""))
+	f.SetLoggerContext(ctx, deepalert.ReportID(""))
 	f.Logger.WithField("event", event).Info("Start")
 
 	args := lambdaArguments{

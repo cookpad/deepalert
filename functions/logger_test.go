@@ -1,22 +1,6 @@
 package functions_test
 
-import (
-	"bytes"
-	"strings"
-	"testing"
-	"time"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	f "github.com/m-mizutani/deepalert/functions"
-	"github.com/m-mizutani/deepalert/test"
-)
-
+/*
 func TestLoggerHook(t *testing.T) {
 	cfg := test.LoadTestConfig("..")
 	testID1 := uuid.New().String()
@@ -58,3 +42,4 @@ func TestLoggerHook(t *testing.T) {
 
 	assert.True(t, detected)
 }
+*/

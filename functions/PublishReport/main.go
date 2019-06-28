@@ -27,7 +27,7 @@ func mainHandler(args lambdaArguments) error {
 }
 
 func handleRequest(ctx context.Context, report deepalert.Report) error {
-	f.SetLoggerContext(ctx, "PublishReport", report.ID)
+	f.SetLoggerContext(ctx, report.ID)
 	f.Logger.WithField("report", report).Info("Start")
 
 	args := lambdaArguments{
