@@ -3,6 +3,7 @@
 import os
 import argparse
 import json
+from functools import reduce
 
 required_parameters = [
     'StackName',
@@ -63,21 +64,21 @@ def gen_test_functions_section():
     return '\n'.join(test_function_builds + [''])
 
 
-def gen_header(args):
-    template = '''
-TEMPLATE_FILE=template.yml
-TEST_TEMPLATE_FILE=test.yml
-SAM_FILE={2}
-OUTPUT_FILE={3}
-TEST_SAM_FILE={4}
-TEST_OUTPUT_FILE={5}
-WORKDIR={6}
+def get_all_source_files(workdir):
+    return [os.path.join(dpath, fname) for dpath, dnames,
+            files in os.walk(workdir) for fname in files
+            if fname.endswith('.go')]
 
-COMMON=functions/*.go *.go
-FUNCTIONS={0}
-TEST_FUNCTIONS={1}
-TEST_UTILS=test/*.go
-'''
+
+def get_source_files(workdir):
+    return list(filter(lambda x: not x.endswith('_test.go'), get_all_source_files(workdir)))
+
+
+def get_test_files(workdir):
+    return list(filter(lambda x: x.endswith('_test.go'), get_all_source_files(workdir)))
+
+
+def gen_header(args):
     sam_file = os.path.join(args.workdir, 'sam.yml')
     output_file = os.path.join(args.workdir, 'output.json')
     test_sam_file = os.path.join(args.workdir, 'test_sam.yml')
@@ -87,9 +88,23 @@ TEST_UTILS=test/*.go
     test_functions = map(lambda f: os.path.join(
         'build', f), get_test_functions())
 
-    return template.format(' '.join(functions), ' '.join(test_functions),
-                           sam_file, output_file,
-                           test_sam_file, test_output_file, args.workdir)
+    lines = [
+        'TEMPLATE_FILE=template.yml',
+        'TEST_TEMPLATE_FILE=test.yml',
+        'SAM_FILE={}'.format(sam_file),
+        'OUTPUT_FILE={}'.format(output_file),
+        'TEST_SAM_FILE={}'.format(test_sam_file),
+        'TEST_OUTPUT_FILE={}'.format(test_output_file),
+        'WORKDIR={}'.format(args.workdir),
+        '',
+        'COMMON=functions/*.go *.go',
+        'FUNCTIONS={}'.format(' '.join(functions)),
+        'TEST_FUNCTIONS={}'.format(' '.join(test_functions)),
+        'TEST_UTILS=test/*.go',
+        '',
+    ]
+
+    return '\n'.join(lines)
 
 
 def gen_parameters(config):
@@ -111,6 +126,7 @@ def gen_parameters(config):
 
     opt = ' '.join(["--parameter-overrides"] + options) if options else ''
 
+    lines.append('TestStackName={}-test'.format(config['StackName']))
     lines.append('PARAMETERS={0}'.format(opt))
 
     return '\n'.join(lines) + '\n'
@@ -123,10 +139,8 @@ functions: $(FUNCTIONS)
 clean:
 	rm $(FUNCTIONS)
 
-$(WORKDIR):
+$(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
 	mkdir -p $(WORKDIR)
-
-$(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS) $(WORKDIR)
 	aws cloudformation package \\
 		--template-file $(TEMPLATE_FILE) \\
 		--s3-bucket $(CodeS3Bucket) \\
@@ -138,15 +152,16 @@ $(OUTPUT_FILE): $(SAM_FILE)
 		--region $(Region) \\
 		--template-file $(SAM_FILE) \\
 		--stack-name $(StackName) \\
+        --no-fail-on-empty-changeset \\
 		--capabilities CAPABILITY_IAM $(PARAMETERS)
 	aws cloudformation describe-stack-resources --stack-name $(StackName) > $(OUTPUT_FILE)
 
 deploy: $(OUTPUT_FILE)
 
-test: $(OUTPUT_FILE) $(TEST_OUTPUT_FILE) $(TEST_UTILS)
-	env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v ./...
+test: $(TEST_OUTPUT_FILE) $(TEST_UTILS)
+	env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v -count=1 . ./functions
 
-$(TEST_SAM_FILE): $(TEST_TEMPLATE_FILE) $(TEST_FUNCTIONS)
+$(TEST_SAM_FILE): $(TEST_TEMPLATE_FILE) $(TEST_FUNCTIONS) $(OUTPUT_FILE)
 	mkdir -p `dirname $(TEST_SAM_FILE)`
 	aws cloudformation package \\
 		--template-file $(TEST_TEMPLATE_FILE) \\
@@ -158,10 +173,11 @@ $(TEST_OUTPUT_FILE): $(TEST_SAM_FILE)
 	aws cloudformation deploy \\
 		--region $(Region) \\
 		--template-file $(TEST_SAM_FILE) \\
-		--stack-name $(StackName)-test \\
+		--stack-name $(TestStackName) \\
 		--capabilities CAPABILITY_IAM \\
+		--no-fail-on-empty-changeset \\
         --parameter-overrides ParentStackName=$(StackName)
-	aws cloudformation describe-stack-resources --stack-name $(StackName)-test > $(TEST_OUTPUT_FILE)
+	aws cloudformation describe-stack-resources --stack-name $(TestStackName) > $(TEST_OUTPUT_FILE)
 
 setuptest: $(TEST_OUTPUT_FILE)
 '''

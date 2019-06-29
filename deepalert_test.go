@@ -62,7 +62,7 @@ func TestNormalWorkFlow(t *testing.T) {
 		gp.GetLambdaLogs(gp.LogicalID("DispatchInspection"), func(log gp.CloudWatchLog) bool {
 			return log.Contains(reportID)
 		}),
-		gp.GetLambdaLogs(gp.LogicalID("SubmitReport"), func(log gp.CloudWatchLog) bool {
+		gp.GetLambdaLogs(gp.LogicalID("SubmitContent"), func(log gp.CloudWatchLog) bool {
 			return log.Contains(reportID)
 		}),
 		gp.GetLambdaLogs(gp.LogicalID("FeedbackAttribute"), func(log gp.CloudWatchLog) bool {

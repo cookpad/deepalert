@@ -34,7 +34,7 @@ Resources:
         Variables:
           SUBMIT_TOPIC:
             Fn::ImportValue:
-              Fn::Sub: ${ParentStackName}-SubmitTopic
+              Fn::Sub: ${ParentStackName}-ContentTopic
           ATTRIBUTE_TOPIC:
             Fn::ImportValue:
               Fn::Sub: ${ParentStackName}-AttributeTopic
@@ -79,6 +79,6 @@ Resources:
                   - sns:Publish
                 Resource:
                   - Fn::ImportValue:
-                      Fn::Sub: ${ParentStackName}-SubmitTopic
+                      Fn::Sub: ${ParentStackName}-ContentTopic
                   - Fn::ImportValue:
                       Fn::Sub: ${ParentStackName}-AttributeTopic
