@@ -5,6 +5,7 @@ import (
 	"time"
 
 	// "github.com/google/uuid"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -16,21 +17,22 @@ import (
 func TestDataStoreTakeReportID(t *testing.T) {
 	cfg := test.LoadTestConfig("..")
 	ts := time.Now().UTC()
+	detector := uuid.New().String()
 
 	alert1 := da.Alert{
-		Detector:  "me",
+		Detector:  detector,
 		RuleName:  "myRule",
 		AlertKey:  "blue",
 		Timestamp: ts,
 	}
 	alert2 := da.Alert{
-		Detector:  "me",
+		Detector:  detector,
 		RuleName:  "myRule",
 		AlertKey:  "blue",
 		Timestamp: ts.Add(time.Hour * 1),
 	}
 	alert3 := da.Alert{
-		Detector:  "me",
+		Detector:  detector,
 		RuleName:  "myRule",
 		AlertKey:  "orange",
 		Timestamp: ts.Add(time.Hour * 4),
@@ -38,17 +40,20 @@ func TestDataStoreTakeReportID(t *testing.T) {
 
 	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
-	id1, err := svc.TakeReportID(alert1)
+	id1, isNew, err := svc.TakeReportID(alert1)
 	require.NoError(t, err)
+	assert.True(t, isNew)
 	assert.NotEqual(t, "", id1)
 
-	id2, err := svc.TakeReportID(alert2)
+	id2, isNew, err := svc.TakeReportID(alert2)
 	require.NoError(t, err)
+	assert.False(t, isNew)
 	// Another result of 1 hour later with same alertID should have same ReportID
 	assert.Equal(t, id1, id2)
 
-	id3, err := svc.TakeReportID(alert3)
+	id3, isNew, err := svc.TakeReportID(alert3)
 	require.NoError(t, err)
+	assert.True(t, isNew)
 	// However result over 3 hour later with same alertID should have other ReportID
 	assert.NotEqual(t, id1, id3)
 }

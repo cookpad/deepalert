@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -19,6 +20,8 @@ type TestConfig struct {
 
 	TestInspectorName string
 	TestPublisherName string
+	TestInspectorArn  string
+	TestPublisherArn  string
 }
 
 type cfnStack struct {
@@ -64,6 +67,12 @@ func loadStackOutput(conf *TestConfig, relPathToRoot string) {
 	}
 }
 
+// stackIDtoMeta return region and accountID
+func stackIDtoMeta(stackID string) (string, string) {
+	arn := strings.Split(stackID, ":")
+	return arn[3], arn[4]
+}
+
 func loadTestStackOutput(conf *TestConfig, relPathToRoot string) {
 	stackOutputPath := "test_output.json"
 	if envvar := os.Getenv("DEEPALERT_TEST_STACK_OUTPUT"); envvar != "" {
@@ -82,11 +91,17 @@ func loadTestStackOutput(conf *TestConfig, relPathToRoot string) {
 	}
 
 	for _, resource := range stack.StackResources {
+		region, accountID := stackIDtoMeta(resource.StackId)
+
 		switch resource.LogicalResourceId {
 		case "TestInspector":
 			conf.TestInspectorName = resource.PhysicalResourceId
+			conf.TestInspectorArn = fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s",
+				region, accountID, resource.PhysicalResourceId)
 		case "TestPublisher":
 			conf.TestPublisherName = resource.PhysicalResourceId
+			conf.TestPublisherArn = fmt.Sprintf("arn:aws:lambda:%s:%s:function:%s",
+				region, accountID, resource.PhysicalResourceId)
 		}
 	}
 }

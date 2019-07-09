@@ -30,7 +30,7 @@ func mainHandler(args lambdaArguments) error {
 			return errors.Wrap(err, "Fail to unmarshal alert from AlertNotification")
 		}
 
-		reportID, err := svc.TakeReportID(alert)
+		reportID, isNew, err := svc.TakeReportID(alert)
 		if err != nil {
 			return errors.Wrapf(err, "Fail to take reportID for alert: %v", alert)
 		}
@@ -45,8 +45,11 @@ func mainHandler(args lambdaArguments) error {
 		if err := f.ExecDelayMachine(args.InspecterDelayMachine, args.Region, &report); err != nil {
 			return errors.Wrap(err, "Fail to execute InspectorDelayMachine")
 		}
-		if err := f.ExecDelayMachine(args.ReviewerDelayMachine, args.Region, &report); err != nil {
-			return errors.Wrap(err, "Fail to execute ReviewerDelayMachine")
+
+		if isNew {
+			if err := f.ExecDelayMachine(args.ReviewerDelayMachine, args.Region, &report); err != nil {
+				return errors.Wrap(err, "Fail to execute ReviewerDelayMachine")
+			}
 		}
 	}
 

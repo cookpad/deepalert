@@ -59,7 +59,7 @@ func NewReportID() deepalert.ReportID {
 	return deepalert.ReportID(uuid.New().String())
 }
 
-func (x *DataStoreService) TakeReportID(alert deepalert.Alert) (deepalert.ReportID, error) {
+func (x *DataStoreService) TakeReportID(alert deepalert.Alert) (deepalert.ReportID, bool, error) {
 	fixedKey := "Fixed"
 	nullID := deepalert.ReportID("")
 	alertID := alert.AlertID()
@@ -78,16 +78,16 @@ func (x *DataStoreService) TakeReportID(alert deepalert.Alert) (deepalert.Report
 		if isConditionalCheckErr(err) {
 			var existedEntry alertEntry
 			if err := x.table.Get("pk", cache.PKey).Range("sk", dynamo.Equal, cache.SKey).One(&existedEntry); err != nil {
-				return nullID, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
+				return nullID, false, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
 			}
 
-			return existedEntry.ReportID, nil
+			return existedEntry.ReportID, false, nil
 		}
 
-		return nullID, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
+		return nullID, false, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
 	}
 
-	return cache.ReportID, nil
+	return cache.ReportID, true, nil
 }
 
 // -----------------------------------------------------------

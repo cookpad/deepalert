@@ -2,23 +2,35 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-
 	"github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/functions"
+	"github.com/sirupsen/logrus"
 )
 
-func handleRequest(ctx context.Context, event interface{}) (deepalert.ReportResult, error) {
-	f.SetLoggerContext(ctx, deepalert.NullReportID)
-	f.Logger.WithField("event", event).Info("Start")
+var logger = logrus.New()
 
-	return deepalert.ReportResult{
-		Severity: deepalert.SevUnclassified,
-		Reason:   "I'm novice",
-	}, nil
+func handleRequest(ctx context.Context, event events.SNSEvent) error {
+	logger.WithField("event", event).Debug("Start")
+
+	for _, record := range event.Records {
+		raw := []byte(record.SNS.Message)
+		var report deepalert.Report
+		if err := json.Unmarshal(raw, &report); err != nil {
+			logger.WithError(err).Error("Fail to unmarshal message")
+		}
+
+		logger.WithField("report", report).Info("Got report")
+	}
+
+	return nil
 }
 
 func main() {
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetLevel(logrus.InfoLevel)
+
 	lambda.Start(handleRequest)
 }
