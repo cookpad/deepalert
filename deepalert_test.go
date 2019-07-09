@@ -129,3 +129,52 @@ func TestNormalWorkFlow(t *testing.T) {
 	err = gp.New(cfg.Region, cfg.StackName).Play(playbook)
 	require.NoError(t, err)
 }
+
+func TestNormalAggregation(t *testing.T) {
+	cfg := test.LoadTestConfig(".")
+	alertKey := uuid.New().String()
+
+	alert := deepalert.Alert{
+		Detector:  "test",
+		RuleName:  "TestRuleBlue",
+		AlertKey:  alertKey,
+		Timestamp: time.Now().UTC(),
+		Attributes: []deepalert.Attribute{
+			{
+				Type:    deepalert.TypeIPAddr,
+				Key:     "test value",
+				Value:   "192.168.0.1",
+				Context: []deepalert.AttrContext{deepalert.CtxLocal},
+			},
+		},
+	}
+	alertMsg1, err := json.Marshal(alert)
+	alert.RuleName = "TestRuleOrange"
+	alertMsg2, err := json.Marshal(alert)
+
+	require.NoError(t, err)
+
+	var reportID string
+
+	playbook := []gp.Scene{
+		// Send request
+		gp.PublishSnsMessage(gp.LogicalID("AlertNotification"), alertMsg1),
+		gp.PublishSnsMessage(gp.LogicalID("AlertNotification"), alertMsg2),
+		gp.GetLambdaLogs(gp.LogicalID("ReceptAlert"), func(log gp.CloudWatchLog) bool {
+			assert.Contains(t, log, alertKey)
+			return true
+		}).Filter(alertKey),
+
+		gp.Pause(10),
+
+		gp.GetLambdaLogs(gp.LogicalID("CompileReport"), func(log gp.CloudWatchLog) bool {
+			return log.Contains(reportID)
+		}),
+		gp.GetLambdaLogs(gp.LogicalID("PublishReport"), func(log gp.CloudWatchLog) bool {
+			return log.Contains(reportID)
+		}),
+	}
+
+	err = gp.New(cfg.Region, cfg.StackName).Play(playbook)
+	require.NoError(t, err)
+}

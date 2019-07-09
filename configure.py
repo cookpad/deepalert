@@ -78,6 +78,13 @@ def get_test_files(workdir):
     return list(filter(lambda x: x.endswith('_test.go'), get_all_source_files(workdir)))
 
 
+def get_common_sources(workdir):
+    dirs = [workdir, os.path.join(workdir, "functions")]
+    files = [os.path.join(d, f) for d in dirs for f in os.listdir(d)]
+
+    return filter(lambda x: x.endswith(".go") and not x.endswith("_test.go"), files)
+
+
 def gen_header(args):
     sam_file = os.path.join(args.workdir, 'sam.yml')
     output_file = os.path.join(args.workdir, 'output.json')
@@ -97,7 +104,7 @@ def gen_header(args):
         'TEST_OUTPUT_FILE={}'.format(test_output_file),
         'WORKDIR={}'.format(args.workdir),
         '',
-        'COMMON=functions/*.go *.go',
+        'COMMON={}'.format(' '.join(get_common_sources(args.workdir))),
         'FUNCTIONS={}'.format(' '.join(functions)),
         'TEST_FUNCTIONS={}'.format(' '.join(test_functions)),
         'TEST_UTILS=test/*.go',
