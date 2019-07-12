@@ -21,23 +21,25 @@ type lambdaArguments struct {
 func mainHandler(args lambdaArguments) error {
 	svc := f.NewDataStoreService(args.CacheTable, args.Region)
 
-	for _, attr := range args.Report.Alert.Attributes {
-		sendable, err := svc.PutAttributeCache(args.Report.ID, attr)
-		if err != nil {
-			return errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
-		}
+	for _, alert := range args.Report.Alerts {
+		for _, attr := range alert.Attributes {
+			sendable, err := svc.PutAttributeCache(args.Report.ID, attr)
+			if err != nil {
+				return errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
+			}
 
-		if !sendable {
-			continue
-		}
+			if !sendable {
+				continue
+			}
 
-		task := deepalert.Task{
-			ReportID:  args.Report.ID,
-			Attribute: attr,
-		}
+			task := deepalert.Task{
+				ReportID:  args.Report.ID,
+				Attribute: attr,
+			}
 
-		if err := f.PublishSNS(args.TaskNotification, args.Region, &task); err != nil {
-			return errors.Wrapf(err, "Fail to publihsh task notification: %v", task)
+			if err := f.PublishSNS(args.TaskNotification, args.Region, &task); err != nil {
+				return errors.Wrapf(err, "Fail to publihsh task notification: %v", task)
+			}
 		}
 	}
 

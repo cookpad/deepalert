@@ -38,7 +38,7 @@ func mainHandler(args lambdaArguments) error {
 
 		report := deepalert.Report{
 			ID:     reportID,
-			Alert:  alert,
+			Alerts: []deepalert.Alert{alert},
 			Status: deepalert.StatusNew,
 		}
 

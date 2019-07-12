@@ -25,6 +25,12 @@ func mainHandler(args lambdaArguments) (*deepalert.Report, error) {
 		return nil, errors.Wrapf(err, "Fail to fetch set of ReportContent: %v", args.Report)
 	}
 
+	alerts, err := svc.FetchAlertCache(args.Report.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Fail to fetch alert caches: %v", args.Report)
+	}
+
+	args.Report.Alerts = alerts
 	args.Report.Contents = contents
 
 	return &args.Report, nil

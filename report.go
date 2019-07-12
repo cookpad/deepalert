@@ -32,7 +32,7 @@ type ReportContentType string
 // Report is a container to deliver contents and inspection results of the alert.
 type Report struct {
 	ID       ReportID        `json:"id"`
-	Alert    Alert           `json:"alert"`
+	Alerts   []Alert         `json:"alerts"`
 	Contents []ReportContent `json:"entities"`
 	Result   ReportResult    `json:"result"`
 	Status   ReportStatus    `json:"status"`
