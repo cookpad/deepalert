@@ -184,7 +184,8 @@ $(TEST_OUTPUT_FILE): $(TEST_SAM_FILE)
 		--capabilities CAPABILITY_IAM \\
 		--no-fail-on-empty-changeset \\
         --parameter-overrides ParentStackName=$(StackName)
-	aws cloudformation describe-stack-resources --stack-name $(TestStackName) > $(TEST_OUTPUT_FILE)
+	aws cloudformation describe-stack-resources --region $(Region) \\
+        --stack-name $(TestStackName) > $(TEST_OUTPUT_FILE)
 
 setuptest: $(TEST_OUTPUT_FILE)
 '''
