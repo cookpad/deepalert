@@ -1,6 +1,7 @@
 package deepalert
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -36,6 +37,14 @@ type Report struct {
 	Contents []ReportContent `json:"entities"`
 	Result   ReportResult    `json:"result"`
 	Status   ReportStatus    `json:"status"`
+}
+
+// ReportMap is mapping Attributes and Hosts. Key of the maps are hash value of Attribute.
+type ReportMaps struct {
+	Attributes map[string]*Attribute
+	Hosts      map[string][]ReportHost
+	Users      map[string][]ReportUser
+	Binaries   map[string][]ReportBinary
 }
 
 // ReportContent is base structure of report entity.
@@ -77,6 +86,50 @@ func (x *Report) IsNew() bool { return x.Status == StatusNew }
 
 // IsPublished returns status of the report
 func (x *Report) IsPublished() bool { return x.Status == StatusPublished }
+
+// ExtractContents extract report contents (host/user/binary) and merge them to ReportMaps
+func (x *Report) ExtractContents() (*ReportMaps, error) {
+	maps := ReportMaps{
+		Attributes: make(map[string]*Attribute),
+		Hosts:      make(map[string][]ReportHost),
+		Users:      make(map[string][]ReportUser),
+		Binaries:   make(map[string][]ReportBinary),
+	}
+
+	for _, content := range x.Contents {
+		raw, err := json.Marshal(content.Content)
+		if err != nil {
+			return nil, err
+		}
+		hv := content.Attribute.Hash()
+		maps.Attributes[hv] = &content.Attribute
+
+		switch content.Type {
+		case ContentUser:
+			var user ReportUser
+			if err := json.Unmarshal(raw, &user); err != nil {
+				return nil, err
+			}
+			maps.Users[hv] = append(maps.Users[hv], user)
+
+		case ContentHost:
+			var host ReportHost
+			if err := json.Unmarshal(raw, &host); err != nil {
+				return nil, err
+			}
+			maps.Hosts[hv] = append(maps.Hosts[hv], host)
+
+		case ContentBinary:
+			var binary ReportBinary
+			if err := json.Unmarshal(raw, &binary); err != nil {
+				return nil, err
+			}
+			maps.Binaries[hv] = append(maps.Binaries[hv], binary)
+		}
+	}
+
+	return &maps, nil
+}
 
 const (
 	StatusNew       ReportStatus = "new"
