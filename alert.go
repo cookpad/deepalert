@@ -15,9 +15,11 @@ import (
 type AttrType string
 
 const (
-	TypeIPAddr     AttrType = "ipaddr"
-	TypeDomainName          = "domain"
-	TypeUserName            = "username"
+	TypeIPAddr        AttrType = "ipaddr"
+	TypeDomainName             = "domain"
+	TypeUserName               = "username"
+	TypeFileHashValue          = "filehashvalue"
+	TypeJSON                   = "json"
 )
 
 // AttrContext describes context of the attribute.
@@ -31,6 +33,9 @@ const (
 	CtxClient              = "client"
 	CtxServer              = "server"
 	CtxFile                = "file"
+
+	// Meta contexts
+	CtxAdditionalInfo = "additional"
 )
 
 // Attribute is element of alert
@@ -43,6 +48,7 @@ type Attribute struct {
 	// Value is main value of attribute.
 	Value string `json:"value"`
 
+	// Context explains background of the attribute value.
 	Context []AttrContext `json:"context"`
 }
 
