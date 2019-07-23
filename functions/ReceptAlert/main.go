@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/m-mizutani/deepalert"
 	f "github.com/m-mizutani/deepalert/functions"
@@ -36,10 +37,21 @@ func mainHandler(args lambdaArguments) error {
 		}
 		f.SetLoggerReportID(reportID)
 
+		f.Logger.WithFields(logrus.Fields{
+			"ReportID": reportID,
+			"isNew":    isNew,
+			"Error":    err,
+			"AlertID":  alert.AlertID(),
+		}).Info("ReportID has been retrieved")
+
 		report := deepalert.Report{
 			ID:     reportID,
 			Alerts: []deepalert.Alert{alert},
 			Status: deepalert.StatusNew,
+		}
+
+		if err := svc.SaveAlertCache(reportID, alert); err != nil {
+			return errors.Wrap(err, "Fail to save alert cache")
 		}
 
 		if err := f.ExecDelayMachine(args.InspecterDelayMachine, args.Region, &report); err != nil {
