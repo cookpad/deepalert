@@ -22,18 +22,21 @@ func TestDataStoreTakeReportID(t *testing.T) {
 	alert1 := da.Alert{
 		Detector:  detector,
 		RuleName:  "myRule",
+		RuleID:    "test1",
 		AlertKey:  "blue",
 		Timestamp: ts,
 	}
 	alert2 := da.Alert{
 		Detector:  detector,
 		RuleName:  "myRule",
+		RuleID:    "test1",
 		AlertKey:  "blue",
 		Timestamp: ts.Add(time.Hour * 1),
 	}
 	alert3 := da.Alert{
 		Detector:  detector,
 		RuleName:  "myRule",
+		RuleID:    "test1",
 		AlertKey:  "orange",
 		Timestamp: ts.Add(time.Hour * 4),
 	}
@@ -65,18 +68,21 @@ func TestDataStoreAlertCache(t *testing.T) {
 	alert1 := da.Alert{
 		Detector:  "me",
 		RuleName:  "myRule",
+		RuleID:    "test1",
 		AlertKey:  "blue",
 		Timestamp: time.Now(),
 	}
 	alert2 := da.Alert{
 		Detector:  "you",
-		RuleName:  "yourRule",
+		RuleName:  "myRule",
+		RuleID:    "test2",
 		AlertKey:  "orange",
 		Timestamp: time.Now(),
 	}
 	alert3 := da.Alert{
 		Detector:  "someone",
-		RuleName:  "addRule",
+		RuleName:  "myRule",
+		RuleID:    "test3",
 		AlertKey:  "gray",
 		Timestamp: time.Now(),
 	}

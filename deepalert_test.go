@@ -22,6 +22,7 @@ func TestNormalWorkFlow(t *testing.T) {
 	alert := deepalert.Alert{
 		Detector:  "test",
 		RuleName:  "TestRule",
+		RuleID:    "xxx",
 		AlertKey:  alertKey,
 		Timestamp: time.Now().UTC(),
 		Attributes: []deepalert.Attribute{
@@ -139,6 +140,7 @@ func TestNormalAggregation(t *testing.T) {
 	alert := deepalert.Alert{
 		Detector:  "test",
 		RuleName:  "TestRule",
+		RuleID:    "yyy",
 		AlertKey:  alertKey,
 		Timestamp: time.Now().UTC(),
 		Attributes: []deepalert.Attribute{

@@ -56,6 +56,7 @@ type Attribute struct {
 type Alert struct {
 	Detector    string `json:"detector"`
 	RuleName    string `json:"rule_name"`
+	RuleID      string `json:"rule_id"`
 	AlertKey    string `json:"alert_key"`
 	Description string `json:"description"`
 
@@ -86,11 +87,11 @@ func (x *Alert) FindAttributes(key string) []Attribute {
 	return attrs
 }
 
-// AlertID calculate ID of the alert from Detector, RuleName and AlertKey.
+// AlertID calculate ID of the alert from Detector, RuleID and AlertKey.
 func (x *Alert) AlertID() string {
 	key := strings.Join([]string{
 		base64.StdEncoding.EncodeToString([]byte(x.Detector)),
-		base64.StdEncoding.EncodeToString([]byte(x.RuleName)),
+		base64.StdEncoding.EncodeToString([]byte(x.RuleID)),
 		base64.StdEncoding.EncodeToString([]byte(x.AlertKey)),
 	}, ":")
 
