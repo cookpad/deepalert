@@ -97,7 +97,7 @@ func (x *Alert) AlertID() string {
 
 	hasher := sha256.New()
 	hasher.Write([]byte(key))
-	return fmt.Sprintf("alert/%x", hasher.Sum(nil))
+	return fmt.Sprintf("alert:%x", hasher.Sum(nil))
 }
 
 // Match checks attribute type and context.
