@@ -34,12 +34,12 @@ type ReportContentType string
 type Report struct {
 	ID       ReportID        `json:"id"`
 	Alerts   []Alert         `json:"alerts"`
-	Contents []ReportContent `json:"entities"`
+	Sections []ReportSection `json:"sections"`
 	Result   ReportResult    `json:"result"`
 	Status   ReportStatus    `json:"status"`
 }
 
-// ReportMap is mapping Attributes and Hosts. Key of the maps are hash value of Attribute.
+// ReportMaps is mapping Attributes and Hosts. Key of the maps are hash value of Attribute.
 type ReportMaps struct {
 	Attributes map[string]*Attribute
 	Hosts      map[string][]ReportHost
@@ -47,8 +47,8 @@ type ReportMaps struct {
 	Binaries   map[string][]ReportBinary
 }
 
-// ReportContent is base structure of report entity.
-type ReportContent struct {
+// ReportSection is base structure of report entity.
+type ReportSection struct {
 	ReportID  ReportID          `json:"report_id"`
 	Author    string            `json:"author"`
 	Attribute Attribute         `json:"attribute"`
@@ -96,15 +96,15 @@ func (x *Report) ExtractContents() (*ReportMaps, error) {
 		Binaries:   make(map[string][]ReportBinary),
 	}
 
-	for _, content := range x.Contents {
-		raw, err := json.Marshal(content.Content)
+	for _, section := range x.Sections {
+		raw, err := json.Marshal(section.Content)
 		if err != nil {
 			return nil, err
 		}
-		hv := content.Attribute.Hash()
-		maps.Attributes[hv] = &content.Attribute
+		hv := section.Attribute.Hash()
+		maps.Attributes[hv] = &section.Attribute
 
-		switch content.Type {
+		switch section.Type {
 		case ContentUser:
 			var user ReportUser
 			if err := json.Unmarshal(raw, &user); err != nil {
@@ -139,8 +139,8 @@ const (
 // -----------------------------------------------
 // Entities
 
-// ReportContentEntity is interface of report entity.
-type ReportContentEntity interface {
+// ReportContent is interface of report entity.
+type ReportContent interface {
 	Type() ReportContentType
 }
 

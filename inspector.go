@@ -71,7 +71,7 @@ func StartInspector(handler InspectHandler, author, submitTopic, attributeTopic 
 
 			// Sending entities
 			for _, entity := range result.Contents {
-				content := ReportContent{
+				section := ReportSection{
 					ReportID:  task.ReportID,
 					Attribute: task.Attribute,
 					Author:    author,
@@ -79,8 +79,8 @@ func StartInspector(handler InspectHandler, author, submitTopic, attributeTopic 
 					Content:   entity,
 				}
 
-				if err := publishSNS(submitTopic, content); err != nil {
-					return errors.Wrapf(err, "Fail to publish ReportContent to %s: %v", submitTopic, content)
+				if err := publishSNS(submitTopic, section); err != nil {
+					return errors.Wrapf(err, "Fail to publish ReportContent to %s: %v", submitTopic, section)
 				}
 			}
 

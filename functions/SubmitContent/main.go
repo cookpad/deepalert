@@ -23,15 +23,15 @@ func mainHandler(args lambdaArguments) error {
 	svc := f.NewDataStoreService(args.TableName, args.Region)
 
 	for _, msg := range f.SNStoMessages(args.Event) {
-		var content deepalert.ReportContent
-		if err := json.Unmarshal(msg, &content); err != nil {
+		var section deepalert.ReportSection
+		if err := json.Unmarshal(msg, &section); err != nil {
 			return errors.Wrapf(err, "Fail to unmarshal ReportContent from SubmitNotification: %s", string(msg))
 		}
 
-		if err := svc.SaveReportContent(content); err != nil {
-			return errors.Wrapf(err, "Fail to save ReportContent: %v", content)
+		if err := svc.SaveReportSection(section); err != nil {
+			return errors.Wrapf(err, "Fail to save ReportContent: %v", section)
 		}
-		f.Logger.WithField("content", content).Info("Saved content")
+		f.Logger.WithField("section", section).Info("Saved content")
 	}
 
 	return nil

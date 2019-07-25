@@ -11,7 +11,7 @@ import (
 
 func TestReportExtraction(t *testing.T) {
 	report := deepalert.Report{
-		Contents: []deepalert.ReportContent{
+		Sections: []deepalert.ReportSection{
 			{
 				Author: "Familiar1",
 				Attribute: deepalert.Attribute{
@@ -58,7 +58,7 @@ func TestReportExtraction(t *testing.T) {
 	require.NotNil(t, reportMap)
 
 	// pp.Println(reportMap)
-	hv := report.Contents[0].Attribute.Hash()
+	hv := report.Sections[0].Attribute.Hash()
 	assert.Equal(t, 1, len(reportMap.Attributes))
 	assert.Equal(t, 1, len(reportMap.Hosts))
 	hosts, ok := reportMap.Hosts[hv]

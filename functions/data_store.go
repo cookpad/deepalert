@@ -171,28 +171,28 @@ func (x *DataStoreService) FetchAlertCache(reportID deepalert.ReportID) ([]deepa
 // -----------------------------------------------------------
 // Control reportRecord to manage report contents by inspector
 //
-type reportContentRecord struct {
+type reportSectionRecord struct {
 	recordBase
 	Data []byte `dynamo:"data"`
 }
 
-func toReportContentRecord(reportID deepalert.ReportID, content *deepalert.ReportContent) (string, string) {
+func toReportSectionRecord(reportID deepalert.ReportID, section *deepalert.ReportSection) (string, string) {
 	pk := fmt.Sprintf("content/%s", reportID)
 	sk := ""
-	if content != nil {
-		sk = fmt.Sprintf("%s/%s", content.Attribute.Hash(), uuid.New().String())
+	if section != nil {
+		sk = fmt.Sprintf("%s/%s", section.Attribute.Hash(), uuid.New().String())
 	}
 	return pk, sk
 }
 
-func (x *DataStoreService) SaveReportContent(content deepalert.ReportContent) error {
-	raw, err := json.Marshal(content)
+func (x *DataStoreService) SaveReportSection(section deepalert.ReportSection) error {
+	raw, err := json.Marshal(section)
 	if err != nil {
-		return errors.Wrapf(err, "Fail to marshal ReportContent: %v", content)
+		return errors.Wrapf(err, "Fail to marshal ReportSection: %v", section)
 	}
 
-	pk, sk := toReportContentRecord(content.ReportID, &content)
-	record := reportContentRecord{
+	pk, sk := toReportSectionRecord(section.ReportID, &section)
+	record := reportSectionRecord{
 		recordBase: recordBase{
 			PKey:      pk,
 			SKey:      sk,
@@ -208,25 +208,25 @@ func (x *DataStoreService) SaveReportContent(content deepalert.ReportContent) er
 	return nil
 }
 
-func (x *DataStoreService) FetchReportContent(reportID deepalert.ReportID) ([]deepalert.ReportContent, error) {
-	var records []reportContentRecord
-	pk, _ := toReportContentRecord(reportID, nil)
+func (x *DataStoreService) FetchReportSection(reportID deepalert.ReportID) ([]deepalert.ReportSection, error) {
+	var records []reportSectionRecord
+	pk, _ := toReportSectionRecord(reportID, nil)
 
 	if err := x.table.Get("pk", pk).All(&records); err != nil {
 		return nil, errors.Wrap(err, "Fail to fetch report records")
 	}
 
-	var contents []deepalert.ReportContent
+	var sections []deepalert.ReportSection
 	for _, record := range records {
-		var content deepalert.ReportContent
-		if err := json.Unmarshal(record.Data, &content); err != nil {
+		var section deepalert.ReportSection
+		if err := json.Unmarshal(record.Data, &section); err != nil {
 			return nil, errors.Wrapf(err, "Fail to unmarshal report content: %v %s", record, string(record.Data))
 		}
 
-		contents = append(contents, content)
+		sections = append(sections, section)
 	}
 
-	return contents, nil
+	return sections, nil
 }
 
 // -----------------------------------------------------------

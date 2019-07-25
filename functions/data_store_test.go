@@ -113,7 +113,7 @@ func TestDataStoreReportContent(t *testing.T) {
 	rID1 := f.NewReportID()
 	rID2 := f.NewReportID()
 
-	content1 := da.ReportContent{
+	section1 := da.ReportSection{
 		ReportID: rID1,
 		Author:   "blue",
 		Attribute: da.Attribute{
@@ -122,7 +122,7 @@ func TestDataStoreReportContent(t *testing.T) {
 			Value: "10.1.2.3",
 		},
 	}
-	content2 := da.ReportContent{
+	section2 := da.ReportSection{
 		ReportID: rID1,
 		Author:   "orange",
 		Attribute: da.Attribute{
@@ -131,7 +131,7 @@ func TestDataStoreReportContent(t *testing.T) {
 			Value: "10.1.2.3",
 		},
 	}
-	content3 := da.ReportContent{
+	section3 := da.ReportSection{
 		ReportID: rID2,
 		Author:   "orange",
 		Attribute: da.Attribute{
@@ -141,16 +141,16 @@ func TestDataStoreReportContent(t *testing.T) {
 		},
 	}
 
-	err := svc.SaveReportContent(content1)
+	err := svc.SaveReportSection(section1)
 	require.NoError(t, err)
-	err = svc.SaveReportContent(content2)
+	err = svc.SaveReportSection(section2)
 	require.NoError(t, err)
-	err = svc.SaveReportContent(content3)
+	err = svc.SaveReportSection(section3)
 	require.NoError(t, err)
 
-	contents, err := svc.FetchReportContent(rID1)
+	sections, err := svc.FetchReportSection(rID1)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(contents))
-	assert.Equal(t, rID1, contents[0].ReportID)
-	assert.Equal(t, rID1, contents[1].ReportID)
+	assert.Equal(t, 2, len(sections))
+	assert.Equal(t, rID1, sections[0].ReportID)
+	assert.Equal(t, rID1, sections[1].ReportID)
 }

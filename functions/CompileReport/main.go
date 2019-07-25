@@ -20,7 +20,7 @@ type lambdaArguments struct {
 func mainHandler(args lambdaArguments) (*deepalert.Report, error) {
 	svc := f.NewDataStoreService(args.TableName, args.Region)
 
-	contents, err := svc.FetchReportContent(args.Report.ID)
+	sections, err := svc.FetchReportSection(args.Report.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Fail to fetch set of ReportContent: %v", args.Report)
 	}
@@ -31,7 +31,7 @@ func mainHandler(args lambdaArguments) (*deepalert.Report, error) {
 	}
 
 	args.Report.Alerts = alerts
-	args.Report.Contents = contents
+	args.Report.Sections = sections
 
 	return &args.Report, nil
 }
