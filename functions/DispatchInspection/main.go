@@ -32,6 +32,10 @@ func mainHandler(args lambdaArguments) error {
 				continue
 			}
 
+			if attr.Timestamp == nil {
+				attr.Timestamp = &alert.Timestamp
+			}
+
 			task := deepalert.Task{
 				ReportID:  args.Report.ID,
 				Attribute: attr,

@@ -84,12 +84,20 @@ func StartInspector(handler InspectHandler, author, submitTopic, attributeTopic 
 				}
 			}
 
+			var newAttrs []Attribute
+			for _, attr := range result.NewAttributes {
+				if attr.Timestamp == nil {
+					attr.Timestamp = task.Attribute.Timestamp
+				}
+				newAttrs = append(newAttrs, attr)
+			}
+
 			// Sending new attributes
 			if len(result.NewAttributes) > 0 {
 				attrReport := ReportAttribute{
 					ReportID:   task.ReportID,
 					Original:   task.Attribute,
-					Attributes: result.NewAttributes,
+					Attributes: newAttrs,
 					Author:     author,
 				}
 

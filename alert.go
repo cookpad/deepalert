@@ -50,6 +50,9 @@ type Attribute struct {
 
 	// Context explains background of the attribute value.
 	Context []AttrContext `json:"context"`
+
+	// Timestamp indicates observed time of the attribute.
+	Timestamp *time.Time `json:"timestamp,omitempty"`
 }
 
 // Alert is extranted data from KinesisStream
