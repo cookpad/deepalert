@@ -60,9 +60,9 @@ const (
 	// ContentUser means Content field is ReportUser.
 	ContentUser ReportContentType = "user"
 	// ContentHost means Content field is ReportHost.
-	ContentHost = "host"
+	ContentHost ReportContentType = "host"
 	// ContentBinary means Content field is ReportBinary.
-	ContentBinary = "binary"
+	ContentBinary ReportContentType = "binary"
 )
 
 // ReportResult shows output of Reviewer invoked to evaluate risk of the alert.
@@ -76,9 +76,9 @@ const (
 	// E.g. Win32 malware is detected in a host, but the host's OS is MacOS.
 	SevSafe ReportSeverity = "safe"
 	// SevUnclassified : Reviewer has no suitable policy or can not determine risk.
-	SevUnclassified = "unclassified"
+	SevUnclassified ReportSeverity = "unclassified"
 	// SevUrgent : The alert has a big impact and a security operator must respond it immediately.
-	SevUrgent = "urgent"
+	SevUrgent ReportSeverity = "urgent"
 )
 
 // IsNew returns status of the report
