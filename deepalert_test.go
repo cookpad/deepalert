@@ -2,6 +2,7 @@ package deepalert_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 )
 
 func TestNormalWorkFlow(t *testing.T) {
-	cfg := test.LoadTestConfig(".")
+	cfg := test.LoadTestConfig()
 	alertKey := uuid.New().String()
 
 	alert := deepalert.Alert{
@@ -38,6 +39,7 @@ func TestNormalWorkFlow(t *testing.T) {
 	require.NoError(t, err)
 
 	var reportID string
+	gp.SetLoggerTraceLevel()
 
 	playbook := []gp.Scene{
 		// Send request
@@ -58,6 +60,7 @@ func TestNormalWorkFlow(t *testing.T) {
 			}
 			require.NotEmpty(t, entry.ReportID)
 			reportID = entry.ReportID
+			fmt.Println("reportID:", reportID)
 			return true
 		}),
 		gp.GetLambdaLogs(gp.LogicalID("DispatchInspection"), func(log gp.CloudWatchLog) bool {
@@ -132,7 +135,7 @@ func TestNormalWorkFlow(t *testing.T) {
 }
 
 func TestNormalAggregation(t *testing.T) {
-	cfg := test.LoadTestConfig(".")
+	cfg := test.LoadTestConfig()
 	alertKey := uuid.New().String()
 	attr1 := uuid.New().String()
 	attr2 := uuid.New().String()

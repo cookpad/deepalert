@@ -10,6 +10,7 @@ import (
 func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error) {
 	hostReport := deepalert.ReportHost{
 		IPAddr: []string{"10.1.2.3"},
+		Owner:  []string{"superman"},
 	}
 
 	newAttr := deepalert.Attribute{
@@ -19,7 +20,7 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 	}
 
 	return &deepalert.TaskResult{
-		Contents:      []deepalert.ReportContentEntity{&hostReport},
+		Contents:      []deepalert.ReportContent{&hostReport},
 		NewAttributes: []deepalert.Attribute{newAttr},
 	}, nil
 }

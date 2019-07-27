@@ -8,10 +8,10 @@
     LogGroupNamePrefix='/DeepAlert/'
   ):: {
     local LambdaRole = (
-      if LambdaRoleArn != '' then LambdaRoleArn else { Ref: 'LambdaRole' }
+      if LambdaRoleArn != '' then LambdaRoleArn else { 'Fn::GetAtt': 'LambdaRole.Arn' }
     ),
     local StepFunctionRole = (
-      if StepFunctionRoleArn != '' then StepFunctionRoleArn else { Ref: 'StepFunctionRole' }
+      if StepFunctionRoleArn != '' then StepFunctionRoleArn else { 'Fn::GetAtt': 'StepFunctionRole.Arn' }
     ),
     local ReviewerLambda = (
       if ReviewerLambdaArn != '' then ReviewerLambdaArn else { 'Fn::GetAtt': 'DummyReviewer.Arn' }
@@ -39,7 +39,7 @@
           ],
           Policies: [
             {
-              PolicyName: 'AlertResponderLambdaReviewer',
+              PolicyName: 'DeepAlertLambda',
               PolicyDocument: {
                 Version: '2012-10-17',
                 Statement: [
@@ -111,7 +111,6 @@
     local StepFunctionRoleTemplate = {
       StepFunctionRole: {
         Type: 'AWS::IAM::Role',
-        Condition: 'StepFunctionRoleRequired',
         Properties: {
           AssumeRolePolicyDocument: {
             Version: '2012-10-17',
@@ -224,14 +223,16 @@
             'Fn::Sub': '${AWS::StackName}-delay-dispatcher',
           },
           RoleArn: StepFunctionRole,
-          DefinitionString: [
-            '{"StartAt":"Waiting","States":{"Waiting":{"Type":"Wait","Next":"Exec","Seconds":' + InspectionDelay + '},"Exec":{"Type":"Task","Resource":"${lambdaArn}","End":true}}}',
-            {
-              lambdaArn: {
-                'Fn::GetAtt': 'DispatchInspection.Arn',
+          DefinitionString: {
+            'Fn::Sub': [
+              '{"StartAt":"Waiting","States":{"Waiting":{"Type":"Wait","Next":"Exec","Seconds":' + InspectionDelay + '},"Exec":{"Type":"Task","Resource":"${lambdaArn}","End":true}}}',
+              {
+                lambdaArn: {
+                  'Fn::GetAtt': 'DispatchInspection.Arn',
+                },
               },
-            },
-          ],
+            ],
+          },
         },
       },
       ReviewInvoker: {
@@ -240,32 +241,24 @@
           StateMachineName: {
             'Fn::Sub': '${AWS::StackName}-review-invoker',
           },
-          RoleArn: {
-            'Fn::If': [
-              'StepFunctionRoleRequired',
+          RoleArn: StepFunctionRole,
+          DefinitionString: {
+            'Fn::Sub': [
+              '{"StartAt":"Wating","States":{"Wating":{"Type":"Wait","Next":"Compiler","Seconds":' + ReviewDelay + '},"Compiler":{"Type":"Task","Resource":"${compilerArn}","Catch":[{"ErrorEquals":["States.ALL"],"ResultPath":"$.error","Next":"ErrorHandler"}],"Next":"CheckPolicy"},"CheckPolicy":{"Type":"Task","Resource":"${policyLambdaArn}","Catch":[{"ErrorEquals":["States.ALL"],"ResultPath":"$.error","Next":"ErrorHandler"}],"ResultPath":"$.result","Next":"Publish"},"ErrorHandler":{"Type":"Task","Resource":"${errorHandlerArn}","End":true},"Publish":{"Type":"Task","Resource":"${publisherArn}","End":true}}}',
               {
-                'Fn::GetAtt': 'StepFunctionRole.Arn',
-              },
-              {
-                Ref: 'StepFunctionRoleArn',
+                policyLambdaArn: ReviewerLambda,
+                compilerArn: {
+                  'Fn::GetAtt': 'CompileReport.Arn',
+                },
+                publisherArn: {
+                  'Fn::GetAtt': 'PublishReport.Arn',
+                },
+                errorHandlerArn: {
+                  'Fn::GetAtt': 'StepFunctionError.Arn',
+                },
               },
             ],
           },
-          DefinitionString: [
-            '{"StartAt":"Wating","States":{"Wating":{"Type":"Wait","Next":"Compiler","Seconds":' + ReviewDelay + '},"Compiler":{"Type":"Task","Resource":"${compilerArn}","Catch":[{"ErrorEquals":["States.ALL"],"ResultPath":"$.error","Next":"ErrorHandler"}],"Next":"CheckPolicy"},"CheckPolicy":{"Type":"Task","Resource":"${policyLambdaArn}","Catch":[{"ErrorEquals":["States.ALL"],"ResultPath":"$.error","Next":"ErrorHandler"}],"ResultPath":"$.result","Next":"Publish"},"ErrorHandler":{"Type":"Task","Resource":"${errorHandlerArn}","End":true},"Publish":{"Type":"Task","Resource":"${publisherArn}","End":true}}}',
-            {
-              policyLambdaArn: ReviewerLambda,
-              compilerArn: {
-                'Fn::GetAtt': 'CompileReport.Arn',
-              },
-              publisherArn: {
-                'Fn::GetAtt': 'PublishReport.Arn',
-              },
-              errorHandlerArn: {
-                'Fn::GetAtt': 'StepFunctionError.Arn',
-              },
-            },
-          ],
         },
       },
       ReceptAlert: {

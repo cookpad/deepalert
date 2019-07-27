@@ -15,7 +15,7 @@ import (
 )
 
 func TestDataStoreTakeReportID(t *testing.T) {
-	cfg := test.LoadTestConfig("..")
+	cfg := test.LoadTestConfig()
 	ts := time.Now().UTC()
 	detector := uuid.New().String()
 
@@ -62,7 +62,7 @@ func TestDataStoreTakeReportID(t *testing.T) {
 }
 
 func TestDataStoreAlertCache(t *testing.T) {
-	cfg := test.LoadTestConfig("..")
+	cfg := test.LoadTestConfig()
 	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
 	alert1 := da.Alert{
@@ -107,7 +107,7 @@ func TestDataStoreAlertCache(t *testing.T) {
 }
 
 func TestDataStoreReportContent(t *testing.T) {
-	cfg := test.LoadTestConfig("..")
+	cfg := test.LoadTestConfig()
 	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
 	rID1 := f.NewReportID()

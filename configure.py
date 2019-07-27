@@ -33,6 +33,7 @@ def get_test_functions():
 def generate_header():
     required_parameters = [
         'StackName',
+        'TestStackName',
         'Region',
         'CodeS3Bucket',
         'CodeS3Prefix',
@@ -45,20 +46,25 @@ def generate_header():
     lines = [
         'DEPLOY_CONFIG ?= deploy.jsonnet',
         'STACK_CONFIG ?= stack.jsonnet',
+        'TEST_STACK_CONFIG ?= test.jsonnet'
+        '',
         'CODE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))',
         'CWD := ${CURDIR}',
         '',
+        'TEMPLATE_JSONNET=$(CODE_DIR)/template.libsonnet',
         'TEMPLATE_FILE=template.json',
         'SAM_FILE=sam.yml',
-        'OUTPUT_FILE=output.json',
+        'OUTPUT_FILE=$(CWD)/output.json',
+        '',
+        'TEST_TEMPLATE_JSONNET=teststack.libsonnet',
         'TEST_TEMPLATE_FILE=teststack_template.json',
         'TEST_SAM_FILE=teststack_sam.yml',
-        'TEST_OUTPUT_FILE=teststack_output.json',
+        'TEST_OUTPUT_FILE=$(CWD)/teststack_output.json',
         '',
         'COMMON={}'.format(' '.join(get_common_sources('.'))),
         'FUNCTIONS={}'.format(' '.join(functions)),
-        'TESTSTACK_FUNCTIONS={}'.format(' '.join(test_functions)),
-        'TESTSTACK_UTILS=$(CODE_DIR)/test/*.go',
+        'TEST_FUNCTIONS={}'.format(' '.join(test_functions)),
+        'TEST_UTILS=$(CODE_DIR)/test/*.go',
         '',
     ] + [
         '{0}=$(shell jsonnet $(DEPLOY_CONFIG) | jq .{0})'.format(p) for p in required_parameters
@@ -100,8 +106,10 @@ build: $(FUNCTIONS)
 clean:
 	rm $(FUNCTIONS)
 
+$(TEMPLATE_FILE): $(STACK_CONFIG) $(TEMPLATE_JSONNET)
+	jsonnet -J $(CODE_DIR) $(STACK_CONFIG) -o $(TEMPLATE_FILE)
+
 $(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
-	mkdir -p $(WORKDIR)
 	aws cloudformation package \\
 		--template-file $(TEMPLATE_FILE) \\
 		--s3-bucket $(CodeS3Bucket) \\
@@ -113,17 +121,19 @@ $(OUTPUT_FILE): $(SAM_FILE)
 		--region $(Region) \\
 		--template-file $(SAM_FILE) \\
 		--stack-name $(StackName) \\
-        --no-fail-on-empty-changeset \\
+		--no-fail-on-empty-changeset \\
 		--capabilities CAPABILITY_IAM $(PARAMETERS)
 	aws cloudformation describe-stack-resources --stack-name $(StackName) > $(OUTPUT_FILE)
 
 deploy: $(OUTPUT_FILE)
 
 test: $(TEST_OUTPUT_FILE) $(TEST_UTILS)
-	env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v -count=1 . ./functions
+	cd $(CODE_DIR) && env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v -count=1 . ./functions && cd $(CWD)
+
+$(TEST_TEMPLATE_FILE): $(TEST_STACK_CONFIG) $(TEMPLATE_JSONNET)
+	jsonnet -J $(CODE_DIR) $(TEST_STACK_CONFIG) -o $(TEST_TEMPLATE_FILE)
 
 $(TEST_SAM_FILE): $(TEST_TEMPLATE_FILE) $(TEST_FUNCTIONS) $(OUTPUT_FILE)
-	mkdir -p `dirname $(TEST_SAM_FILE)`
 	aws cloudformation package \\
 		--template-file $(TEST_TEMPLATE_FILE) \\
 		--s3-bucket $(CodeS3Bucket) \\
@@ -136,8 +146,7 @@ $(TEST_OUTPUT_FILE): $(TEST_SAM_FILE)
 		--template-file $(TEST_SAM_FILE) \\
 		--stack-name $(TestStackName) \\
 		--capabilities CAPABILITY_IAM \\
-		--no-fail-on-empty-changeset \\
-        --parameter-overrides ParentStackName=$(StackName)
+		--no-fail-on-empty-changeset
 	aws cloudformation describe-stack-resources --region $(Region) \\
         --stack-name $(TestStackName) > $(TEST_OUTPUT_FILE)
 
@@ -148,7 +157,6 @@ setuptest: $(TEST_OUTPUT_FILE)
 def main():
     psr = argparse.ArgumentParser()
     psr.add_argument('-o', '--output', default="Makefile")
-    psr.add_argument('-c', '--config', type=argparse.FileType('rt'))
 
     args = psr.parse_args()
 

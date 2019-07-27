@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
@@ -33,21 +32,20 @@ type cfnStack struct {
 	}
 }
 
-func loadStackOutput(conf *TestConfig, relPathToRoot string) {
+func loadStackOutput(conf *TestConfig) {
 	stackOutputPath := "output.json"
 	if envvar := os.Getenv("DEEPALERT_STACK_OUTPUT"); envvar != "" {
 		stackOutputPath = envvar
 	}
 
-	actualPath := filepath.Join(relPathToRoot, stackOutputPath)
-	raw, err := ioutil.ReadFile(actualPath)
+	raw, err := ioutil.ReadFile(stackOutputPath)
 	if err != nil {
-		log.Fatalf("Fail to read DEEPALERT_STACK_OUTPUT: %s, %s", actualPath, err)
+		log.Fatalf("Fail to read DEEPALERT_STACK_OUTPUT: %s, %s", stackOutputPath, err)
 	}
 
 	var stack cfnStack
 	if err := json.Unmarshal(raw, &stack); err != nil {
-		log.Fatalf("Fail to unmarshal output file: %s, %s", actualPath, err)
+		log.Fatalf("Fail to unmarshal output file: %s, %s", stackOutputPath, err)
 	}
 
 	for _, resource := range stack.StackResources {
@@ -73,21 +71,20 @@ func stackIDtoMeta(stackID string) (string, string) {
 	return arn[3], arn[4]
 }
 
-func loadTestStackOutput(conf *TestConfig, relPathToRoot string) {
+func loadTestStackOutput(conf *TestConfig) {
 	stackOutputPath := "test_output.json"
 	if envvar := os.Getenv("DEEPALERT_TEST_STACK_OUTPUT"); envvar != "" {
 		stackOutputPath = envvar
 	}
 
-	actualPath := filepath.Join(relPathToRoot, stackOutputPath)
-	raw, err := ioutil.ReadFile(actualPath)
+	raw, err := ioutil.ReadFile(stackOutputPath)
 	if err != nil {
-		log.Fatalf("Fail to read DEEPALERT_TEST_STACK_OUTPUT: %s, %s", actualPath, err)
+		log.Fatalf("Fail to read DEEPALERT_TEST_STACK_OUTPUT: %s, %s", stackOutputPath, err)
 	}
 
 	var stack cfnStack
 	if err := json.Unmarshal(raw, &stack); err != nil {
-		log.Fatalf("Fail to unmarshal output file: %s, %s", actualPath, err)
+		log.Fatalf("Fail to unmarshal output file: %s, %s", stackOutputPath, err)
 	}
 
 	for _, resource := range stack.StackResources {
@@ -107,11 +104,11 @@ func loadTestStackOutput(conf *TestConfig, relPathToRoot string) {
 }
 
 // LoadTestConfig reads and parses config file.
-func LoadTestConfig(relPathToRoot string) TestConfig {
+func LoadTestConfig() TestConfig {
 	var conf TestConfig
 
-	loadStackOutput(&conf, relPathToRoot)
-	loadTestStackOutput(&conf, relPathToRoot)
+	loadStackOutput(&conf)
+	loadTestStackOutput(&conf)
 
 	return conf
 }
