@@ -5,34 +5,17 @@ import argparse
 import json
 from functools import reduce
 
-required_parameters = [
-    'StackName',
-    'Region',
-    'CodeS3Bucket',
-    'CodeS3Prefix',
-]
-optional_parameters = [
-    'LambdaRoleArn',
-    'StepFunctionRoleArn',
-    'ReviewerLambdaArn',
-    'InspectionDelay',
-    'ReviewDelay',
-]
+
+def append_codedir(files):
+    return map(lambda x: '$(CODE_DIR)/' + x, files)
 
 
-def args2config(args):
-    params = required_parameters + optional_parameters
-
-    if args.config:
-        config = dict([(k, v) for k, v in json.load(args.config).items()])
-    else:
-        config = {}
-
-    for k in params:
-        if hasattr(args, k) and getattr(args, k) is not None:
-            config[k] = getattr(args, k)
-
-    return config
+def get_common_sources(workdir):
+    dirs = [workdir, os.path.join(workdir, "functions")]
+    files = [os.path.join(d, f) for d in dirs for f in os.listdir(d)]
+    codes = filter(lambda x: x.endswith(".go")
+                   and not x.endswith("_test.go"), files)
+    return append_codedir(codes)
 
 
 def get_functions():
@@ -41,27 +24,66 @@ def get_functions():
                   os.listdir(basedir))
 
 
-def gen_functions_section():
-    template = '''build/{0}: ./functions/{0}/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build -o build/{0} ./functions/{0}/'''
-
-    lines = map(lambda x: template.format(x), get_functions())
-    return '\n'.join(lines) + '\n'
-
-
 def get_test_functions():
     basedir = './test'
     return filter(lambda x: os.path.isdir(os.path.join(basedir, x)),
                   os.listdir(basedir))
 
 
-def gen_test_functions_section():
-    template = '''build/{0}: ./test/{0}/*.go
-	env GOARCH=amd64 GOOS=linux go build -o build/{0} ./test/{0}/'''
+def generate_header():
+    required_parameters = [
+        'StackName',
+        'Region',
+        'CodeS3Bucket',
+        'CodeS3Prefix',
+    ]
 
+    functions = map(lambda f: os.path.join('build', f), get_functions())
+    test_functions = map(lambda f: os.path.join(
+        'build', f), get_test_functions())
+
+    lines = [
+        'DEPLOY_CONFIG ?= deploy.jsonnet',
+        'STACK_CONFIG ?= stack.jsonnet',
+        'CODE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))',
+        'CWD := ${CURDIR}',
+        '',
+        'TEMPLATE_FILE=template.json',
+        'SAM_FILE=sam.yml',
+        'OUTPUT_FILE=output.json',
+        'TEST_TEMPLATE_FILE=teststack_template.json',
+        'TEST_SAM_FILE=teststack_sam.yml',
+        'TEST_OUTPUT_FILE=teststack_output.json',
+        '',
+        'COMMON={}'.format(' '.join(get_common_sources('.'))),
+        'FUNCTIONS={}'.format(' '.join(functions)),
+        'TESTSTACK_FUNCTIONS={}'.format(' '.join(test_functions)),
+        'TESTSTACK_UTILS=$(CODE_DIR)/test/*.go',
+        '',
+    ] + [
+        '{0}=$(shell jsonnet $(DEPLOY_CONFIG) | jq .{0})'.format(p) for p in required_parameters
+    ]
+
+    return '\n'.join(lines)
+
+
+def generate_functions_section():
+    template = '''build/{0}: $(CODE_DIR)/functions/{0}/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/{0} ./functions/{0} && cd $(CWD)'''
+
+    header = ['', '# Functions ------------------------']
+    lines = map(lambda x: template.format(x), get_functions())
+    return '\n'.join(header + lines) + '\n'
+
+
+def generate_test_functions_section():
+    template = '''build/{0}: $(CODE_DIR)/test/{0}/*.go
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/{0} ./test/{0} && cd $(CWD)'''
+
+    header = ['', '# TestStack Functions ------------------------']
     test_function_builds = [template.format(x) for x in get_test_functions()]
 
-    return '\n'.join(test_function_builds + [''])
+    return '\n'.join(header + test_function_builds + [''])
 
 
 def get_all_source_files(workdir):
@@ -70,78 +92,10 @@ def get_all_source_files(workdir):
             if fname.endswith('.go')]
 
 
-def get_source_files(workdir):
-    return list(filter(lambda x: not x.endswith('_test.go'), get_all_source_files(workdir)))
-
-
-def get_test_files(workdir):
-    return list(filter(lambda x: x.endswith('_test.go'), get_all_source_files(workdir)))
-
-
-def get_common_sources(workdir):
-    dirs = [workdir, os.path.join(workdir, "functions")]
-    files = [os.path.join(d, f) for d in dirs for f in os.listdir(d)]
-
-    return filter(lambda x: x.endswith(".go") and not x.endswith("_test.go"), files)
-
-
-def gen_header(args):
-    sam_file = os.path.join(args.workdir, 'sam.yml')
-    output_file = os.path.join(args.workdir, 'output.json')
-    test_sam_file = os.path.join(args.workdir, 'test_sam.yml')
-    test_output_file = os.path.join(args.workdir, 'test_output.json')
-
-    functions = map(lambda f: os.path.join('build', f), get_functions())
-    test_functions = map(lambda f: os.path.join(
-        'build', f), get_test_functions())
-
-    lines = [
-        'TEMPLATE_FILE=template.yml',
-        'TEST_TEMPLATE_FILE=test.yml',
-        'SAM_FILE={}'.format(sam_file),
-        'OUTPUT_FILE={}'.format(output_file),
-        'TEST_SAM_FILE={}'.format(test_sam_file),
-        'TEST_OUTPUT_FILE={}'.format(test_output_file),
-        'WORKDIR={}'.format(args.workdir),
-        '',
-        'COMMON={}'.format(' '.join(get_common_sources(args.workdir))),
-        'FUNCTIONS={}'.format(' '.join(functions)),
-        'TEST_FUNCTIONS={}'.format(' '.join(test_functions)),
-        'TEST_UTILS=test/*.go',
-        '',
-    ]
-
-    return '\n'.join(lines)
-
-
-def gen_parameters(config):
-    lines = []
-
-    # Check required parameters
-    for k in required_parameters:
-        if k not in config.keys():
-            raise Exception(
-                'Parameter "{0}" is required, but not found'.format(k))
-
-        lines.append('{0}="{1}"'.format(k, config[k]))
-
-    # Build override parameters
-    options = []
-    for k in optional_parameters:
-        if k in config.keys():
-            options.append('{0}="{1}"'.format(k, config[k]))
-
-    opt = ' '.join(["--parameter-overrides"] + options) if options else ''
-
-    lines.append('TestStackName={}-test'.format(config['StackName']))
-    lines.append('PARAMETERS={0}'.format(opt))
-
-    return '\n'.join(lines) + '\n'
-
-
-def gen_task_section(config):
+def generate_task_section():
     return '''
-functions: $(FUNCTIONS)
+# Base Tasks -------------------------------------
+build: $(FUNCTIONS)
 
 clean:
 	rm $(FUNCTIONS)
@@ -195,27 +149,14 @@ def main():
     psr = argparse.ArgumentParser()
     psr.add_argument('-o', '--output', default="Makefile")
     psr.add_argument('-c', '--config', type=argparse.FileType('rt'))
-    psr.add_argument('-w', '--workdir', default=".")
-
-    psr.add_argument('--StackName')
-    psr.add_argument('--Region')
-    psr.add_argument('--CodeS3Bucket')
-    psr.add_argument('--CodeS3Prefix')
-    psr.add_argument('--LambdaRoleArn')
-    psr.add_argument('--StepFunctionRoleArn')
-    psr.add_argument('--ReviewerLambdaArn')
-    psr.add_argument('--InspectionDelay', type=int)
-    psr.add_argument('--ReviewDelay', type=int)
 
     args = psr.parse_args()
-    config = args2config(args)
 
     body = [
-        gen_header(args),
-        gen_parameters(config),
-        gen_task_section(config),
-        gen_functions_section(),
-        gen_test_functions_section(),
+        generate_header(),
+        generate_functions_section(),
+        generate_task_section(),
+        generate_test_functions_section(),
     ]
 
     makefile = '\n'.join(body)
