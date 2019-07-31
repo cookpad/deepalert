@@ -80,6 +80,10 @@ func StartInspector(handler InspectHandler, author, submitTopic, attributeTopic 
 				return errors.Wrapf(err, "Fail to handle task: %v", task)
 			}
 
+			if result == nil {
+				continue
+			}
+
 			// Sending entities
 			for _, entity := range result.Contents {
 				section := ReportSection{
