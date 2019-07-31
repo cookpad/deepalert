@@ -108,6 +108,9 @@ func (x *Attribute) Match(context AttrContext, attrType AttrType) bool {
 	if x.Type != attrType {
 		return false
 	}
+	if x.Context == nil {
+		return false
+	}
 
 	for _, ctx := range x.Context {
 		if ctx == context {
