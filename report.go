@@ -41,7 +41,7 @@ type Report struct {
 
 // ReportMaps is mapping Attributes and Hosts. Key of the maps are hash value of Attribute.
 type ReportMaps struct {
-	Attributes map[string]*Attribute
+	Attributes map[string]Attribute
 	Hosts      map[string][]ReportHost
 	Users      map[string][]ReportUser
 	Binaries   map[string][]ReportBinary
@@ -90,7 +90,7 @@ func (x *Report) IsPublished() bool { return x.Status == StatusPublished }
 // ExtractContents extract report contents (host/user/binary) and merge them to ReportMaps
 func (x *Report) ExtractContents() (*ReportMaps, error) {
 	maps := ReportMaps{
-		Attributes: make(map[string]*Attribute),
+		Attributes: make(map[string]Attribute),
 		Hosts:      make(map[string][]ReportHost),
 		Users:      make(map[string][]ReportUser),
 		Binaries:   make(map[string][]ReportBinary),
@@ -102,7 +102,7 @@ func (x *Report) ExtractContents() (*ReportMaps, error) {
 			return nil, err
 		}
 		hv := section.Attribute.Hash()
-		maps.Attributes[hv] = &section.Attribute
+		maps.Attributes[hv] = section.Attribute
 
 		switch section.Type {
 		case ContentUser:
