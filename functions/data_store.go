@@ -244,6 +244,12 @@ type attributeCache struct {
 // it returns false.
 func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr deepalert.Attribute) (bool, error) {
 	now := time.Now().UTC()
+	var ts time.Time
+	if attr.Timestamp != nil {
+		ts = *attr.Timestamp
+	} else {
+		ts = now
+	}
 
 	cache := attributeCache{
 		recordBase: recordBase{
@@ -251,7 +257,7 @@ func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr d
 			SKey:      attr.Hash(),
 			ExpiresAt: now.Add(time.Hour * 3),
 		},
-		Timestamp: now,
+		Timestamp: ts,
 		AttrKey:   attr.Key,
 		AttrType:  string(attr.Type),
 		AttrValue: attr.Value,
@@ -259,6 +265,7 @@ func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr d
 
 	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", now).Run(); err != nil {
 		if isConditionalCheckErr(err) {
+			// The attribute already exists
 			return false, nil
 		}
 
