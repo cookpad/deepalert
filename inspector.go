@@ -13,10 +13,18 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // InspectHandler is a function type of callback of inspector.
 type InspectHandler func(ctx context.Context, attr Attribute) (*TaskResult, error)
+
+var logger = logrus.New()
+
+func init() {
+	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetLevel(logrus.InfoLevel)
+}
 
 func publishSNS(topicArn string, data interface{}) error {
 	// arn
@@ -57,6 +65,8 @@ func publishSNS(topicArn string, data interface{}) error {
 // StartInspector is a wrapper of Inspector.
 func StartInspector(handler InspectHandler, author, submitTopic, attributeTopic string) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
+		logger.WithField("event", event).Info("Start inspector")
+
 		for _, record := range event.Records {
 			var task Task
 			msg := record.SNS.Message
@@ -64,6 +74,7 @@ func StartInspector(handler InspectHandler, author, submitTopic, attributeTopic 
 				return errors.Wrapf(err, "Fail to unmarshal task: %s", msg)
 			}
 
+			logger.WithField("task", task).Info("run handler")
 			result, err := handler(ctx, task.Attribute)
 			if err != nil {
 				return errors.Wrapf(err, "Fail to handle task: %v", task)
