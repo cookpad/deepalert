@@ -43,22 +43,26 @@ func TestDataStoreTakeReportID(t *testing.T) {
 
 	svc := f.NewDataStoreService(cfg.TableName, cfg.Region)
 
-	id1, isNew, err := svc.TakeReportID(alert1)
+	report1, err := svc.TakeReport(alert1)
 	require.NoError(t, err)
-	assert.True(t, isNew)
-	assert.NotEqual(t, "", id1)
+	assert.NotNil(t, report1)
+	assert.True(t, report1.IsNew())
 
-	id2, isNew, err := svc.TakeReportID(alert2)
+	report2, err := svc.TakeReport(alert2)
+	assert.NotNil(t, report2)
 	require.NoError(t, err)
-	assert.False(t, isNew)
+	assert.False(t, report2.IsNew())
+	assert.True(t, report2.IsMore())
+
 	// Another result of 1 hour later with same alertID should have same ReportID
-	assert.Equal(t, id1, id2)
+	assert.Equal(t, report1.ID, report2.ID)
 
-	id3, isNew, err := svc.TakeReportID(alert3)
+	report3, err := svc.TakeReport(alert3)
+	assert.NotNil(t, report3)
 	require.NoError(t, err)
-	assert.True(t, isNew)
+	assert.True(t, report3.IsNew())
 	// However result over 3 hour later with same alertID should have other ReportID
-	assert.NotEqual(t, id1, id3)
+	assert.NotEqual(t, report1.ID, report3.ID)
 }
 
 func TestDataStoreAlertCache(t *testing.T) {

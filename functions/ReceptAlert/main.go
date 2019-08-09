@@ -31,26 +31,27 @@ func mainHandler(args lambdaArguments) error {
 			return errors.Wrap(err, "Fail to unmarshal alert from AlertNotification")
 		}
 
-		reportID, isNew, err := svc.TakeReportID(alert)
+		f.Logger.WithField("alert", alert).Info("Taking report")
+		report, err := svc.TakeReport(alert)
 		if err != nil {
 			return errors.Wrapf(err, "Fail to take reportID for alert: %v", alert)
 		}
-		f.SetLoggerReportID(reportID)
+		if report == nil {
+			return errors.Wrapf(err, "Fatal error: no report with no error: %v", alert)
+		}
+
+		f.SetLoggerReportID(report.ID)
 
 		f.Logger.WithFields(logrus.Fields{
-			"ReportID": reportID,
-			"isNew":    isNew,
+			"ReportID": report.ID,
+			"Status":   report.Status,
 			"Error":    err,
 			"AlertID":  alert.AlertID(),
 		}).Info("ReportID has been retrieved")
 
-		report := deepalert.Report{
-			ID:     reportID,
-			Alerts: []deepalert.Alert{alert},
-			Status: deepalert.StatusNew,
-		}
+		report.Alerts = []deepalert.Alert{alert}
 
-		if err := svc.SaveAlertCache(reportID, alert); err != nil {
+		if err := svc.SaveAlertCache(report.ID, alert); err != nil {
 			return errors.Wrap(err, "Fail to save alert cache")
 		}
 
@@ -58,7 +59,7 @@ func mainHandler(args lambdaArguments) error {
 			return errors.Wrap(err, "Fail to execute InspectorDelayMachine")
 		}
 
-		if isNew {
+		if report.IsNew() {
 			if err := f.ExecDelayMachine(args.ReviewerDelayMachine, args.Region, &report); err != nil {
 				return errors.Wrap(err, "Fail to execute ReviewerDelayMachine")
 			}

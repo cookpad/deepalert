@@ -61,6 +61,7 @@ type recordBase struct {
 	PKey      string    `dynamo:"pk"`
 	SKey      string    `dynamo:"sk"`
 	ExpiresAt time.Time `dynamo:"expires_at"`
+	CreatedAt time.Time `dynamo:"created_at,omitempty"`
 }
 
 // -----------------------------------------------------------
@@ -82,17 +83,18 @@ func NewReportID() deepalert.ReportID {
 	return deepalert.ReportID(uuid.New().String())
 }
 
-func (x *DataStoreService) TakeReportID(alert deepalert.Alert) (deepalert.ReportID, bool, error) {
+func (x *DataStoreService) TakeReport(alert deepalert.Alert) (*deepalert.Report, error) {
 	fixedKey := "Fixed"
-	nullID := deepalert.ReportID("")
 	alertID := alert.AlertID()
 	ts := alert.Timestamp
+	now := time.Now().UTC()
 
 	cache := alertEntry{
 		recordBase: recordBase{
 			PKey:      "alertmap/" + alertID,
 			SKey:      fixedKey,
 			ExpiresAt: ts.Add(time.Hour * 3),
+			CreatedAt: now,
 		},
 		ReportID: NewReportID(),
 	}
@@ -101,16 +103,24 @@ func (x *DataStoreService) TakeReportID(alert deepalert.Alert) (deepalert.Report
 		if isConditionalCheckErr(err) {
 			var existedEntry alertEntry
 			if err := x.table.Get("pk", cache.PKey).Range("sk", dynamo.Equal, cache.SKey).One(&existedEntry); err != nil {
-				return nullID, false, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
+				return nil, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
 			}
 
-			return existedEntry.ReportID, false, nil
+			return &deepalert.Report{
+				ID:        existedEntry.ReportID,
+				Status:    deepalert.StatusMore,
+				CreatedAt: existedEntry.CreatedAt,
+			}, nil
 		}
 
-		return nullID, false, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
+		return nil, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
 	}
 
-	return cache.ReportID, true, nil
+	return &deepalert.Report{
+		ID:        cache.ReportID,
+		Status:    deepalert.StatusNew,
+		CreatedAt: now,
+	}, nil
 }
 
 // -----------------------------------------------------------

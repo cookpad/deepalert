@@ -18,6 +18,16 @@ const NullReportID ReportID = ""
 // as a reviwed report.
 type ReportStatus string
 
+const (
+	// StatusNew means the report is newly created with a new alert. "New alert" means
+	// "CacheTable does not have same alert key in expiration time slot (now 3h)"
+	StatusNew ReportStatus = "new"
+	// StatusMore means there is an existing report for a key of the alert.
+	StatusMore ReportStatus = "more"
+	// StatusPublished means the report has all alert data and inspection results.
+	StatusPublished ReportStatus = "published"
+)
+
 // ReportSeverity has three statuses: "safe", "unclassified", "urgent".
 // - "safe": Reviewer determined the alert has no or minimal risk.
 //           E.g. Win32 malware is detected in a host, but the host's OS is MacOS.
@@ -26,17 +36,28 @@ type ReportStatus string
 //             respond it immediately.
 type ReportSeverity string
 
+const (
+	// SevSafe : Reviewer determined the alert has no or minimal risk.
+	// E.g. Win32 malware is detected in a host, but the host's OS is MacOS.
+	SevSafe ReportSeverity = "safe"
+	// SevUnclassified : Reviewer has no suitable policy or can not determine risk.
+	SevUnclassified ReportSeverity = "unclassified"
+	// SevUrgent : The alert has a big impact and a security operator must respond it immediately.
+	SevUrgent ReportSeverity = "urgent"
+)
+
 // ReportContentType shows "user", "host" or "binary". It helps to parse
 // Content field in ReportContnet.
 type ReportContentType string
 
 // Report is a container to deliver contents and inspection results of the alert.
 type Report struct {
-	ID       ReportID        `json:"id"`
-	Alerts   []Alert         `json:"alerts"`
-	Sections []ReportSection `json:"sections"`
-	Result   ReportResult    `json:"result"`
-	Status   ReportStatus    `json:"status"`
+	ID        ReportID        `json:"id"`
+	Alerts    []Alert         `json:"alerts"`
+	Sections  []ReportSection `json:"sections"`
+	Result    ReportResult    `json:"result"`
+	Status    ReportStatus    `json:"status"`
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 // ReportMaps is mapping Attributes and Hosts. Key of the maps are hash value of Attribute.
@@ -71,18 +92,11 @@ type ReportResult struct {
 	Reason   string         `json:"reason"`
 }
 
-const (
-	// SevSafe : Reviewer determined the alert has no or minimal risk.
-	// E.g. Win32 malware is detected in a host, but the host's OS is MacOS.
-	SevSafe ReportSeverity = "safe"
-	// SevUnclassified : Reviewer has no suitable policy or can not determine risk.
-	SevUnclassified ReportSeverity = "unclassified"
-	// SevUrgent : The alert has a big impact and a security operator must respond it immediately.
-	SevUrgent ReportSeverity = "urgent"
-)
-
 // IsNew returns status of the report
 func (x *Report) IsNew() bool { return x.Status == StatusNew }
+
+// IsMore returns status of the report
+func (x *Report) IsMore() bool { return x.Status == StatusMore }
 
 // IsPublished returns status of the report
 func (x *Report) IsPublished() bool { return x.Status == StatusPublished }
@@ -130,11 +144,6 @@ func (x *Report) ExtractContents() (*ReportMaps, error) {
 
 	return &maps, nil
 }
-
-const (
-	StatusNew       ReportStatus = "new"
-	StatusPublished              = "published"
-)
 
 // -----------------------------------------------
 // Entities
