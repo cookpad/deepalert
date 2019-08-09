@@ -19,6 +19,7 @@ type lambdaArguments struct {
 	InspecterDelayMachine string
 	ReviewerDelayMachine  string
 	CacheTable            string
+	ReportNotification    string
 	Region                string
 }
 
@@ -64,6 +65,10 @@ func mainHandler(args lambdaArguments) error {
 				return errors.Wrap(err, "Fail to execute ReviewerDelayMachine")
 			}
 		}
+
+		if err := f.PublishSNS(args.ReportNotification, args.Region, report); err != nil {
+			return errors.Wrap(err, "Fail to publish report")
+		}
 	}
 
 	return nil
@@ -77,6 +82,7 @@ func handleRequest(ctx context.Context, event events.SNSEvent) error {
 		Event:                 event,
 		InspecterDelayMachine: os.Getenv("DISPATCH_MACHINE"),
 		ReviewerDelayMachine:  os.Getenv("REVIEW_MACHINE"),
+		ReportNotification:    os.Getenv("REPORT_NOTIFICATION"),
 		CacheTable:            os.Getenv("CACHE_TABLE"),
 		Region:                os.Getenv("AWS_REGION"),
 	}
