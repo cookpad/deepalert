@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/m-mizutani/deepalert"
@@ -158,9 +159,26 @@ func (x *cloudWatchLogsHook) Fire(entry *logrus.Entry) error {
 	if x.nextSequenceToken != nil {
 		input.SequenceToken = x.nextSequenceToken
 	} else {
-		input.SequenceToken, err = createCloudWatchLogsStream(x.cwlogs, x.logGroup, x.logStream())
-		if err != nil {
-			return err
+		token, cwErr := createCloudWatchLogsStream(x.cwlogs, x.logGroup, x.logStream())
+
+		if cwErr != nil {
+			switch awsErr := cwErr.(type) {
+			case awserr.Error:
+				if awsErr.Code() != "ResourceAlreadyExistsException" {
+					return err
+				}
+
+				token, err := getCloudWatchLogsNextToken(x.cwlogs, x.logGroup, x.logStream())
+				if err != nil {
+					return err
+				}
+				input.SequenceToken = token
+
+			default:
+				return errors.Wrap(err, "Fail go crete CW Logs stream")
+			}
+		} else {
+			input.SequenceToken = token
 		}
 	}
 
