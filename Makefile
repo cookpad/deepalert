@@ -55,7 +55,7 @@ clean:
 $(TEMPLATE_FILE): $(STACK_CONFIG) $(TEMPLATE_JSONNET)
 	jsonnet -J $(CODE_DIR) $(STACK_CONFIG) -o $(TEMPLATE_FILE)
 
-$(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS)
+$(SAM_FILE): $(TEMPLATE_FILE) $(BINPATH) $(DEPLOY_CONFIG)
 	aws cloudformation package \
 		--template-file $(TEMPLATE_FILE) \
 		--s3-bucket $(CodeS3Bucket) \
