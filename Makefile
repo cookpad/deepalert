@@ -14,8 +14,10 @@ TEST_TEMPLATE_FILE=teststack_template.json
 TEST_SAM_FILE=teststack_sam.yml
 TEST_OUTPUT_FILE=$(CWD)/teststack_output.json
 
-COMMON=$(CODE_DIR)/./task.go $(CODE_DIR)/./inspector.go $(CODE_DIR)/./alert.go $(CODE_DIR)/./report.go $(CODE_DIR)/./emitter.go $(CODE_DIR)/./functions/data_store.go $(CODE_DIR)/./functions/logger.go $(CODE_DIR)/./functions/aws_utils.go $(CODE_DIR)/./functions/init.go
+COMMON=$(CODE_DIR)/task.go $(CODE_DIR)/inspector.go $(CODE_DIR)/alert.go $(CODE_DIR)/report.go $(CODE_DIR)/emitter.go $(CODE_DIR)/functions/data_store.go $(CODE_DIR)/functions/logger.go $(CODE_DIR)/functions/aws_utils.go $(CODE_DIR)/functions/init.go
+
 FUNCTIONS=build/DummyReviewer build/DispatchInspection build/CompileReport build/ReceptAlert build/ErrorHandler build/StepFunctionError build/PublishReport build/SubmitContent build/FeedbackAttribute
+
 TEST_FUNCTIONS=build/TestPublisher build/TestInspector
 TEST_UTILS=$(CODE_DIR)/test/*.go
 
@@ -24,6 +26,12 @@ TestStackName=$(shell jsonnet $(DEPLOY_CONFIG) | jq .TestStackName)
 Region=$(shell jsonnet $(DEPLOY_CONFIG) | jq .Region)
 CodeS3Bucket=$(shell jsonnet $(DEPLOY_CONFIG) | jq .CodeS3Bucket)
 CodeS3Prefix=$(shell jsonnet $(DEPLOY_CONFIG) | jq .CodeS3Prefix)
+
+ifdef TAGS
+TAGOPT=--tags $(TAGS)
+else
+TAGOPT=
+endif
 
 # Functions ------------------------
 build/DummyReviewer: $(CODE_DIR)/functions/DummyReviewer/*.go $(COMMON)
@@ -55,7 +63,7 @@ clean:
 $(TEMPLATE_FILE): $(STACK_CONFIG) $(TEMPLATE_JSONNET)
 	jsonnet -J $(CODE_DIR) $(STACK_CONFIG) -o $(TEMPLATE_FILE)
 
-$(SAM_FILE): $(TEMPLATE_FILE) $(BINPATH) $(DEPLOY_CONFIG)
+$(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS) $(DEPLOY_CONFIG)
 	aws cloudformation package \
 		--template-file $(TEMPLATE_FILE) \
 		--s3-bucket $(CodeS3Bucket) \
@@ -68,6 +76,7 @@ $(OUTPUT_FILE): $(SAM_FILE)
 		--template-file $(SAM_FILE) \
 		--stack-name $(StackName) \
 		--no-fail-on-empty-changeset \
+		$(TAGOPT) \
 		--capabilities CAPABILITY_IAM $(PARAMETERS)
 	aws cloudformation describe-stack-resources --stack-name $(StackName) > $(OUTPUT_FILE)
 
@@ -92,6 +101,7 @@ $(TEST_OUTPUT_FILE): $(TEST_SAM_FILE)
 		--template-file $(TEST_SAM_FILE) \
 		--stack-name $(TestStackName) \
 		--capabilities CAPABILITY_IAM \
+		$(TAGOPT) \
 		--no-fail-on-empty-changeset
 	aws cloudformation describe-stack-resources --region $(Region) \
         --stack-name $(TestStackName) > $(TEST_OUTPUT_FILE)
