@@ -337,10 +337,10 @@
           Handler: 'SubmitContent',
           Role: LambdaRole,
           Events: {
-            ContentNotification: {
-              Type: 'SNS',
+            ContentQueue: {
+              Type: 'SQS',
               Properties: {
-                Topic: { Ref: 'ContentNotification' },
+                Queue: { 'Fn::GetAtt': 'ContentQueue.Arn' },
               },
             },
           },
@@ -353,10 +353,10 @@
           Handler: 'FeedbackAttribute',
           Role: LambdaRole,
           Events: {
-            AttributeNotification: {
-              Type: 'SNS',
+            AttirbuteQueue: {
+              Type: 'SQS',
               Properties: {
-                Topic: { Ref: 'AttributeNotification' },
+                Queue: { 'Fn::GetAtt': 'AttributeQueue.Arn' },
               },
             },
           },
@@ -438,6 +438,16 @@
         Type: 'AWS::SNS::Topic',
       },
 
+      ContentQueue: {
+        Type: 'AWS::SQS::Queue',
+        Properties: {
+          VisibilityTimeout: ReviewDelay - InspectionDelay,
+        },
+      },
+      AttributeQueue: {
+        Type: 'AWS::SQS::Queue',
+      },
+
       // CloudWatch Logs LogGroup
       LogStore: {
         Type: 'AWS::Logs::LogGroup',
@@ -461,17 +471,17 @@
         Value: { Ref: 'TaskNotification' },
         Export: { Name: { 'Fn::Sub': '${AWS::StackName}-TaskTopic' } },
       },
-      ContentTopic: {
-        Value: { Ref: 'ContentNotification' },
-        Export: { Name: { 'Fn::Sub': '${AWS::StackName}-ContentTopic' } },
-      },
-      AttributeTopic: {
-        Value: { Ref: 'AttributeNotification' },
-        Export: { Name: { 'Fn::Sub': '${AWS::StackName}-AttributeTopic' } },
-      },
       ReportTopic: {
         Value: { Ref: 'ReportNotification' },
         Export: { Name: { 'Fn::Sub': '${AWS::StackName}-ReportTopic' } },
+      },
+      ContentQueue: {
+        Value: { Ref: 'ContentQueue' },
+        Export: { Name: { 'Fn::Sub': '${AWS::StackName}-ContentQueue' } },
+      },
+      AttributeQueue: {
+        Value: { Ref: 'AttributeQueue' },
+        Export: { Name: { 'Fn::Sub': '${AWS::StackName}-AttributeQueue' } },
       },
     },
   },

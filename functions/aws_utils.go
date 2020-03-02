@@ -45,6 +45,14 @@ func SNStoMessages(snsEvent events.SNSEvent) [][]byte {
 	return messages
 }
 
+func SQStoMessage(sqsEvent events.SQSEvent) [][]byte {
+	var messages [][]byte
+	for _, record := range sqsEvent.Records {
+		messages = append(messages, []byte(record.Body))
+	}
+	return messages
+}
+
 func ExecDelayMachine(stateMachineARN, region string, data interface{}) error {
 	raw, err := json.Marshal(data)
 	if err != nil {

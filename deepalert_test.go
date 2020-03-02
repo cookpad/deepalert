@@ -17,6 +17,8 @@ import (
 )
 
 func TestNormalWorkFlow(t *testing.T) {
+	t.Skip()
+
 	cfg := test.LoadTestConfig()
 	alertKey := uuid.New().String()
 
@@ -135,6 +137,7 @@ func TestNormalWorkFlow(t *testing.T) {
 }
 
 func TestNormalAggregation(t *testing.T) {
+	t.Skip()
 	cfg := test.LoadTestConfig()
 	alertKey := uuid.New().String()
 	attr1 := uuid.New().String()

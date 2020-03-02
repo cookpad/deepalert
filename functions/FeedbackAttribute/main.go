@@ -15,7 +15,7 @@ import (
 )
 
 type lambdaArguments struct {
-	Event            events.SNSEvent
+	Event            events.SQSEvent
 	TaskNotification string
 	CacheTable       string
 	Region           string
@@ -24,7 +24,7 @@ type lambdaArguments struct {
 func mainHandler(args lambdaArguments) error {
 	svc := f.NewDataStoreService(args.CacheTable, args.Region)
 
-	for _, msg := range f.SNStoMessages(args.Event) {
+	for _, msg := range f.SQStoMessage(args.Event) {
 		var reportedAttr deepalert.ReportAttribute
 		if err := json.Unmarshal(msg, &reportedAttr); err != nil {
 			return errors.Wrapf(err, "Fail to unmarshal ReportAttribute from AttributeaNotification: %s", string(msg))
@@ -58,7 +58,7 @@ func mainHandler(args lambdaArguments) error {
 	return nil
 }
 
-func handleRequest(ctx context.Context, event events.SNSEvent) error {
+func handleRequest(ctx context.Context, event events.SQSEvent) error {
 	f.SetLoggerContext(ctx, deepalert.ReportID(""))
 	f.Logger.WithField("event", event).Info("Start")
 
