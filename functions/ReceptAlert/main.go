@@ -16,7 +16,7 @@ import (
 
 type lambdaArguments struct {
 	Event                 events.SNSEvent
-	InspecterDelayMachine string
+	InspectorDelayMachine string
 	ReviewerDelayMachine  string
 	CacheTable            string
 	ReportNotification    string
@@ -56,7 +56,7 @@ func mainHandler(args lambdaArguments) error {
 			return errors.Wrap(err, "Fail to save alert cache")
 		}
 
-		if err := f.ExecDelayMachine(args.InspecterDelayMachine, args.Region, &report); err != nil {
+		if err := f.ExecDelayMachine(args.InspectorDelayMachine, args.Region, &report); err != nil {
 			return errors.Wrap(err, "Fail to execute InspectorDelayMachine")
 		}
 
@@ -80,7 +80,7 @@ func handleRequest(ctx context.Context, event events.SNSEvent) error {
 
 	args := lambdaArguments{
 		Event:                 event,
-		InspecterDelayMachine: os.Getenv("DISPATCH_MACHINE"),
+		InspectorDelayMachine: os.Getenv("INSPECTOR_MACHINE"),
 		ReviewerDelayMachine:  os.Getenv("REVIEW_MACHINE"),
 		ReportNotification:    os.Getenv("REPORT_NOTIFICATION"),
 		CacheTable:            os.Getenv("CACHE_TABLE"),

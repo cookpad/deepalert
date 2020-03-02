@@ -7,15 +7,9 @@
     ReviewDelay=120,
     LogGroupNamePrefix='/DeepAlert/'
   ):: {
-    local LambdaRole = (
-      if LambdaRoleArn != '' then LambdaRoleArn else { 'Fn::GetAtt': 'LambdaRole.Arn' }
-    ),
-    local StepFunctionRole = (
-      if StepFunctionRoleArn != '' then StepFunctionRoleArn else { 'Fn::GetAtt': 'StepFunctionRole.Arn' }
-    ),
-    local ReviewerLambda = (
-      if ReviewerLambdaArn != '' then ReviewerLambdaArn else { 'Fn::GetAtt': 'DummyReviewer.Arn' }
-    ),
+    local LambdaRole = (if LambdaRoleArn != '' then LambdaRoleArn else { 'Fn::GetAtt': 'LambdaRole.Arn' }),
+    local StepFunctionRole = (if StepFunctionRoleArn != '' then StepFunctionRoleArn else { 'Fn::GetAtt': 'StepFunctionRole.Arn' }),
+    local ReviewerLambda = (if ReviewerLambdaArn != '' then ReviewerLambdaArn else { 'Fn::GetAtt': 'DummyReviewer.Arn' }),
 
     local LambdaRoleTemplate = {
       LambdaRole: {
@@ -154,6 +148,77 @@
       },
     },
 
+    local stateErrorCatch = [
+      {
+        ErrorEquals: ['States.ALL'],
+        ResultPath: '$.error',
+        Next: 'ErrorHandler',
+      },
+    ],
+
+    local inspectorStateMachine = {
+      StartAt: 'Wait1',
+      States: {
+        Wait1: {
+          Type: 'Wait',
+          Next: 'Inspection',
+          Seconds: InspectionDelay,
+        },
+        Inspection: {
+          Type: 'Task',
+          Resource: '${dispatcherArn}',
+          Catch: stateErrorCatch,
+          End: true,
+        },
+        ErrorHandler: {
+          Type: 'Task',
+          Resource: '${errorHandlerArn}',
+          End: true,
+        },
+      },
+    },
+
+    local reviewerStateMachine = {
+      StartAt: 'Wait2',
+      States: {
+        Wait2: {
+          Type: 'Wait',
+          Next: 'Compile',
+          Seconds: ReviewDelay,
+        },
+        Compile: {
+          Type: 'Task',
+          Resource: '${compilerArn}',
+          Catch: stateErrorCatch,
+          Next: 'Review',
+        },
+        Review: {
+          Type: 'Task',
+          Resource: ReviewerLambda,
+          Catch: stateErrorCatch,
+          ResultPath: '$.result',
+          Next: 'Publish',
+        },
+        ErrorHandler: {
+          Type: 'Task',
+          Resource: '${errorHandlerArn}',
+          End: true,
+        },
+        Publish: {
+          Type: 'Task',
+          Resource: '${publisherArn}',
+          End: true,
+        },
+      },
+    },
+
+    local stateMachineMapping = {
+      dispatcherArn: { 'Fn::GetAtt': 'DispatchInspection.Arn' },
+      compilerArn: { 'Fn::GetAtt': 'CompileReport.Arn' },
+      publisherArn: { 'Fn::GetAtt': 'PublishReport.Arn' },
+      errorHandlerArn: { 'Fn::GetAtt': 'StepFunctionError.Arn' },
+    },
+
     AWSTemplateFormatVersion: '2010-09-09',
     Description: 'DeepAlert https://github.com/m-mizutani/deepalert',
     Transform: 'AWS::Serverless-2016-10-31',
@@ -216,51 +281,25 @@
       },
 
       // StepFunctions
-      DelayDispatcher: {
+      InspectionMachine: {
         Type: 'AWS::StepFunctions::StateMachine',
         Properties: {
-          StateMachineName: {
-            'Fn::Sub': '${AWS::StackName}-delay-dispatcher',
-          },
+          StateMachineName: { 'Fn::Sub': '${AWS::StackName}-inspection-machine' },
           RoleArn: StepFunctionRole,
-          DefinitionString: {
-            'Fn::Sub': [
-              '{"StartAt":"Waiting","States":{"Waiting":{"Type":"Wait","Next":"Exec","Seconds":' + InspectionDelay + '},"Exec":{"Type":"Task","Resource":"${lambdaArn}","End":true}}}',
-              {
-                lambdaArn: {
-                  'Fn::GetAtt': 'DispatchInspection.Arn',
-                },
-              },
-            ],
-          },
+          DefinitionString: { 'Fn::Sub': [std.toString(inspectorStateMachine), stateMachineMapping] },
         },
       },
-      ReviewInvoker: {
+
+      ReviewMachine: {
         Type: 'AWS::StepFunctions::StateMachine',
         Properties: {
-          StateMachineName: {
-            'Fn::Sub': '${AWS::StackName}-review-invoker',
-          },
+          StateMachineName: { 'Fn::Sub': '${AWS::StackName}-review-machine' },
           RoleArn: StepFunctionRole,
-          DefinitionString: {
-            'Fn::Sub': [
-              '{"StartAt":"Wating","States":{"Wating":{"Type":"Wait","Next":"Compiler","Seconds":' + ReviewDelay + '},"Compiler":{"Type":"Task","Resource":"${compilerArn}","Catch":[{"ErrorEquals":["States.ALL"],"ResultPath":"$.error","Next":"ErrorHandler"}],"Next":"CheckPolicy"},"CheckPolicy":{"Type":"Task","Resource":"${policyLambdaArn}","Catch":[{"ErrorEquals":["States.ALL"],"ResultPath":"$.error","Next":"ErrorHandler"}],"ResultPath":"$.result","Next":"Publish"},"ErrorHandler":{"Type":"Task","Resource":"${errorHandlerArn}","End":true},"Publish":{"Type":"Task","Resource":"${publisherArn}","End":true}}}',
-              {
-                policyLambdaArn: ReviewerLambda,
-                compilerArn: {
-                  'Fn::GetAtt': 'CompileReport.Arn',
-                },
-                publisherArn: {
-                  'Fn::GetAtt': 'PublishReport.Arn',
-                },
-                errorHandlerArn: {
-                  'Fn::GetAtt': 'StepFunctionError.Arn',
-                },
-              },
-            ],
-          },
+          DefinitionString: { 'Fn::Sub': [std.toString(reviewerStateMachine), stateMachineMapping] },
         },
       },
+
+      // Lambda Functions
       ReceptAlert: {
         Type: 'AWS::Serverless::Function',
         Properties: {
@@ -269,8 +308,8 @@
           Role: LambdaRole,
           Environment: {
             Variables: {
-              DISPATCH_MACHINE: { Ref: 'DelayDispatcher' },
-              REVIEW_MACHINE: { Ref: 'ReviewInvoker' },
+              INSPECTOR_MACHINE: { Ref: 'InspectionMachine' },
+              REVIEW_MACHINE: { Ref: 'ReviewMachine' },
             },
           },
           Events: {
