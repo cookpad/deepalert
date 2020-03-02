@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/functions"
+	f "github.com/m-mizutani/deepalert/internal"
 )
 
 func handleRequest(ctx context.Context, event interface{}) (deepalert.ReportResult, error) {

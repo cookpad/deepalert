@@ -14,7 +14,7 @@ TEST_TEMPLATE_FILE=teststack_template.json
 TEST_SAM_FILE=teststack_sam.yml
 TEST_OUTPUT_FILE=$(CWD)/teststack_output.json
 
-COMMON=$(CODE_DIR)/task.go $(CODE_DIR)/inspector.go $(CODE_DIR)/alert.go $(CODE_DIR)/report.go $(CODE_DIR)/emitter.go $(CODE_DIR)/functions/data_store.go $(CODE_DIR)/functions/logger.go $(CODE_DIR)/functions/aws_utils.go $(CODE_DIR)/functions/init.go
+COMMON=$(CODE_DIR)/task.go $(CODE_DIR)/inspector.go $(CODE_DIR)/alert.go $(CODE_DIR)/report.go $(CODE_DIR)/emitter.go $(CODE_DIR)/internal/data_store.go $(CODE_DIR)/internal/logger.go $(CODE_DIR)/internal/aws_utils.go $(CODE_DIR)/internal/init.go
 
 FUNCTIONS=build/DummyReviewer build/DispatchInspection build/CompileReport build/ReceptAlert build/ErrorHandler build/StepFunctionError build/PublishReport build/SubmitContent build/FeedbackAttribute
 
@@ -34,24 +34,24 @@ TAGOPT=
 endif
 
 # Functions ------------------------
-build/DummyReviewer: $(CODE_DIR)/functions/DummyReviewer/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/DummyReviewer ./functions/DummyReviewer && cd $(CWD)
-build/DispatchInspection: $(CODE_DIR)/functions/DispatchInspection/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/DispatchInspection ./functions/DispatchInspection && cd $(CWD)
-build/CompileReport: $(CODE_DIR)/functions/CompileReport/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/CompileReport ./functions/CompileReport && cd $(CWD)
-build/ReceptAlert: $(CODE_DIR)/functions/ReceptAlert/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/ReceptAlert ./functions/ReceptAlert && cd $(CWD)
-build/ErrorHandler: $(CODE_DIR)/functions/ErrorHandler/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/ErrorHandler ./functions/ErrorHandler && cd $(CWD)
-build/StepFunctionError: $(CODE_DIR)/functions/StepFunctionError/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/StepFunctionError ./functions/StepFunctionError && cd $(CWD)
-build/PublishReport: $(CODE_DIR)/functions/PublishReport/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/PublishReport ./functions/PublishReport && cd $(CWD)
-build/SubmitContent: $(CODE_DIR)/functions/SubmitContent/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/SubmitContent ./functions/SubmitContent && cd $(CWD)
-build/FeedbackAttribute: $(CODE_DIR)/functions/FeedbackAttribute/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/FeedbackAttribute ./functions/FeedbackAttribute && cd $(CWD)
+build/DummyReviewer: $(CODE_DIR)/lambda/DummyReviewer/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/DummyReviewer ./lambda/DummyReviewer && cd $(CWD)
+build/DispatchInspection: $(CODE_DIR)/lambda/DispatchInspection/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/DispatchInspection ./lambda/DispatchInspection && cd $(CWD)
+build/CompileReport: $(CODE_DIR)/lambda/CompileReport/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/CompileReport ./lambda/CompileReport && cd $(CWD)
+build/ReceptAlert: $(CODE_DIR)/lambda/ReceptAlert/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/ReceptAlert ./lambda/ReceptAlert && cd $(CWD)
+build/ErrorHandler: $(CODE_DIR)/lambda/ErrorHandler/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/ErrorHandler ./lambda/ErrorHandler && cd $(CWD)
+build/StepFunctionError: $(CODE_DIR)/lambda/StepFunctionError/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/StepFunctionError ./lambda/StepFunctionError && cd $(CWD)
+build/PublishReport: $(CODE_DIR)/lambda/PublishReport/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/PublishReport ./lambda/PublishReport && cd $(CWD)
+build/SubmitContent: $(CODE_DIR)/lambda/SubmitContent/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/SubmitContent ./lambda/SubmitContent && cd $(CWD)
+build/FeedbackAttribute: $(CODE_DIR)/lambda/FeedbackAttribute/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/FeedbackAttribute ./lambda/FeedbackAttribute && cd $(CWD)
 
 
 # Base Tasks -------------------------------------
@@ -83,7 +83,7 @@ $(OUTPUT_FILE): $(SAM_FILE)
 deploy: $(OUTPUT_FILE)
 
 test: $(TEST_OUTPUT_FILE) $(TEST_UTILS)
-	cd $(CODE_DIR) && env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v -count=1 . ./functions && cd $(CWD)
+	cd $(CODE_DIR) && env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v -count=1 . ./internal && cd $(CWD)
 
 $(TEST_TEMPLATE_FILE): $(TEST_STACK_CONFIG) $(TEMPLATE_JSONNET)
 	jsonnet -J $(CODE_DIR) $(TEST_STACK_CONFIG) -o $(TEST_TEMPLATE_FILE)

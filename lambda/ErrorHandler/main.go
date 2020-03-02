@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/functions"
+	f "github.com/m-mizutani/deepalert/internal"
 )
 
 func handleRequest(ctx context.Context, event events.SNSEvent) error {

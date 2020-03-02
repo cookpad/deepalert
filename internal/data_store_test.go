@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	da "github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/functions"
+	f "github.com/m-mizutani/deepalert/internal"
 	"github.com/m-mizutani/deepalert/test"
 )
 
