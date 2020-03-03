@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
@@ -59,7 +58,7 @@ func publishSNS(topicArn string, data interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "Fail to publish report")
 	}
-	log.Printf("Published SNS %v to %s: %v", data, topicArn, resp)
+	logger.Debugf("Published SNS %v to %s: %v", data, topicArn, resp)
 
 	return nil
 }
@@ -114,6 +113,16 @@ func sendSQS(msg interface{}, targetURL string) error {
 	return nil
 }
 
+type reportIDKey struct{}
+
+var contextKey = &reportIDKey{}
+
+// ReportIDFromCtx extracts ReportID from context. The function is available in handler called by StartInspector
+func ReportIDFromCtx(ctx context.Context) (*ReportID, bool) {
+	lc, ok := ctx.Value(contextKey).(*ReportID)
+	return lc, ok
+}
+
 // StartInspector is a wrapper of Inspector.
 func StartInspector(handler InspectHandler, author, attrQueueURL, contentQueueURL string) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
@@ -127,7 +136,9 @@ func StartInspector(handler InspectHandler, author, attrQueueURL, contentQueueUR
 			}
 
 			logger.WithField("task", task).Info("run handler")
-			result, err := handler(ctx, task.Attribute)
+			newCtx := context.WithValue(ctx, contextKey, &task.ReportID)
+
+			result, err := handler(newCtx, task.Attribute)
 			if err != nil {
 				return errors.Wrapf(err, "Fail to handle task: %v", task)
 			}

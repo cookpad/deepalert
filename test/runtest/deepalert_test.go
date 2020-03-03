@@ -1,21 +1,6 @@
 package deepalert_test
 
-import (
-	"encoding/json"
-	"fmt"
-	"testing"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/guregu/dynamo"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/m-mizutani/deepalert"
-	"github.com/m-mizutani/deepalert/test"
-	gp "github.com/m-mizutani/generalprobe"
-)
-
+/*
 func TestNormalWorkFlow(t *testing.T) {
 	t.Skip()
 
@@ -199,3 +184,4 @@ func TestNormalAggregation(t *testing.T) {
 	require.NoError(t, err)
 
 }
+*/

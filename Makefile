@@ -81,36 +81,3 @@ $(OUTPUT_FILE): $(SAM_FILE)
 	aws cloudformation describe-stack-resources --stack-name $(StackName) > $(OUTPUT_FILE)
 
 deploy: $(OUTPUT_FILE)
-
-test: $(TEST_OUTPUT_FILE) $(TEST_UTILS)
-	cd $(CODE_DIR) && env DEEPALERT_STACK_OUTPUT=$(OUTPUT_FILE) DEEPALERT_TEST_STACK_OUTPUT=$(TEST_OUTPUT_FILE) go test -v -count=1 . ./internal && cd $(CWD)
-
-$(TEST_TEMPLATE_FILE): $(TEST_STACK_CONFIG) $(TEMPLATE_JSONNET)
-	jsonnet -J $(CODE_DIR) $(TEST_STACK_CONFIG) -o $(TEST_TEMPLATE_FILE)
-
-$(TEST_SAM_FILE): $(TEST_TEMPLATE_FILE) $(TEST_FUNCTIONS) $(OUTPUT_FILE)
-	aws cloudformation package \
-		--template-file $(TEST_TEMPLATE_FILE) \
-		--s3-bucket $(CodeS3Bucket) \
-		--s3-prefix $(CodeS3Prefix) \
-		--output-template-file $(TEST_SAM_FILE)
-
-$(TEST_OUTPUT_FILE): $(TEST_SAM_FILE)
-	aws cloudformation deploy \
-		--region $(Region) \
-		--template-file $(TEST_SAM_FILE) \
-		--stack-name $(TestStackName) \
-		--capabilities CAPABILITY_IAM \
-		$(TAGOPT) \
-		--no-fail-on-empty-changeset
-	aws cloudformation describe-stack-resources --region $(Region) \
-        --stack-name $(TestStackName) > $(TEST_OUTPUT_FILE)
-
-setuptest: $(TEST_OUTPUT_FILE)
-
-
-# TestStack Functions ------------------------
-build/TestPublisher: $(CODE_DIR)/test/TestPublisher/*.go
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/TestPublisher ./test/TestPublisher && cd $(CWD)
-build/TestInspector: $(CODE_DIR)/test/TestInspector/*.go
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CWD)/build/TestInspector ./test/TestInspector && cd $(CWD)

@@ -1,19 +1,6 @@
 package functions_test
 
-import (
-	"testing"
-	"time"
-
-	// "github.com/google/uuid"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	da "github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/internal"
-	"github.com/m-mizutani/deepalert/test"
-)
-
+/*
 func TestDataStoreTakeReportID(t *testing.T) {
 	cfg := test.LoadTestConfig()
 	ts := time.Now().UTC()
@@ -158,3 +145,4 @@ func TestDataStoreReportContent(t *testing.T) {
 	assert.Equal(t, rID1, sections[0].ReportID)
 	assert.Equal(t, rID1, sections[1].ReportID)
 }
+*/
