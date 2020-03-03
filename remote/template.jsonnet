@@ -1,10 +1,10 @@
-local settings = import 'settings.json';
+local config = import 'config.json';
 
 {
-  local TaskTopic = { 'Fn::ImportValue': settings.DeepAlertStackName + '-TaskTopic' },
-  local ContentQueue = { 'Fn::ImportValue': settings.DeepAlertStackName + '-ContentQueue' },
-  local AttributeQueue = { 'Fn::ImportValue': settings.DeepAlertStackName + '-AttributeQueue' },
-  local ReportTopic = { 'Fn::ImportValue': settings.DeepAlertStackName + '-ReportTopic' },
+  local TaskTopic = { 'Fn::ImportValue': config.DeepAlertStackName + '-TaskTopic' },
+  local ContentQueue = { 'Fn::ImportValue': config.DeepAlertStackName + '-ContentQueue' },
+  local AttributeQueue = { 'Fn::ImportValue': config.DeepAlertStackName + '-AttributeQueue' },
+  local ReportTopic = { 'Fn::ImportValue': config.DeepAlertStackName + '-ReportTopic' },
 
   AWSTemplateFormatVersion: '2010-09-09',
   Description: 'DeepAlert TestStack https://github.com/m-mizutani/deepalert/test',
@@ -52,7 +52,7 @@ local settings = import 'settings.json';
         Runtime: 'go1.x',
         Timeout: 30,
         MemorySize: 128,
-        Role: settings.LambdaRoleArn,
+        Role: config.LambdaRoleArn,
         Environment: {
           Variables: {
             RESULT_TABLE: { Ref: 'ResultTable' },
@@ -77,7 +77,7 @@ local settings = import 'settings.json';
         Runtime: 'go1.x',
         Timeout: 30,
         MemorySize: 128,
-        Role: settings.LambdaRoleArn,
+        Role: config.LambdaRoleArn,
         Environment: {
           Variables: {
             RESULT_TABLE: { Ref: 'ResultTable' },

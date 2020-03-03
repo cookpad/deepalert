@@ -1,10 +1,52 @@
-package deepalert_test
+package remote_test
 
-/*
-func TestNormalWorkFlow(t *testing.T) {
-	t.Skip()
+import (
+	"encoding/json"
+	"testing"
+	"time"
 
-	cfg := test.LoadTestConfig()
+	"github.com/google/uuid"
+	"github.com/guregu/dynamo"
+	"github.com/m-mizutani/deepalert"
+	gp "github.com/m-mizutani/generalprobe"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func getReportID(alertID string, table dynamo.Table) (*string, error) {
+	var entry struct {
+		ReportID string `dynamo:"report_id"`
+	}
+
+	pk := "alertmap/" + alertID
+	err := table.Get("pk", pk).Range("sk", dynamo.Equal, "Fixed").One(&entry)
+	if err != nil {
+		return nil, nil
+	}
+
+	reportID := entry.ReportID
+	logger.WithField("ReportID", reportID).Debug("Got reportID")
+
+	return &reportID, nil
+}
+
+type attrCache struct {
+	Key   string `dynamo:"attr_key"`
+	Value string `dynamo:"attr_value"`
+	Type  string `dynamo:"attr_type"`
+}
+type attrCaches []attrCache
+
+func (x attrCaches) lookup(key string) *attrCache {
+	for i := 0; i < len(x); i++ {
+		if x[i].Key == key {
+			return &x[i]
+		}
+	}
+	return nil
+}
+
+func TestNormalWorkflow(t *testing.T) {
 	alertKey := uuid.New().String()
 
 	alert := deepalert.Alert{
@@ -23,51 +65,25 @@ func TestNormalWorkFlow(t *testing.T) {
 		},
 	}
 	alertMsg, err := json.Marshal(alert)
-	require.NoError(t, err)
 
 	var reportID string
-	gp.SetLoggerTraceLevel()
 
 	playbook := []gp.Scene{
 		// Send request
 		gp.PublishSnsMessage(gp.LogicalID("AlertNotification"), alertMsg),
-		gp.GetLambdaLogs(gp.LogicalID("ReceptAlert"), func(log gp.CloudWatchLog) bool {
-			assert.Contains(t, log, alertKey)
-			return true
-		}).Filter(alertKey),
 		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
-			var entry struct {
-				ReportID string `dynamo:"report_id"`
-			}
-
-			alertID := "alertmap/" + alert.AlertID()
-			err := table.Get("pk", alertID).Range("sk", dynamo.Equal, "Fixed").One(&entry)
-			if err != nil {
+			id, err := getReportID(alert.AlertID(), table)
+			require.NoError(t, err)
+			if id == nil {
 				return false
 			}
-			require.NotEmpty(t, entry.ReportID)
-			reportID = entry.ReportID
-			fmt.Println("reportID:", reportID)
+
+			reportID = *id
+			logger.WithField("ReportID", reportID).Debug("Got reportID")
 			return true
 		}),
-		gp.GetLambdaLogs(gp.LogicalID("DispatchInspection"), func(log gp.CloudWatchLog) bool {
-			return log.Contains(reportID)
-		}),
-		gp.GetLambdaLogs(gp.LogicalID("SubmitContent"), func(log gp.CloudWatchLog) bool {
-			return log.Contains(reportID)
-		}),
-		gp.GetLambdaLogs(gp.LogicalID("FeedbackAttribute"), func(log gp.CloudWatchLog) bool {
-			return log.Contains(reportID)
-		}),
-		gp.GetLambdaLogs(gp.LogicalID("FeedbackAttribute"), func(log gp.CloudWatchLog) bool {
-			return log.Contains("mizutani")
-		}),
 		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
-			var caches []struct {
-				Key   string `dynamo:"attr_key"`
-				Value string `dynamo:"attr_value"`
-				Type  string `dynamo:"attr_type"`
-			}
+			var caches attrCaches
 
 			pk := "attribute/" + reportID
 			if err := table.Get("pk", pk).All(&caches); err != nil {
@@ -109,21 +125,28 @@ func TestNormalWorkFlow(t *testing.T) {
 
 		gp.Pause(10),
 
-		gp.GetLambdaLogs(gp.LogicalID("CompileReport"), func(log gp.CloudWatchLog) bool {
-			return log.Contains(reportID)
-		}),
-		gp.GetLambdaLogs(gp.LogicalID("PublishReport"), func(log gp.CloudWatchLog) bool {
-			return log.Contains(reportID)
+		gp.GetDynamoRecord(gp.Arn(testCfg.ResultTableArn), func(table dynamo.Table) bool {
+			var contents []struct {
+				Timestamp time.Time `dynamo:"timestamp"`
+			}
+
+			pk := "emitter/" + reportID
+
+			if err := table.Get("pk", pk).All(&contents); err != nil {
+				require.Equal(t, dynamo.ErrNotFound, err)
+				return false
+			}
+
+			require.NotEqual(t, 0, len(contents))
+			return true
 		}),
 	}
 
-	err = gp.New(cfg.Region, cfg.StackName).Play(playbook)
+	err = gp.New(testCfg.Region, testCfg.DeepAlertStackName).Play(playbook)
 	require.NoError(t, err)
 }
 
 func TestNormalAggregation(t *testing.T) {
-	t.Skip()
-	cfg := test.LoadTestConfig()
 	alertKey := uuid.New().String()
 	attr1 := uuid.New().String()
 	attr2 := uuid.New().String()
@@ -162,26 +185,41 @@ func TestNormalAggregation(t *testing.T) {
 		// Send request
 		gp.PublishSnsMessage(gp.LogicalID("AlertNotification"), alertMsg1),
 		gp.PublishSnsMessage(gp.LogicalID("AlertNotification"), alertMsg2),
-		gp.GetLambdaLogs(gp.LogicalID("ReceptAlert"), func(log gp.CloudWatchLog) bool {
-			assert.Contains(t, log, alertKey)
+		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
+			id, err := getReportID(alert.AlertID(), table)
+			require.NoError(t, err)
+			if id == nil {
+				return false
+			}
+
+			reportID = *id
+			logger.WithField("ReportID", reportID).Debug("Got reportID")
 			return true
-		}).Filter(alertKey),
-
-		gp.Pause(10),
-
-		gp.GetLambdaLogs(gp.LogicalID("CompileReport"), func(log gp.CloudWatchLog) bool {
-			return log.Contains(reportID)
 		}),
-		gp.GetLambdaLogs(gp.Arn(cfg.TestPublisherArn), func(log gp.CloudWatchLog) bool {
-			return log.Contains(attr1)
-		}),
-		gp.GetLambdaLogs(gp.Arn(cfg.TestPublisherArn), func(log gp.CloudWatchLog) bool {
-			return log.Contains(attr2)
+
+		gp.GetDynamoRecord(gp.LogicalID("CacheTable"), func(table dynamo.Table) bool {
+			var caches attrCaches
+
+			pk := "attribute/" + reportID
+			if err := table.Get("pk", pk).All(&caches); err != nil {
+				return false
+			}
+
+			if len(caches) != 3 {
+				return false
+			}
+
+			blue := caches.lookup("blue")
+			orange := caches.lookup("orange")
+
+			assert.Equal(t, deepalert.TypeUserName, blue.Type)
+			assert.Equal(t, deepalert.TypeUserName, orange.Type)
+			assert.Equal(t, attr1, blue.Value)
+			assert.Equal(t, attr2, orange.Value)
+			return true
 		}),
 	}
 
-	err = gp.New(cfg.Region, cfg.StackName).Play(playbook)
+	err = gp.New(testCfg.Region, testCfg.DeepAlertStackName).Play(playbook)
 	require.NoError(t, err)
-
 }
-*/

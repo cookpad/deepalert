@@ -1,4 +1,4 @@
-package test
+package remote
 
 import (
 	"fmt"
@@ -46,31 +46,6 @@ func toDynamoKeys(alertKey, testTable string) (string, string) {
 	return fmt.Sprintf("alert:%s", alertKey), testTable
 }
 
-// InspectorResult is record of Inspector test
-type InspectorResult struct {
-	baseResult
-	Key   string `dynamo:"key"`
-	Value string `dynamo:"value"`
-}
-
-// PutInspectorResult puts InspectorResult to DynamoDB
-func (x *Repository) PutInspectorResult(id deepalert.ReportID, key, value string) error {
-	values := InspectorResult{
-		Key:   key,
-		Value: value,
-	}
-	return x.put("inspector:"+string(id), key, &values)
-}
-
-// GetInspectorResult looks up InspectorResult from DynamoDB
-func (x *Repository) GetInspectorResult(id deepalert.ReportID, key string) (*InspectorResult, error) {
-	var values InspectorResult
-	if err := x.get("inspector:"+string(id), key, &values); err != nil {
-		return nil, err
-	}
-	return &values, nil
-}
-
 // EmitterResult is record of Emitter test
 type EmitterResult struct {
 	baseResult
@@ -82,13 +57,13 @@ func (x *Repository) PutEmitterResult(reportID deepalert.ReportID) error {
 	values := EmitterResult{
 		Timestamp: time.Now().UTC(),
 	}
-	return x.put("emitter:"+string(reportID), "@", &values)
+	return x.put("emitter/"+string(reportID), "@", &values)
 }
 
 // GetEmitterResult looks up EmitterResult from DynamoDB
 func (x *Repository) GetEmitterResult(reportID deepalert.ReportID) (*EmitterResult, error) {
 	var values EmitterResult
-	if err := x.get("emitter:"+string(reportID), "@", &values); err != nil {
+	if err := x.get("emitter/"+string(reportID), "@", &values); err != nil {
 		return nil, err
 	}
 	return &values, nil

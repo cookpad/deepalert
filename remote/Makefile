@@ -1,5 +1,6 @@
 TEST_CONFIG ?= config.json
 
+COMMON=result.go
 FUNCTIONS=build/TestInspector build/TestEmitter
 TEMPLATE_FILE=template.json
 TEMPLATE_JSONNET=template.jsonnet
@@ -14,9 +15,9 @@ endif
 
 all: deploy
 
-build/TestInspector: TestInspector/*
+build/TestInspector: TestInspector/* $(COMMON)
 	env GOARCH=amd64 GOOS=linux go build -o ./build/TestInspector ./TestInspector
-build/TestEmitter: TestEmitter/*
+build/TestEmitter: TestEmitter/* $(COMMON)
 	env GOARCH=amd64 GOOS=linux go build -o ./build/TestEmitter ./TestEmitter
 
 # Base Tasks -------------------------------------
