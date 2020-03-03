@@ -1,4 +1,4 @@
-SETTINGS = settings.json
+TEST_CONFIG ?= config.json
 
 FUNCTIONS=build/TestInspector build/TestEmitter
 TEMPLATE_FILE=template.json
@@ -25,12 +25,12 @@ build: $(FUNCTIONS)
 clean:
 	rm $(FUNCTIONS)
 
-$(TEMPLATE_FILE): $(SETTINGS) $(TEMPLATE_JSONNET)
+$(TEMPLATE_FILE): $(TEST_CONFIG) $(TEMPLATE_JSONNET)
 	jsonnet $(TEMPLATE_JSONNET) -o $(TEMPLATE_FILE)
 
 $(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS) $(DEPLOY_CONFIG)
-	$(eval CodeS3Bucket := $(shell cat $(SETTINGS) | jq .CodeS3Bucket))
-	$(eval CodeS3Prefix := $(shell cat $(SETTINGS) | jq .CodeS3Prefix))
+	$(eval CodeS3Bucket := $(shell cat $(TEST_CONFIG) | jq .CodeS3Bucket))
+	$(eval CodeS3Prefix := $(shell cat $(TEST_CONFIG) | jq .CodeS3Prefix))
 	aws cloudformation package \
 		--template-file $(TEMPLATE_FILE) \
 		--s3-bucket $(CodeS3Bucket) \
@@ -38,8 +38,8 @@ $(SAM_FILE): $(TEMPLATE_FILE) $(FUNCTIONS) $(DEPLOY_CONFIG)
 		--output-template-file $(SAM_FILE)
 
 $(OUTPUT_FILE): $(SAM_FILE)
-	$(eval StackName := $(shell cat $(SETTINGS) | jq .StackName))
-	$(eval Region := $(shell cat $(SETTINGS) | jq .Region))
+	$(eval StackName := $(shell cat $(TEST_CONFIG) | jq .StackName))
+	$(eval Region := $(shell cat $(TEST_CONFIG) | jq .Region))
 	aws cloudformation deploy \
 		--region $(Region) \
 		--template-file $(SAM_FILE) \
