@@ -60,7 +60,7 @@ func NewDataStoreService(tableName, region string) *DataStoreService {
 type recordBase struct {
 	PKey      string    `dynamo:"pk"`
 	SKey      string    `dynamo:"sk"`
-	ExpiresAt time.Time `dynamo:"expires_at"`
+	ExpiresAt int64     `dynamo:"expires_at"`
 	CreatedAt time.Time `dynamo:"created_at,omitempty"`
 }
 
@@ -93,13 +93,13 @@ func (x *DataStoreService) TakeReport(alert deepalert.Alert) (*deepalert.Report,
 		recordBase: recordBase{
 			PKey:      "alertmap/" + alertID,
 			SKey:      fixedKey,
-			ExpiresAt: ts.Add(time.Hour * 3),
+			ExpiresAt: ts.Add(time.Hour * 3).Unix(),
 			CreatedAt: now,
 		},
 		ReportID: NewReportID(),
 	}
 
-	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", ts).Run(); err != nil {
+	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", ts.Unix()).Run(); err != nil {
 		if isConditionalCheckErr(err) {
 			var existedEntry alertEntry
 			if err := x.table.Get("pk", cache.PKey).Range("sk", dynamo.Equal, cache.SKey).One(&existedEntry); err != nil {
@@ -206,7 +206,7 @@ func (x *DataStoreService) SaveReportSection(section deepalert.ReportSection) er
 		recordBase: recordBase{
 			PKey:      pk,
 			SKey:      sk,
-			ExpiresAt: time.Now().UTC().Add(time.Hour * 24),
+			ExpiresAt: time.Now().UTC().Add(time.Hour * 24).Unix(),
 		},
 		Data: raw,
 	}
@@ -265,7 +265,7 @@ func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr d
 		recordBase: recordBase{
 			PKey:      "attribute/" + string(reportID),
 			SKey:      attr.Hash(),
-			ExpiresAt: now.Add(time.Hour * 3),
+			ExpiresAt: now.Add(time.Hour * 3).Unix(),
 		},
 		Timestamp: ts,
 		AttrKey:   attr.Key,
@@ -273,7 +273,7 @@ func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr d
 		AttrValue: attr.Value,
 	}
 
-	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", now).Run(); err != nil {
+	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", now.Unix()).Run(); err != nil {
 		if isConditionalCheckErr(err) {
 			// The attribute already exists
 			return false, nil

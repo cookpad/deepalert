@@ -53,4 +53,4 @@ $(OUTPUT_FILE): $(SAM_FILE)
 deploy: $(OUTPUT_FILE)
 
 test: $(OUTPUT_FILE)
-	go test -v .
+	go test -count=1 -v test

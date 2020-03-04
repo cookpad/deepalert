@@ -14,7 +14,7 @@ TEST_TEMPLATE_FILE=teststack_template.json
 TEST_SAM_FILE=teststack_sam.yml
 TEST_OUTPUT_FILE=$(CWD)/teststack_output.json
 
-COMMON=$(CODE_DIR)/task.go $(CODE_DIR)/inspector.go $(CODE_DIR)/alert.go $(CODE_DIR)/report.go $(CODE_DIR)/emitter.go $(CODE_DIR)/internal/data_store.go $(CODE_DIR)/internal/logger.go $(CODE_DIR)/internal/aws_utils.go $(CODE_DIR)/internal/init.go
+COMMON=$(CODE_DIR)/*.go $(CODE_DIR)/internal/*.go
 
 FUNCTIONS=build/DummyReviewer build/DispatchInspection build/CompileReport build/ReceptAlert build/ErrorHandler build/StepFunctionError build/PublishReport build/SubmitContent build/FeedbackAttribute
 
