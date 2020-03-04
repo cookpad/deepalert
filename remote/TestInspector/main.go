@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/m-mizutani/deepalert"
+	"github.com/m-mizutani/deepalert/inspector"
 )
 
 func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error) {
@@ -29,6 +30,6 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 }
 
 func main() {
-	deepalert.StartInspector(dummyInspector, "dummyInspector",
+	inspector.Start(dummyInspector, "dummyInspector",
 		os.Getenv("ATTRIBUTE_QUEUE"), os.Getenv("CONTENT_QUEUE"))
 }

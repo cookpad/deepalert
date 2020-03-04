@@ -1,66 +1,29 @@
-package deepalert
+package inspector
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/m-mizutani/deepalert"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-// InspectHandler is a function type of callback of inspector.
-type InspectHandler func(ctx context.Context, attr Attribute) (*TaskResult, error)
+// Handler is a function type of callback of inspector.
+type Handler func(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error)
 
 var logger = logrus.New()
 
 func init() {
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetLevel(logrus.InfoLevel)
-}
-
-func publishSNS(topicArn string, data interface{}) error {
-	// arn
-	// aws
-	// sns
-	// ap-northeast-1
-	// 789035092620
-	// xxxxxx
-	arr := strings.Split(topicArn, ":")
-	if len(arr) != 6 {
-		return fmt.Errorf("Invalid SNS ARN format: %s", topicArn)
-	}
-	region := arr[3]
-
-	msg, err := json.Marshal(data)
-	if err != nil {
-		return errors.Wrap(err, "Fail to marshal report data")
-	}
-
-	ssn := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	}))
-	snsService := sns.New(ssn)
-
-	resp, err := snsService.Publish(&sns.PublishInput{
-		Message:  aws.String(string(msg)),
-		TopicArn: aws.String(topicArn),
-	})
-
-	if err != nil {
-		return errors.Wrap(err, "Fail to publish report")
-	}
-	logger.Debugf("Published SNS %v to %s: %v", data, topicArn, resp)
-
-	return nil
 }
 
 type sqsClient interface {
@@ -117,19 +80,19 @@ type reportIDKey struct{}
 
 var contextKey = &reportIDKey{}
 
-// ReportIDFromCtx extracts ReportID from context. The function is available in handler called by StartInspector
-func ReportIDFromCtx(ctx context.Context) (*ReportID, bool) {
-	lc, ok := ctx.Value(contextKey).(*ReportID)
+// ReportIDFromCtx extracts ReportID from context. The function is available in handler called by Start
+func ReportIDFromCtx(ctx context.Context) (*deepalert.ReportID, bool) {
+	lc, ok := ctx.Value(contextKey).(*deepalert.ReportID)
 	return lc, ok
 }
 
-// StartInspector is a wrapper of Inspector.
-func StartInspector(handler InspectHandler, author, attrQueueURL, contentQueueURL string) {
+// Start is a wrapper of Inspector.
+func Start(handler Handler, author, attrQueueURL, contentQueueURL string) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
 		logger.WithField("event", event).Info("Start inspector")
 
 		for _, record := range event.Records {
-			var task Task
+			var task deepalert.Task
 			msg := record.SNS.Message
 			if err := json.Unmarshal([]byte(msg), &task); err != nil {
 				return errors.Wrapf(err, "Fail to unmarshal task: %s", msg)
@@ -149,7 +112,7 @@ func StartInspector(handler InspectHandler, author, attrQueueURL, contentQueueUR
 
 			// Sending entities
 			for _, entity := range result.Contents {
-				section := ReportSection{
+				section := deepalert.ReportSection{
 					ReportID:  task.ReportID,
 					Attribute: task.Attribute,
 					Author:    author,
@@ -162,7 +125,7 @@ func StartInspector(handler InspectHandler, author, attrQueueURL, contentQueueUR
 				}
 			}
 
-			var newAttrs []Attribute
+			var newAttrs []deepalert.Attribute
 			for _, attr := range result.NewAttributes {
 				if attr.Timestamp == nil {
 					attr.Timestamp = task.Attribute.Timestamp
@@ -172,7 +135,7 @@ func StartInspector(handler InspectHandler, author, attrQueueURL, contentQueueUR
 
 			// Sending new attributes
 			if len(result.NewAttributes) > 0 {
-				attrReport := ReportAttribute{
+				attrReport := deepalert.ReportAttribute{
 					ReportID:   task.ReportID,
 					Original:   task.Attribute,
 					Attributes: newAttrs,

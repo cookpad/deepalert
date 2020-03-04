@@ -1,4 +1,4 @@
-package deepalert
+package emitter
 
 import (
 	"context"
@@ -6,17 +6,18 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/m-mizutani/deepalert"
 	"github.com/pkg/errors"
 )
 
-// EmitHandler is a function type of callback of inspector.
-type EmitHandler func(ctx context.Context, report Report) error
+// Handler is a function type of callback of inspector.
+type Handler func(ctx context.Context, report deepalert.Report) error
 
-// StartEmitter is a wrapper of Emitter.
-func StartEmitter(handler EmitHandler) {
+// Start is a wrapper of Emitter.
+func Start(handler Handler) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
 		for _, record := range event.Records {
-			var report Report
+			var report deepalert.Report
 			msg := record.SNS.Message
 			if err := json.Unmarshal([]byte(msg), &report); err != nil {
 				return errors.Wrapf(err, "Fail to unmarshal report: %s", msg)
