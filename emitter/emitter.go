@@ -23,8 +23,7 @@ func Start(handler Handler) {
 				return errors.Wrapf(err, "Fail to unmarshal report: %s", msg)
 			}
 
-			err := handler(ctx, report)
-			if err != nil {
+			if err := handler(ctx, report); err != nil {
 				return errors.Wrapf(err, "Fail to handle report: %v", report)
 			}
 		}

@@ -30,6 +30,10 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 }
 
 func main() {
-	inspector.Start(dummyInspector, "dummyInspector",
-		os.Getenv("ATTRIBUTE_QUEUE"), os.Getenv("CONTENT_QUEUE"))
+	inspector.Start(inspector.Arguments{
+		Handler:         dummyInspector,
+		Author:          "dummyInspector",
+		AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
+		ContentQueueURL: os.Getenv("CONTENT_QUEUE"),
+	})
 }
