@@ -20,6 +20,7 @@ const (
 	TypeUserName               = "username"
 	TypeFileHashValue          = "filehashvalue"
 	TypeJSON                   = "json"
+	TypeURL                    = "url"
 )
 
 // AttrContext describes context of the attribute.
