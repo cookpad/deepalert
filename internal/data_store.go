@@ -127,10 +127,10 @@ func (x *DataStoreService) TakeReport(alert deepalert.Alert) (*deepalert.Report,
 // Control alertCache to manage published alert data
 //
 type alertCache struct {
-	PKey      string    `dynamo:"pk"`
-	SKey      string    `dynamo:"sk"`
-	AlertData []byte    `dynamo:"alert_data"`
-	ExpiresAt time.Time `dynamo:"expires_at"`
+	PKey      string `dynamo:"pk"`
+	SKey      string `dynamo:"sk"`
+	AlertData []byte `dynamo:"alert_data"`
+	ExpiresAt int64  `dynamo:"expires_at"`
 }
 
 func toAlertCacheKey(reportID deepalert.ReportID) (string, string) {
@@ -148,7 +148,7 @@ func (x *DataStoreService) SaveAlertCache(reportID deepalert.ReportID, alert dee
 		PKey:      pk,
 		SKey:      sk,
 		AlertData: raw,
-		ExpiresAt: alert.Timestamp.Add(x.timeToLive),
+		ExpiresAt: alert.Timestamp.Add(x.timeToLive).Unix(),
 	}
 
 	if err := x.table.Put(cache).Run(); err != nil {
