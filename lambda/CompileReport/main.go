@@ -33,6 +33,8 @@ func mainHandler(args lambdaArguments) (*deepalert.Report, error) {
 	args.Report.Alerts = alerts
 	args.Report.Sections = sections
 
+	f.Logger.WithField("report", args.Report).Info("Compiled report")
+
 	return &args.Report, nil
 }
 
