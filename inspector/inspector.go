@@ -59,8 +59,10 @@ type Arguments struct {
 func Start(args Arguments) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
 		Logger.WithFields(logrus.Fields{
-			"event": event,
-			"args":  args,
+			"event":           event,
+			"Author":          args.Author,
+			"AttrQueueURL":    args.AttrQueueURL,
+			"ContentQueueURL": args.ContentQueueURL,
 		}).Info("Start inspector")
 
 		// Check Arguments
