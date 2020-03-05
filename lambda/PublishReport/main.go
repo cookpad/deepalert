@@ -19,6 +19,8 @@ type lambdaArguments struct {
 
 func mainHandler(args lambdaArguments) error {
 	args.Report.Status = deepalert.StatusPublished
+	f.Logger.WithField("report", args.Report).Info("Publishing report")
+
 	if err := f.PublishSNS(args.ReportNotification, args.Region, &args.Report); err != nil {
 		return errors.Wrap(err, "Fail to publish report")
 	}
