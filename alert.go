@@ -26,16 +26,34 @@ const (
 // AttrContext describes context of the attribute.
 type AttrContext string
 
-const (
-	CtxRemote  AttrContext = "remote"
-	CtxLocal               = "local"
-	CtxSubject             = "subject"
-	CtxObject              = "object"
-	CtxClient              = "client"
-	CtxServer              = "server"
-	CtxFile                = "file"
+// AttrContexts is set of AttrContext
+type AttrContexts []AttrContext
 
-	// Meta contexts
+const (
+	// CtxRemote means an entity of the attribute is outside of your organization.
+	// E.g. External Web site, Attacker Host
+	CtxRemote AttrContext = "remote"
+
+	// CtxLocal means an entity of the attribute is inside of your organization.
+	// E.g. Staff's workstation, Owned cloud instance.
+	CtxLocal = "local"
+
+	// CtxSubject means an entity of the attribute is subject of the event.
+	CtxSubject = "subject"
+
+	// CtxObject means an entity of the attribute is target of the event.
+	CtxObject = "object"
+
+	// CtxClient means a network entity works as client (requester).
+	CtxClient = "client"
+
+	// CtxServer means a network entity works as server (responder).
+	CtxServer = "server"
+
+	// CtxFile means the attribute comes from file object.
+	CtxFile   = "file"
+
+	// CtxAdditionalInfo means the attribute is meta contexts
 	CtxAdditionalInfo = "additional"
 )
 
@@ -50,7 +68,7 @@ type Attribute struct {
 	Value string `json:"value"`
 
 	// Context explains background of the attribute value.
-	Context []AttrContext `json:"context"`
+	Context AttrContexts `json:"context"`
 
 	// Timestamp indicates observed time of the attribute.
 	Timestamp *time.Time `json:"timestamp,omitempty"`
@@ -139,4 +157,15 @@ func (x Attribute) Hash() string {
 	sha := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	return sha
+}
+
+// Have of AttrContexts checks if context is in AttrContexts
+func (x AttrContexts) Have(context AttrContext) bool {
+	for _, ctx := range x {
+		if ctx == context {
+			return true
+		}
+	}
+
+	return false
 }
