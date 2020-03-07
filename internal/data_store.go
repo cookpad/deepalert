@@ -86,20 +86,19 @@ func NewReportID() deepalert.ReportID {
 func (x *DataStoreService) TakeReport(alert deepalert.Alert) (*deepalert.Report, error) {
 	fixedKey := "Fixed"
 	alertID := alert.AlertID()
-	ts := alert.Timestamp
 	now := time.Now().UTC()
 
 	cache := alertEntry{
 		recordBase: recordBase{
 			PKey:      "alertmap/" + alertID,
 			SKey:      fixedKey,
-			ExpiresAt: ts.Add(time.Hour * 3).Unix(),
+			ExpiresAt: now.Add(time.Hour * 3).Unix(),
 			CreatedAt: now,
 		},
 		ReportID: NewReportID(),
 	}
 
-	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", ts.Unix()).Run(); err != nil {
+	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", now.Unix()).Run(); err != nil {
 		if isConditionalCheckErr(err) {
 			var existedEntry alertEntry
 			if err := x.table.Get("pk", cache.PKey).Range("sk", dynamo.Equal, cache.SKey).One(&existedEntry); err != nil {
@@ -148,7 +147,7 @@ func (x *DataStoreService) SaveAlertCache(reportID deepalert.ReportID, alert dee
 		PKey:      pk,
 		SKey:      sk,
 		AlertData: raw,
-		ExpiresAt: alert.Timestamp.Add(x.timeToLive).Unix(),
+		ExpiresAt: time.Now().UTC().Add(x.timeToLive).Unix(),
 	}
 
 	if err := x.table.Put(cache).Run(); err != nil {
