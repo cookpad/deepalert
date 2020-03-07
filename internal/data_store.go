@@ -244,10 +244,15 @@ func (x *DataStoreService) FetchReportSection(reportID deepalert.ReportID) ([]de
 //
 type attributeCache struct {
 	recordBase
-	Timestamp time.Time `dynamo:"timestamp"`
-	AttrKey   string    `dynamo:"attr_key"`
-	AttrType  string    `dynamo:"attr_type"`
-	AttrValue string    `dynamo:"attr_value"`
+	Timestamp   time.Time              `dynamo:"timestamp"`
+	AttrKey     string                 `dynamo:"attr_key"`
+	AttrType    string                 `dynamo:"attr_type"`
+	AttrValue   string                 `dynamo:"attr_value"`
+	AttrContext deepalert.AttrContexts `dynamo:"attr_context"`
+}
+
+func toAttributeCacheKey(reportID deepalert.ReportID) string {
+	return fmt.Sprintf("attribute/%s", reportID)
 }
 
 // PutAttributeCache puts attributeCache to DB and returns true. If the attribute alrady exists,
@@ -263,14 +268,15 @@ func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr d
 
 	cache := attributeCache{
 		recordBase: recordBase{
-			PKey:      "attribute/" + string(reportID),
+			PKey:      toAttributeCacheKey(reportID),
 			SKey:      attr.Hash(),
 			ExpiresAt: now.Add(time.Hour * 3).Unix(),
 		},
-		Timestamp: ts,
-		AttrKey:   attr.Key,
-		AttrType:  string(attr.Type),
-		AttrValue: attr.Value,
+		Timestamp:   ts,
+		AttrKey:     attr.Key,
+		AttrType:    string(attr.Type),
+		AttrValue:   attr.Value,
+		AttrContext: attr.Context,
 	}
 
 	if err := x.table.Put(cache).If("(attribute_not_exists(pk) AND attribute_not_exists(sk)) OR expires_at < ?", now.Unix()).Run(); err != nil {
@@ -283,4 +289,28 @@ func (x *DataStoreService) PutAttributeCache(reportID deepalert.ReportID, attr d
 	}
 
 	return true, nil
+}
+
+// FetchAttributeCache retrieves all cached attribute from DB.
+func (x *DataStoreService) FetchAttributeCache(reportID deepalert.ReportID) ([]deepalert.Attribute, error) {
+	pk := toAttributeCacheKey(reportID)
+	var caches []attributeCache
+	if err := x.table.Get("pk", pk).All(&caches); err != nil {
+		return nil, errors.Wrapf(err, "Fail to retrieve attributeCache: %s", reportID)
+	}
+
+	var attrs []deepalert.Attribute
+	for _, cache := range caches {
+		attr := deepalert.Attribute{
+			Type:      deepalert.AttrType(cache.AttrType),
+			Key:       cache.AttrKey,
+			Value:     cache.AttrValue,
+			Context:   cache.AttrContext,
+			Timestamp: &cache.Timestamp,
+		}
+
+		attrs = append(attrs, attr)
+	}
+
+	return attrs, nil
 }

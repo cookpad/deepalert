@@ -52,12 +52,13 @@ type ReportContentType string
 
 // Report is a container to deliver contents and inspection results of the alert.
 type Report struct {
-	ID        ReportID        `json:"id"`
-	Alerts    []Alert         `json:"alerts"`
-	Sections  []ReportSection `json:"sections"`
-	Result    ReportResult    `json:"result"`
-	Status    ReportStatus    `json:"status"`
-	CreatedAt time.Time       `json:"created_at"`
+	ID         ReportID        `json:"id"`
+	Alerts     []Alert         `json:"alerts"`
+	Attributes []Attribute     `json:"attributes"`
+	Sections   []ReportSection `json:"sections"`
+	Result     ReportResult    `json:"result"`
+	Status     ReportStatus    `json:"status"`
+	CreatedAt  time.Time       `json:"created_at"`
 }
 
 // ReportMaps is mapping Attributes and Hosts. Key of the maps are hash value of Attribute.

@@ -30,8 +30,14 @@ func mainHandler(args lambdaArguments) (*deepalert.Report, error) {
 		return nil, errors.Wrapf(err, "Fail to fetch alert caches: %v", args.Report)
 	}
 
+	attrs, err := svc.FetchAttributeCache(args.Report.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Fail to fetch attribute caches: %v", args.Report)
+	}
+
 	args.Report.Alerts = alerts
 	args.Report.Sections = sections
+	args.Report.Attributes = attrs
 
 	f.Logger.WithField("report", args.Report).Info("Compiled report")
 
