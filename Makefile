@@ -81,3 +81,6 @@ $(OUTPUT_FILE): $(SAM_FILE)
 	aws cloudformation describe-stack-resources --stack-name $(StackName) > $(OUTPUT_FILE)
 
 deploy: $(OUTPUT_FILE)
+
+test:
+	go test -v . ./inspector
