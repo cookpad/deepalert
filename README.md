@@ -1,56 +1,110 @@
 # DeepAlert
 
+DeepAlert is a serverless framework for automatic response of security alert.
 
-## Prerequisite (deployment and test)
+## Overview
+
+DeepAlert receives a security alert that is event of interest from security view point and responses the alert automatically. DeepAlert has 3 parts of automatic response.
+
+- **Inspector** investigates entities that are appeaered in the alert including IP address, Domain name and store a result: reputation, history of malicious activities, associated cloud instance and etc. Following components are already provided to integrate with your DeepAlert environment. Also you can create own inspector to check logs that is stored into original log storage or log search system.
+- **Reviewer** receives the alert with result(s) of Inspector and evaluate severity of the alert. Reviewer should be written by each security operator/administrator of your organization because security policies are differ from organazation to organization.
+- **Emitter** finally receives the alert with result of Reviewer's severity evaluation. After that, Emitter sends external integrated system. E.g. PagerDuty, Slack, Github Enterprise, etc. Also automatic quarantine can be configured by AWS Lambda function.
+
+![Overview](https://user-images.githubusercontent.com/605953/76850323-80914100-688a-11ea-9c9a-96030094af2c.png)
+
+## How to use
+
+### Prerequisite
 
 - Tools
-  - `python` >= 3.6.4
   - `awscli` >= 1.16.140
-  - `go` >= 1.12.4
+  - `go` >= 1.14
   - `GNU Make` >= 3.81
 - Credential
   - AWS CLI credential to deploy CloudFormation. See [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for more detail.
 
-## How to use
+### Build and deploy Reviewer
 
-### Getting Started
+See [example](./examples/reviewer) and deploy it as Lambda Function.
 
-```shell
-$ ./configure.py --StackName=your-deepalert-stack --CodeS3Bucket=YOUR_BUCKET_TO_STORE_BINARY --Region=ap-northeast-1
+### Configuration and deploy DeepAlert
+
+Clone this repository and create two config files, `deploy.jsonnet` and `stack.jsonnet` under `deepalert` directory.
+
+```
+$ git clone https://github.com/m-mizutani/deepalert.git
+$ cd deepalert
+```
+
+**deploy.jsonnet** is for AWS SAM deployment by aws command.
+
+```js
+{
+  StackName: 'deepalert',          // You can change the stack name.
+  CodeS3Bucket: 'YOUR_S3_BUCKET',  // S3 bucket to save code materials for deployment
+  CodeS3Prefix: 'functions',       // Prefix of S3 path if youn need (optional)
+  Region: 'ap-northeast-1',        // Region to deploy the stack
+}
+```
+
+**stack.jsonnet** is for building stack template.
+
+```js
+local template = import 'template.libsonnet';
+
+// Set Lambda Function's ARN that you deployed as Reviewer
+local reviewerArn = 'arn:aws:lambda:ap-northeast-1:123456789xx:function:YOUR_REVIEWER_ARN';
+
+template.build(ReviewerLambdaArn=reviewerArn)
+```
+
+Then, deploy DeepAlert stack.
+
+```
 $ make deploy
 ```
 
-### configure script
+### Build and deploy Reviewer
 
-Options of `configure.py` to generate `Makefile` is following.
+See examples and deploy it as Lambda Function.
 
-- CLI options
-  - `-o, --output`: Specify output file name. `-` means stdout. Default is `Makefile`
-  - `-c, --config`: Specify JSON format config file. A config file can have parameter values, e.g. `{"StackName": "your-stack-name"}`
-  - `-w, --workdir`: Specify working directory for deploy and test. Default is `.`.
-- Parameters
-  - `--StackName`: Required. Specify stack name of DeepAlert deployed by CloudFormation.
-  - `--Region`: Required. Specify AWS region such as `ap-northeast-1` to deploy.
-  - `--CodeS3Bucket`: Required. Specify S3 bucket name to store executable binary of DeepAlert.
-  - `--CodeS3Prefix`: Required. Specify S3 key prefix to store executable binary of DeepAlert. NOTE: `/` at tail of prefix is not needed.
-  - `--LambdaRoleArn`: Optional. Specify IAM Role ARN for Lambda functions of DeepAlert. If not specified, CloudFormation will create own IAM Role for Lambda as resource `LambdaRole`
-  - `--StepFunctionRoleArn`: Optional. Specify IAM Role ARN for Lambda functions of DeepAlert. If not specified, CloudFormation will create own IAM Role for Lambda as resource `StepFunctionRole`
-  - `--ReviewerLambdaArn`: Optional. Specify "Reviewer" Lambda ARN. If not specified, `DummyReviewer` that evaluates all alert as `Unclassified` will be set.
-  - `--InspectionDelay`: Optional. Specify delay seconds of invoking Inspectors. Default is `300` seconds.
-  - `--ReviewDelay`: Optional. Specify delay seconds of invoking Reviewer. Default is `600` seconds.
-
-CLI parameter (e.g. `--StackName`) overwrites same key parameter in config file specified by `--config` option.
+- Inspector example: [./examples/inspector](./examples/inspector)
+- Emitter example: [./examples/emitter](./examples/inspector)
 
 ## Development
 
 ### Architecture
 
-![Archtecture](https://user-images.githubusercontent.com/605953/57503796-bc837d80-732c-11e9-9de3-cf077deb0f11.png)
+![Architecture](https://user-images.githubusercontent.com/605953/76850184-34460100-688a-11ea-92fe-cd8a1226174f.png)
 
-### Test
+### Unit Test
 
-```shell
-$ ./configure.py --StackName=your-deepalert-test --CodeS3Bucket=YOUR_BUCKET_TO_STORE_BINARY --CodeS3Prefix=functions --Region=ap-northeast-1 -o Makefile.test --workdir=testing
-$ make test -f Makefile.test
+```
+$ make test
 ```
 
+### Integration Test
+
+At first, deploy DeepAlert stack for test. Then, create a config file into `remote/`.
+
+```json
+{
+    "StackName": "deepalert-test-stack",
+    "CodeS3Bucket": "YOUR_S3_BUCKET",
+    "CodeS3Prefix": "SET_IF_YOU_NEED",
+    "Region": "ap-northeast-1",
+    "DeepAlertStackName": "DEPLOYED_DEEPALERT_STACK_NAME",
+    "LambdaRoleArn": "arn:aws:iam::123456xxx:role/YOUR_LAMBDA_ROLE"
+}
+```
+
+After that, deploy test stack and run test.
+
+```
+$ cd remote/
+$ make test
+```
+
+## License
+
+MIT License

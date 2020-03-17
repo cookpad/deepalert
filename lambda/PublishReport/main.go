@@ -19,6 +19,10 @@ type lambdaArguments struct {
 
 func mainHandler(args lambdaArguments) error {
 	args.Report.Status = deepalert.StatusPublished
+	if args.Report.Result.Severity == "" {
+		args.Report.Result.Severity = deepalert.SevUnclassified
+	}
+
 	f.Logger.WithField("report", args.Report).Info("Publishing report")
 
 	if err := f.PublishSNS(args.ReportNotification, args.Region, &args.Report); err != nil {
