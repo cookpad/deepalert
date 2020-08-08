@@ -1,6 +1,6 @@
 # DeepAlert
 
-DeepAlert is a serverless framework for automatic response of security alert.
+Serverless SOAR (Security Orchestration, Automation and Response) framework for automatic inspection and evaluation of security alert.
 
 ## Overview
 
