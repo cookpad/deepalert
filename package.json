@@ -8,7 +8,7 @@
     "build": "make; tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "deploy": "make; cdk deploy",
+    "deploy": "make; tsc; cdk deploy",
     "cdk": "cdk"
   },
   "devDependencies": {

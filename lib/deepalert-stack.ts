@@ -6,8 +6,11 @@ import * as sqs from "@aws-cdk/aws-sqs";
 import * as dynamodb from "@aws-cdk/aws-dynamodb";
 import * as sfn from "@aws-cdk/aws-stepfunctions";
 import * as tasks from "@aws-cdk/aws-stepfunctions-tasks";
-import { SqsEventSource } from "@aws-cdk/aws-lambda-event-sources";
-import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
+import {
+  SqsEventSource,
+  SnsEventSource,
+} from "@aws-cdk/aws-lambda-event-sources";
+// import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
 
 export interface property extends cdk.StackProps {
   lambdaRoleARN?: string;
@@ -25,9 +28,10 @@ export class DeepAlertStack extends cdk.Stack {
   readonly contentTopic: sns.Topic;
   readonly attributeTopic: sns.Topic;
   readonly reportTopic: sns.Topic;
-  readonly alertQueue: sqs.Queue;
+  // readonly alertQueue: sqs.Queue;
   readonly contentQueue: sqs.Queue;
   readonly attributeQueue: sqs.Queue;
+  readonly deadLetterQueue: sqs.Queue;
 
   // Lambda
   readonly recvAlert: lambda.Function;
@@ -38,7 +42,6 @@ export class DeepAlertStack extends cdk.Stack {
   readonly dummyReviewer: lambda.Function;
   readonly publishReport: lambda.Function;
   readonly lambdaError: lambda.Function;
-  readonly stepFunctionError: lambda.Function;
 
   // StepFunctions
   readonly inspectionMachine: sfn.StateMachine;
@@ -74,10 +77,12 @@ export class DeepAlertStack extends cdk.Stack {
     this.reportTopic = new sns.Topic(this, "reportTopic");
 
     const alertQueueTimeout = cdk.Duration.seconds(30);
+    /*
     this.alertQueue = new sqs.Queue(this, "alertQueue", {
       visibilityTimeout: alertQueueTimeout,
     });
     this.alertTopic.addSubscription(new SqsSubscription(this.alertQueue));
+*/
 
     const contentQueueTimeout = cdk.Duration.seconds(30);
     this.contentQueue = new sqs.Queue(this, "contentQueue", {
@@ -88,6 +93,8 @@ export class DeepAlertStack extends cdk.Stack {
     this.attributeQueue = new sqs.Queue(this, "attributeQueue", {
       visibilityTimeout: attributeQueueTimeout,
     });
+
+    this.deadLetterQueue = new sqs.Queue(this, "deadLetterQueue");
 
     // ----------------------------------------------------------------
     // Lambda Functions
@@ -105,6 +112,7 @@ export class DeepAlertStack extends cdk.Stack {
       role: lambdaRole,
       events: [new SqsEventSource(this.contentQueue)],
       environment: baseEnvVars,
+      deadLetterQueue: this.deadLetterQueue,
     });
 
     this.feedbackAttribute = new lambda.Function(this, "feedbackAttribute", {
@@ -115,6 +123,7 @@ export class DeepAlertStack extends cdk.Stack {
       role: lambdaRole,
       events: [new SqsEventSource(this.attributeQueue)],
       environment: baseEnvVars,
+      deadLetterQueue: this.deadLetterQueue,
     });
 
     this.dispatchInspection = new lambda.Function(this, "dispatchInspection", {
@@ -123,6 +132,7 @@ export class DeepAlertStack extends cdk.Stack {
       code: buildPath,
       role: lambdaRole,
       environment: baseEnvVars,
+      deadLetterQueue: this.deadLetterQueue,
     });
     this.compileReport = new lambda.Function(this, "compileReport", {
       runtime: lambda.Runtime.GO_1_X,
@@ -130,12 +140,14 @@ export class DeepAlertStack extends cdk.Stack {
       code: buildPath,
       role: lambdaRole,
       environment: baseEnvVars,
+      deadLetterQueue: this.deadLetterQueue,
     });
     this.dummyReviewer = new lambda.Function(this, "dummyReviewer", {
       runtime: lambda.Runtime.GO_1_X,
       handler: "dummyReviewer",
       code: buildPath,
       role: lambdaRole,
+      deadLetterQueue: this.deadLetterQueue,
     });
     this.publishReport = new lambda.Function(this, "publishReport", {
       runtime: lambda.Runtime.GO_1_X,
@@ -143,13 +155,7 @@ export class DeepAlertStack extends cdk.Stack {
       code: buildPath,
       role: lambdaRole,
       environment: baseEnvVars,
-    });
-    this.stepFunctionError = new lambda.Function(this, "stepFunctionError", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "stepFunctionError",
-      code: buildPath,
-      role: lambdaRole,
-      environment: baseEnvVars,
+      deadLetterQueue: this.deadLetterQueue,
     });
     this.lambdaError = new lambda.Function(this, "lambdaError", {
       runtime: lambda.Runtime.GO_1_X,
@@ -157,12 +163,12 @@ export class DeepAlertStack extends cdk.Stack {
       code: buildPath,
       role: lambdaRole,
       environment: baseEnvVars,
+      events: [new SqsEventSource(this.deadLetterQueue)],
     });
 
     this.inspectionMachine = buildInspectionMachine(
       this,
       this.dispatchInspection,
-      this.stepFunctionError,
       props.inspectDelay,
       sfnRole
     );
@@ -172,7 +178,6 @@ export class DeepAlertStack extends cdk.Stack {
       this.compileReport,
       props.reviewer || this.dummyReviewer,
       this.publishReport,
-      this.stepFunctionError,
       props.reviewDelay,
       sfnRole
     );
@@ -183,11 +188,12 @@ export class DeepAlertStack extends cdk.Stack {
       code: buildPath,
       timeout: alertQueueTimeout,
       role: lambdaRole,
-      events: [new SqsEventSource(this.alertQueue)],
+      events: [new SnsEventSource(this.alertTopic)],
       environment: Object.assign(baseEnvVars, {
         INSPECTOR_MACHINE: this.inspectionMachine.stateMachineArn,
         REVIEW_MACHINE: this.reviewMachine.stateMachineArn,
       }),
+      deadLetterQueue: this.deadLetterQueue,
     });
 
     if (lambdaRole === undefined) {
@@ -208,7 +214,6 @@ export class DeepAlertStack extends cdk.Stack {
 function buildInspectionMachine(
   scope: cdk.Construct,
   dispatchInspection: lambda.Function,
-  errorHandler: lambda.Function,
   delay?: cdk.Duration,
   sfnRole?: iam.IRole
 ): sfn.StateMachine {
@@ -222,20 +227,8 @@ function buildInspectionMachine(
     "InvokeDispatchInspection",
     { lambdaFunction: dispatchInspection }
   );
-  const invokeErrorHandler = new tasks.LambdaInvoke(
-    scope,
-    "InvokeInspectionErrorHandler",
-    { lambdaFunction: errorHandler }
-  );
 
-  const definition = wait
-    .next(invokeDispatcher)
-    .next(
-      new sfn.Choice(scope, "invokeDispatcher Complete?").when(
-        sfn.Condition.stringEquals("$.status", "FAILED"),
-        invokeErrorHandler
-      )
-    );
+  const definition = wait.next(invokeDispatcher);
 
   return new sfn.StateMachine(scope, "InspectionMachine", {
     definition,
@@ -248,19 +241,10 @@ function buildReviewMachine(
   compileReport: lambda.Function,
   reviewer: lambda.Function,
   publishReport: lambda.Function,
-  errorHandler: lambda.Function,
   delay?: cdk.Duration,
   sfnRole?: iam.IRole
 ): sfn.StateMachine {
   const waitTime = delay || cdk.Duration.minutes(10);
-
-  const invokeErrorHandler = new tasks.LambdaInvoke(
-    scope,
-    "InvokeReviewErrorHandler",
-    { lambdaFunction: errorHandler }
-  );
-  const condFailed = sfn.Condition.stringEquals("$.status", "FAILED");
-  const condSucceeded = sfn.Condition.stringEquals("$.status", "SUCCEEDED");
 
   const wait = new sfn.Wait(scope, "WaitCompile", {
     time: sfn.WaitTime.duration(waitTime),
