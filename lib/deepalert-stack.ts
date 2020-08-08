@@ -103,7 +103,7 @@ export class DeepAlertStack extends cdk.Stack {
       REPORT_TOPIC: this.reportTopic.topicArn,
       CACHE_TABLE: this.cacheTable.tableName,
     };
-    const buildPath = lambda.Code.asset("./build/deepalert");
+    const buildPath = lambda.Code.asset("./build");
 
     this.submitContent = new lambda.Function(this, "submitContent", {
       runtime: lambda.Runtime.GO_1_X,

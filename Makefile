@@ -13,7 +13,6 @@ FUNCTIONS= \
 	$(CODE_DIR)/build/compileReport \
 	$(CODE_DIR)/build/receptAlert \
 	$(CODE_DIR)/build/errorHandler \
-	$(CODE_DIR)/build/stepFunctionError \
 	$(CODE_DIR)/build/publishReport \
 	$(CODE_DIR)/build/submitContent \
 	$(CODE_DIR)/build/feedbackAttribute
@@ -29,8 +28,6 @@ $(CODE_DIR)/build/receptAlert: $(CODE_DIR)/lambda/receptAlert/*.go $(COMMON)
 	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CODE_DIR)/build/receptAlert ./lambda/receptAlert && cd $(CWD)
 $(CODE_DIR)/build/errorHandler: $(CODE_DIR)/lambda/errorHandler/*.go $(COMMON)
 	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CODE_DIR)/build/errorHandler ./lambda/errorHandler && cd $(CWD)
-$(CODE_DIR)/build/stepFunctionError: $(CODE_DIR)/lambda/stepFunctionError/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CODE_DIR)/build/stepFunctionError ./lambda/stepFunctionError && cd $(CWD)
 $(CODE_DIR)/build/publishReport: $(CODE_DIR)/lambda/publishReport/*.go $(COMMON)
 	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build -o $(CODE_DIR)/build/publishReport ./lambda/publishReport && cd $(CWD)
 $(CODE_DIR)/build/submitContent: $(CODE_DIR)/lambda/submitContent/*.go $(COMMON)
