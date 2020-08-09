@@ -10,6 +10,8 @@ import {
   SqsEventSource,
   SnsEventSource,
 } from "@aws-cdk/aws-lambda-event-sources";
+import * as path from "path";
+
 // import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
 
 export interface property extends cdk.StackProps {
@@ -103,7 +105,7 @@ export class DeepAlertStack extends cdk.Stack {
       REPORT_TOPIC: this.reportTopic.topicArn,
       CACHE_TABLE: this.cacheTable.tableName,
     };
-    const buildPath = lambda.Code.asset("./build");
+    const buildPath = lambda.Code.asset(path.join(__dirname, "../build"));
 
     this.submitContent = new lambda.Function(this, "submitContent", {
       runtime: lambda.Runtime.GO_1_X,

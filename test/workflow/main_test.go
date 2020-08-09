@@ -1,4 +1,4 @@
-package remote_test
+package workflow_test
 
 import (
 	"encoding/json"
@@ -49,17 +49,20 @@ func init() {
 
 	// Setup logger
 	logger.SetLevel(logrus.DebugLevel)
-
-	// Setup config
-	configPath := "./config.json"
-	if v := os.Getenv("TEST_CONFIG_PATH"); v != "" {
-		configPath = v
+	region := os.Getenv("AWS_REGION")
+	if region == "" {
+		region = "ap-northeast-1"
+	}
+	deepalertStackName := os.Getenv("DEEPALERT_TEST_STACK_NAME")
+	if deepalertStackName == "" {
+		deepalertStackName = "DeepAlertTestStack"
+	}
+	workflowStackName := os.Getenv("DEEPALERT_WORKFLOW_STACK_NAME")
+	if workflowStackName == "" {
+		workflowStackName = "DeepAlertTestWorkflowStack"
 	}
 
-	testCfg = loadTestConfig(configPath)
-	logger.WithField("config", *testCfg).Info("Start test")
-
-	testStack, err := getStackResources(testCfg.Region, testCfg.StackName)
+	testStack, err := getStackResources(region, workflowStackName)
 	if err != nil {
 		logger.WithError(err).Fatal("Fail setup")
 	}

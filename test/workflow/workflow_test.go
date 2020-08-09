@@ -1,4 +1,4 @@
-package remote_test
+package workflow_test
 
 import (
 	"encoding/json"
