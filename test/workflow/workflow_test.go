@@ -2,6 +2,7 @@ package workflow_test
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -47,6 +48,10 @@ func (x attrCaches) lookup(key string) *attrCache {
 }
 
 func TestNormalWorkflow(t *testing.T) {
+	if "" == os.Getenv("WORKFLOW_TEST") {
+		t.Skip("WORKFLOW_TEST is not set")
+	}
+
 	alertKey := uuid.New().String()
 
 	alert := deepalert.Alert{
@@ -147,6 +152,10 @@ func TestNormalWorkflow(t *testing.T) {
 }
 
 func TestNormalAggregation(t *testing.T) {
+	if "" == os.Getenv("WORKFLOW_TEST") {
+		t.Skip("WORKFLOW_TEST is not set")
+	}
+
 	alertKey := uuid.New().String()
 	attr1 := uuid.New().String()
 	attr2 := uuid.New().String()

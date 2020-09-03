@@ -44,6 +44,10 @@ var (
 )
 
 func init() {
+	if "" == os.Getenv("WORKFLOW_TEST") {
+		return
+	}
+
 	// Setup generalprobe
 	generalprobe.SetLoggerTraceLevel()
 

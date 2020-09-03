@@ -1,68 +1,44 @@
 package main
 
 import (
-	"context"
-	"os"
-
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/pkg/errors"
-
 	"github.com/m-mizutani/deepalert"
 	f "github.com/m-mizutani/deepalert/internal"
+	"github.com/m-mizutani/deepalert/internal/errors"
+	"github.com/m-mizutani/deepalert/internal/handler"
 )
 
-type lambdaArguments struct {
-	Report    deepalert.Report
-	TableName string
-	Region    string
-}
-
-func mainHandler(args lambdaArguments) (*deepalert.Report, error) {
-	svc := f.NewDataStoreService(args.TableName, args.Region)
-
-	sections, err := svc.FetchReportSection(args.Report.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Fail to fetch set of ReportContent: %v", args.Report)
-	}
-
-	alerts, err := svc.FetchAlertCache(args.Report.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Fail to fetch alert caches: %v", args.Report)
-	}
-
-	attrs, err := svc.FetchAttributeCache(args.Report.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Fail to fetch attribute caches: %v", args.Report)
-	}
-
-	args.Report.Alerts = alerts
-	args.Report.Sections = sections
-	args.Report.Attributes = attrs
-
-	f.Logger.WithField("report", args.Report).Info("Compiled report")
-
-	return &args.Report, nil
-}
-
-func handleRequest(ctx context.Context, report deepalert.Report) (deepalert.Report, error) {
-	f.SetLoggerContext(ctx, report.ID)
-	f.Logger.WithField("report", report).Info("Start")
-
-	args := lambdaArguments{
-		Report:    report,
-		TableName: os.Getenv("CACHE_TABLE"),
-		Region:    os.Getenv("AWS_REGION"),
-	}
-
-	compiledReport, err := mainHandler(args)
-	if err != nil || compiledReport == nil {
-		f.Logger.WithError(err).Error("Fail")
-		return report, err
-	}
-
-	return *compiledReport, nil
-}
-
 func main() {
-	lambda.Start(handleRequest)
+	handler.StartLambda(handleRequest)
+}
+
+func handleRequest(args handler.Arguments) (interface{}, *errors.Error) {
+	var report deepalert.Report
+	if err := args.BindEvent(&report); err != nil {
+		return nil, err
+	}
+
+	svc := f.NewDataStoreService(args.CacheTable, args.AwsRegion)
+
+	sections, err := svc.FetchReportSection(report.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "FetchReportSection").With("report", report)
+	}
+
+	alerts, err := svc.FetchAlertCache(report.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "FetchAlertCache").With("report", report)
+	}
+
+	attrs, err := svc.FetchAttributeCache(report.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "FetchAttributeCache").With("report", report)
+	}
+
+	report.Alerts = alerts
+	report.Sections = sections
+	report.Attributes = attrs
+
+	f.Logger.WithField("report", report).Info("Compiled report")
+
+	return &report, nil
 }

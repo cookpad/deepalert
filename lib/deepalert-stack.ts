@@ -20,6 +20,10 @@ export interface property extends cdk.StackProps {
   reviewer?: lambda.Function;
   inspectDelay?: cdk.Duration;
   reviewDelay?: cdk.Duration;
+
+  sentryDsn?: string;
+  sentryEnv?: string;
+  logLevel?: string;
 }
 
 export class DeepAlertStack extends cdk.Stack {
@@ -104,6 +108,10 @@ export class DeepAlertStack extends cdk.Stack {
       TASK_TOPIC: this.taskTopic.topicArn,
       REPORT_TOPIC: this.reportTopic.topicArn,
       CACHE_TABLE: this.cacheTable.tableName,
+
+      SENTRY_DSN: props.sentryDsn || "",
+      SENTRY_ENVIRONMENT: props.sentryEnv || "",
+      LOG_LEVEL: props.logLevel || "",
     };
     const buildPath = lambda.Code.asset(path.join(__dirname, "../build"));
 
