@@ -9,6 +9,10 @@ type EnvVars struct {
 	ReportTopic string `env:"REPORT_TOPIC"`
 	CacheTable  string `env:"CACHE_TABLE"`
 
+	// Only recvAlert can use because of dependency
+	InspectorMashine string `env:"INSPECTOR_MACHINE"`
+	ReviewMachine    string `env:"REVIEW_MACHINE"`
+
 	// Utilities
 	SentryDSN string `env:"SENTRY_DSN"`
 	SentryEnv string `env:"SENTRY_ENVIRONMENT"`

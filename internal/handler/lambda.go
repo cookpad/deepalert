@@ -13,7 +13,10 @@ import (
 var Logger = logrus.New()
 
 // Handler has main logic of the lambda function
-type Handler func(Arguments) (interface{}, *errors.Error)
+type Handler func(*Arguments) (Response, error)
+
+// Response is return object of Handler required for StepFunctions.
+type Response interface{}
 
 // StartLambda initialize AWS Lambda and invokes handler
 func StartLambda(handler Handler) {
@@ -23,7 +26,7 @@ func StartLambda(handler Handler) {
 	lambda.Start(func(ctx context.Context, event interface{}) (interface{}, error) {
 		defer errors.Flush()
 
-		var args Arguments
+		args := newArguments()
 		if err := args.BindEnvVars(); err != nil {
 			return nil, err
 		}
@@ -39,11 +42,16 @@ func StartLambda(handler Handler) {
 
 		out, err := handler(args)
 		if err != nil {
-			Logger.WithFields(logrus.Fields{
+			fields := logrus.Fields{
 				"args":  args,
 				"event": event,
 				"error": err,
-			}).Error("Failed Handler")
+			}
+
+			if daErr, ok := err.(*errors.Error); ok {
+				fields["context"] = daErr.Context
+			}
+			Logger.WithFields(fields).Error("Failed Handler")
 			return nil, err
 		}
 

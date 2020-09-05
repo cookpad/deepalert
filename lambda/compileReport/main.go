@@ -2,22 +2,22 @@ package main
 
 import (
 	"github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/internal"
 	"github.com/m-mizutani/deepalert/internal/errors"
 	"github.com/m-mizutani/deepalert/internal/handler"
+	"github.com/m-mizutani/deepalert/internal/logging"
 )
 
 func main() {
 	handler.StartLambda(handleRequest)
 }
 
-func handleRequest(args handler.Arguments) (interface{}, *errors.Error) {
+func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	var report deepalert.Report
 	if err := args.BindEvent(&report); err != nil {
 		return nil, err
 	}
 
-	svc := f.NewDataStoreService(args.CacheTable, args.AwsRegion)
+	svc := args.Repository()
 
 	sections, err := svc.FetchReportSection(report.ID)
 	if err != nil {
@@ -38,7 +38,7 @@ func handleRequest(args handler.Arguments) (interface{}, *errors.Error) {
 	report.Sections = sections
 	report.Attributes = attrs
 
-	f.Logger.WithField("report", report).Info("Compiled report")
+	logging.Logger.WithField("report", report).Info("Compiled report")
 
 	return &report, nil
 }

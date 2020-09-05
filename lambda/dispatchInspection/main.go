@@ -1,31 +1,31 @@
 package main
 
 import (
-	"context"
-	"os"
-
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/pkg/errors"
+	"time"
 
 	"github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/internal"
+	"github.com/m-mizutani/deepalert/internal/errors"
+	"github.com/m-mizutani/deepalert/internal/handler"
 )
 
-type lambdaArguments struct {
-	Report           deepalert.Report
-	TaskNotification string
-	CacheTable       string
-	Region           string
+func main() {
+	handler.StartLambda(handleRequest)
 }
 
-func mainHandler(args lambdaArguments) error {
-	svc := f.NewDataStoreService(args.CacheTable, args.Region)
+func handleRequest(args *handler.Arguments) (handler.Response, error) {
+	var report deepalert.Report
+	if err := args.BindEvent(&report); err != nil {
+		return nil, err
+	}
 
-	for _, alert := range args.Report.Alerts {
+	now := time.Now()
+	repo := args.Repository()
+	snsSvc := args.SNSService()
+	for _, alert := range report.Alerts {
 		for _, attr := range alert.Attributes {
-			sendable, err := svc.PutAttributeCache(args.Report.ID, attr)
+			sendable, err := repo.PutAttributeCache(report.ID, attr, now)
 			if err != nil {
-				return errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
+				return nil, errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
 			}
 
 			if !sendable {
@@ -37,38 +37,15 @@ func mainHandler(args lambdaArguments) error {
 			}
 
 			task := deepalert.Task{
-				ReportID:  args.Report.ID,
+				ReportID:  report.ID,
 				Attribute: attr,
 			}
 
-			if err := f.PublishSNS(args.TaskNotification, args.Region, &task); err != nil {
-				return errors.Wrapf(err, "Fail to publihsh task notification: %v", task)
+			if err := snsSvc.Publish(args.TaskTopic, &task); err != nil {
+				return nil, errors.Wrapf(err, "Fail to publihsh task notification: %v", task)
 			}
 		}
 	}
 
-	return nil
-}
-
-func handleRequest(ctx context.Context, report deepalert.Report) error {
-	f.SetLoggerContext(ctx, report.ID)
-	f.Logger.WithField("report", report).Info("Start")
-
-	args := lambdaArguments{
-		Report:           report,
-		TaskNotification: os.Getenv("TASK_NOTIFICATION"),
-		Region:           os.Getenv("AWS_REGION"),
-		CacheTable:       os.Getenv("CACHE_TABLE"),
-	}
-
-	if err := mainHandler(args); err != nil {
-		f.Logger.WithError(err).Error("Fail")
-		return err
-	}
-
-	return nil
-}
-
-func main() {
-	lambda.Start(handleRequest)
+	return nil, nil
 }

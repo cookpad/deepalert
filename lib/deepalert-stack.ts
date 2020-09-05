@@ -40,7 +40,7 @@ export class DeepAlertStack extends cdk.Stack {
   readonly deadLetterQueue: sqs.Queue;
 
   // Lambda
-  readonly recvAlert: lambda.Function;
+  readonly receptAlert: lambda.Function;
   readonly dispatchInspection: lambda.Function;
   readonly submitContent: lambda.Function;
   readonly feedbackAttribute: lambda.Function;
@@ -192,9 +192,9 @@ export class DeepAlertStack extends cdk.Stack {
       sfnRole
     );
 
-    this.recvAlert = new lambda.Function(this, "recvAlert", {
+    this.receptAlert = new lambda.Function(this, "receptAlert", {
       runtime: lambda.Runtime.GO_1_X,
-      handler: "recvAlert",
+      handler: "receptAlert",
       code: buildPath,
       timeout: alertQueueTimeout,
       role: lambdaRole,
@@ -207,12 +207,12 @@ export class DeepAlertStack extends cdk.Stack {
     });
 
     if (lambdaRole === undefined) {
-      this.inspectionMachine.grantStartExecution(this.recvAlert);
-      this.reviewMachine.grantStartExecution(this.recvAlert);
+      this.inspectionMachine.grantStartExecution(this.receptAlert);
+      this.reviewMachine.grantStartExecution(this.receptAlert);
       this.taskTopic.grantPublish(this.dispatchInspection);
 
       // DynamoDB
-      this.cacheTable.grantReadWriteData(this.recvAlert);
+      this.cacheTable.grantReadWriteData(this.receptAlert);
       this.cacheTable.grantReadWriteData(this.dispatchInspection);
       this.cacheTable.grantReadWriteData(this.feedbackAttribute);
       this.cacheTable.grantReadWriteData(this.submitContent);

@@ -6,7 +6,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/m-mizutani/deepalert/internal/adaptor"
 	"github.com/m-mizutani/deepalert/internal/errors"
 	"github.com/sirupsen/logrus"
@@ -16,16 +15,13 @@ var logger = logrus.New()
 
 // SNSService is accessor to SQS
 type SNSService struct {
-	newSQS   adaptor.SNSClientFactory
-	queueMap map[string]*sqs.ReceiveMessageOutput
-	msgIndex int
+	newSNS adaptor.SNSClientFactory
 }
 
 // NewSNSService is constructor of
-func NewSNSService(newSQS adaptor.SNSClientFactory) *SNSService {
+func NewSNSService(newSNS adaptor.SNSClientFactory) *SNSService {
 	return &SNSService{
-		queueMap: make(map[string]*sqs.ReceiveMessageOutput),
-		newSQS:   newSQS,
+		newSNS: newSNS,
 	}
 }
 
@@ -41,13 +37,13 @@ func extractSNSRegion(topicARN string) (string, *errors.Error) {
 }
 
 // Publish is wrapper of sns:Publish of AWS
-func (x *SNSService) Publish(msg interface{}, topicARN string) *errors.Error {
+func (x *SNSService) Publish(topicARN string, msg interface{}) *errors.Error {
 	region, daErr := extractSNSRegion(topicARN)
 	if daErr != nil {
 		return daErr
 	}
 
-	client := x.newSQS(region)
+	client := x.newSNS(region)
 
 	raw, err := json.Marshal(msg)
 	if err != nil {

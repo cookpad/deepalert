@@ -1,44 +1,48 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"os"
+	"time"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/m-mizutani/deepalert"
-	f "github.com/m-mizutani/deepalert/internal"
+	"github.com/m-mizutani/deepalert/internal/errors"
+	"github.com/m-mizutani/deepalert/internal/handler"
+	"github.com/m-mizutani/deepalert/internal/logging"
 )
 
-type lambdaArguments struct {
-	Event            events.SQSEvent
-	TaskNotification string
-	CacheTable       string
-	Region           string
+var logger = logging.Logger
+
+func main() {
+	handler.StartLambda(handleRequest)
 }
 
-func mainHandler(args lambdaArguments) error {
-	svc := f.NewDataStoreService(args.CacheTable, args.Region)
+func handleRequest(args *handler.Arguments) (handler.Response, error) {
+	repo := args.Repository()
+	snsSvc := args.SNSService()
+	now := time.Now()
 
-	for _, msg := range f.SQStoMessage(args.Event) {
+	sqsMessages, err := args.DecapSQSEvent()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, msg := range sqsMessages {
 		var reportedAttr deepalert.ReportAttribute
 		if err := json.Unmarshal(msg, &reportedAttr); err != nil {
-			return errors.Wrapf(err, "Fail to unmarshal ReportAttribute from AttributeaNotification: %s", string(msg))
+			return nil, errors.Wrapf(err, "Unmarshal ReportAttribute").With("msg", string(msg))
 		}
 
-		f.Logger.WithField("reportedAttr", reportedAttr).Info("unmarshaled reported attribute")
+		logger.WithField("reportedAttr", reportedAttr).Info("unmarshaled reported attribute")
 
 		for _, attr := range reportedAttr.Attributes {
-			sendable, err := svc.PutAttributeCache(reportedAttr.ReportID, attr)
+			sendable, err := repo.PutAttributeCache(reportedAttr.ReportID, attr, now)
 			if err != nil {
-				return errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
+				return nil, errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
 			}
 
-			f.Logger.WithFields(logrus.Fields{"sendable": sendable, "attr": attr}).Info("attribute")
+			logger.WithFields(logrus.Fields{"sendable": sendable, "attr": attr}).Info("attribute")
 			if !sendable {
 				continue
 			}
@@ -48,35 +52,11 @@ func mainHandler(args lambdaArguments) error {
 				Attribute: attr,
 			}
 
-			if err := f.PublishSNS(args.TaskNotification, args.Region, &task); err != nil {
-				return errors.Wrapf(err, "Fail to publihsh task notification: %v", task)
+			if err := snsSvc.Publish(args.TaskTopic, &task); err != nil {
+				return nil, err
 			}
-
 		}
 	}
 
-	return nil
-}
-
-func handleRequest(ctx context.Context, event events.SQSEvent) error {
-	f.SetLoggerContext(ctx, deepalert.ReportID(""))
-	f.Logger.WithField("event", event).Info("Start")
-
-	args := lambdaArguments{
-		Event:            event,
-		TaskNotification: os.Getenv("TASK_NOTIFICATION"),
-		CacheTable:       os.Getenv("CACHE_TABLE"),
-		Region:           os.Getenv("AWS_REGION"),
-	}
-
-	if err := mainHandler(args); err != nil {
-		f.Logger.WithError(err).Error("Fail")
-		return err
-	}
-
-	return nil
-}
-
-func main() {
-	lambda.Start(handleRequest)
+	return nil, nil
 }
