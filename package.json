@@ -1,9 +1,6 @@
 {
   "name": "deepalert",
   "version": "2.0.0",
-  "bin": {
-    "deepalert": "bin/deepalert.js"
-  },
   "scripts": {
     "build": "make; tsc",
     "watch": "tsc -w",
