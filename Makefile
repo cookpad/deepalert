@@ -3,7 +3,7 @@ all: build
 CODE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 CWD := ${CURDIR}
 
-COMMON=$(CODE_DIR)/*.go $(CODE_DIR)/internal/*.go
+COMMON=$(CODE_DIR)/*.go $(CODE_DIR)/internal/*/*.go
 TEST_FUNCTIONS=$(CODE_DIR)/build/TestPublisher $(CODE_DIR)/build/TestInspector
 TEST_UTILS=$(CODE_DIR)/test/*.go
 
