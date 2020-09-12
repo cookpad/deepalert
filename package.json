@@ -6,12 +6,14 @@
     "watch": "tsc -w",
     "test": "jest",
     "deploy": "make; tsc; cdk deploy",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "install": "make"
   },
   "main": "./cdk/deepalert-stack.js",
   "type": "./cdk/deepalert-stack.d.ts",
   "files": [
     "Makefile",
+    "go.*",
     "*.go",
     "internal",
     "lambda",
