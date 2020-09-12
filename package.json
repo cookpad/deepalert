@@ -6,8 +6,7 @@
     "watch": "tsc -w",
     "test": "jest",
     "deploy": "make; tsc; cdk deploy",
-    "cdk": "cdk",
-    "install": "make"
+    "cdk": "cdk"
   },
   "main": "./cdk/deepalert-stack.js",
   "type": "./cdk/deepalert-stack.d.ts",
