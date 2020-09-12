@@ -15,10 +15,11 @@ import (
 var logger = logging.Logger
 
 func main() {
-	handler.StartLambda(handleRequest)
+	handler.StartLambda(HandleRequest)
 }
 
-func handleRequest(args *handler.Arguments) (handler.Response, error) {
+// HandleRequest is main logic of ReceptAlert
+func HandleRequest(args *handler.Arguments) (handler.Response, error) {
 	messages, err := args.DecapSNSEvent()
 	if err != nil {
 		return nil, err

@@ -43,7 +43,7 @@ type DynamoDBRepositry struct {
 }
 
 // NewDynamoDB is constructor of DynamoDBRepositry
-func NewDynamoDB(tableName, region string) adaptor.Repository {
+func NewDynamoDB(region, tableName string) adaptor.Repository {
 	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
 	x := &DynamoDBRepositry{
 		tableName:  tableName,
