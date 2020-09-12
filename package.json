@@ -9,8 +9,18 @@
     "watch": "tsc -w",
     "test": "jest",
     "deploy": "make; tsc; cdk deploy",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "install": "make"
   },
+  "main": "./cdk/deepalert-stack.js",
+  "type": "./cdk/deepalert-stack.d.ts",
+  "files": [
+    "Makefile",
+    "*.go",
+    "internal",
+    "lambda",
+    "cdk"
+  ],
   "devDependencies": {
     "@aws-cdk/assert": "1.56.0",
     "@types/jest": "^25.2.1",

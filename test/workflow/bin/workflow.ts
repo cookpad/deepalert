@@ -4,7 +4,7 @@ import * as cdk from "@aws-cdk/core";
 import * as dynamodb from "@aws-cdk/aws-dynamodb";
 import * as lambda from "@aws-cdk/aws-lambda";
 
-import { DeepAlertStack } from "../../../lib/deepalert-stack";
+import { DeepAlertStack } from "../../../cdk/deepalert-stack";
 import { SnsEventSource } from "@aws-cdk/aws-lambda-event-sources";
 
 interface properties extends cdk.StackProps {

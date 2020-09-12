@@ -4,7 +4,7 @@ import {
   MatchStyle,
 } from "@aws-cdk/assert";
 import * as cdk from "@aws-cdk/core";
-import * as Deepalert from "../lib/deepalert-stack";
+import * as Deepalert from "../../cdk/deepalert-stack";
 
 test("Empty Stack", () => {
   const app = new cdk.App();
