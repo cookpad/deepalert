@@ -1,19 +1,6 @@
 package workflow_test
 
-import (
-	"encoding/json"
-	"os"
-	"testing"
-	"time"
-
-	"github.com/google/uuid"
-	"github.com/guregu/dynamo"
-	"github.com/m-mizutani/deepalert"
-	gp "github.com/m-mizutani/generalprobe"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func getReportID(alertID string, table dynamo.Table) (*string, error) {
 	var entry struct {
 		ReportID string `dynamo:"report_id"`
@@ -232,3 +219,4 @@ func TestNormalAggregation(t *testing.T) {
 	err = gp.New(testCfg.Region, testCfg.DeepAlertStackName).Play(playbook)
 	require.NoError(t, err)
 }
+*/

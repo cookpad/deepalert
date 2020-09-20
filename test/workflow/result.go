@@ -1,17 +1,6 @@
 package workflow
 
-import (
-	"fmt"
-	"math"
-	"time"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/guregu/dynamo"
-	"github.com/m-mizutani/deepalert"
-	"github.com/pkg/errors"
-)
-
+/*
 // Repository is accessor to DynamoDB
 type Repository struct {
 	table dynamo.Table
@@ -104,3 +93,4 @@ func (x *Repository) get(pk, sk string, res result) error {
 
 	return fmt.Errorf("Timeout to get value (waited %f sec): %v + %v", end.Sub(start).Seconds(), pk, sk)
 }
+*/

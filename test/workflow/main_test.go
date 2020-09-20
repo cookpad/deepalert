@@ -1,19 +1,6 @@
 package workflow_test
 
-import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"strings"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/cloudformation"
-	"github.com/m-mizutani/generalprobe"
-	"github.com/sirupsen/logrus"
-)
-
+/*
 var logger = logrus.New()
 
 type testConfig struct {
@@ -57,10 +44,13 @@ func init() {
 	if region == "" {
 		region = "ap-northeast-1"
 	}
-	deepalertStackName := os.Getenv("DEEPALERT_TEST_STACK_NAME")
-	if deepalertStackName == "" {
-		deepalertStackName = "DeepAlertTestStack"
-	}
+
+		deepalertStackName := os.Getenv("DEEPALERT_TEST_STACK_NAME")
+		if deepalertStackName == "" {
+			deepalertStackName = "DeepAlertTestStack"
+		}
+
+
 	workflowStackName := os.Getenv("DEEPALERT_WORKFLOW_STACK_NAME")
 	if workflowStackName == "" {
 		workflowStackName = "DeepAlertTestWorkflowStack"
@@ -104,3 +94,4 @@ func getStackResources(region, stackName string) (stackResources, error) {
 
 	return resp.StackResources, nil
 }
+*/
