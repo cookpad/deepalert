@@ -70,9 +70,7 @@ func convert(src interface{}, dst interface{}) error {
 }
 
 func TestSQS(t *testing.T) {
-	dummy := dummySQSClient{}
-	inspector.InjectNewSQSClient(&dummy)
-	defer inspector.FixNewSQSClient()
+	mock, newSQS := inspector.NewSQSMock()
 
 	attrURL := "https://sqs.ap-northeast-1.amazonaws.com/123456789xxx/attribute-queue"
 	contentURL := "https://sqs.ap-northeast-1.amazonaws.com/123456789xxx/content-queue"
@@ -81,6 +79,7 @@ func TestSQS(t *testing.T) {
 		Author:          "blue",
 		AttrQueueURL:    attrURL,
 		ContentQueueURL: contentURL,
+		NewSQS:          newSQS,
 	}
 
 	task := deepalert.Task{
@@ -94,13 +93,18 @@ func TestSQS(t *testing.T) {
 
 	err := inspector.HandleTask(context.Background(), args, task)
 	require.NoError(t, err)
-	assert.Equal(t, 2, len(dummy.Requests))
+	assert.Equal(t, 2, len(mock.InputMap))
+	require.Equal(t, 1, len(mock.InputMap[attrURL]))
+	require.Equal(t, 1, len(mock.InputMap[contentURL]))
+
+	cq := mock.InputMap[contentURL][0]
+	aq := mock.InputMap[attrURL][0]
 
 	var req1 deepalert.ReportSection
-	err = json.Unmarshal([]byte(*dummy.Requests[0].MessageBody), &req1)
+	err = json.Unmarshal([]byte(*cq.MessageBody), &req1)
 	require.NoError(t, err)
-	assert.Equal(t, contentURL, aws.StringValue(dummy.Requests[0].QueueUrl))
-	assert.Equal(t, attrURL, aws.StringValue(dummy.Requests[1].QueueUrl))
+	assert.Equal(t, contentURL, aws.StringValue(cq.QueueUrl))
+	assert.Equal(t, attrURL, aws.StringValue(aq.QueueUrl))
 
 	var host deepalert.ReportHost
 	require.NoError(t, convert(req1.Content, &host))

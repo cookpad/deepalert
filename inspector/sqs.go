@@ -11,16 +11,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-type sqsClient interface {
+// SQSClient is interface of AWS SDK SQS. Need to have only SendMessage()
+type SQSClient interface {
 	SendMessage(*sqs.SendMessageInput) (*sqs.SendMessageOutput, error)
 }
 
-var newSqsClient = newAwsSqsClient
+// SQSClientFactory is constructor of SQSClient with region
+type SQSClientFactory func(region string) (SQSClient, error)
 
-func newAwsSqsClient(region string) sqsClient {
-	ssn := session.New(&aws.Config{Region: aws.String(region)})
+func newAwsSQSClient(region string) (SQSClient, error) {
+	ssn, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	if err != nil {
+		return nil, err
+	}
 	client := sqs.New(ssn)
-	return client
+	return client, nil
 }
 
 // Sample: https://sqs.ap-northeast-1.amazonaws.com/123456789xxx/some-queue-name
@@ -33,17 +38,20 @@ func extractRegionFromURL(url string) (*string, error) {
 	return nil, fmt.Errorf("Invalid SQS URL foramt: %v", url)
 }
 
-func sendSQS(msg interface{}, targetURL string) error {
+func sendSQS(newSQS SQSClientFactory, msg interface{}, targetURL string) error {
 	region, err := extractRegionFromURL(targetURL)
 	if err != nil {
 		return err
 	}
 
-	client := newSqsClient(*region)
+	client, err := newSQS(*region)
+	if err != nil {
+		return errors.Wrap(err, "Failed to create a new SQS client")
+	}
 
 	raw, err := json.Marshal(msg)
 	if err != nil {
-		return errors.Wrapf(err, "Fail to marshal message: %v", msg)
+		return errors.Wrapf(err, "Failed to marshal message: %v", msg)
 	}
 
 	input := sqs.SendMessageInput{
@@ -53,7 +61,7 @@ func sendSQS(msg interface{}, targetURL string) error {
 	resp, err := client.SendMessage(&input)
 
 	if err != nil {
-		return errors.Wrapf(err, "Fail to send SQS message: %v", input)
+		return errors.Wrapf(err, "Failed to send SQS message: %v", input)
 	}
 
 	Logger.WithField("resp", resp).Trace("Sent SQS message")

@@ -53,51 +53,64 @@ type Arguments struct {
 
 	// ContentQueueURL is also URL to send contents generated inspector (e.g. IP address is blacklisted or not). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-ContentQueue to your inspector CloudFormation stack.
 	ContentQueueURL string
+
+	// NewSQS is constructor of SQSClient that is interface of AWS SDK. This function is to set stub for testing. If NewSQS is nil, use default constructor, newAwsSQSClient.
+	NewSQS SQSClientFactory
 }
 
 // Start is a wrapper of Inspector.
 func Start(args Arguments) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
-		Logger.WithFields(logrus.Fields{
-			"event":           event,
-			"Author":          args.Author,
-			"AttrQueueURL":    args.AttrQueueURL,
-			"ContentQueueURL": args.ContentQueueURL,
-		}).Info("Start inspector")
-
-		// Check Arguments
-		if args.Handler == nil {
-			return fmt.Errorf("Handler is not set in emitter.Argument")
-		}
-		if args.Author == "" {
-			return fmt.Errorf("Author is not set in emitter.Argument")
-		}
-		if args.AttrQueueURL == "" {
-			return fmt.Errorf("AttrQueueURL is not set in emitter.Argument")
-		}
-		if args.ContentQueueURL == "" {
-			return fmt.Errorf("ContentQueueURL is not set in emitter.Argument")
-		}
-
-		for _, record := range event.Records {
-			var task deepalert.Task
-			msg := record.SNS.Message
-			if err := json.Unmarshal([]byte(msg), &task); err != nil {
-				return errors.Wrapf(err, "Fail to unmarshal task: %s", msg)
-			}
-
-			if err := handleTask(ctx, args, task); err != nil {
-				return err
-			}
-		}
-
-		Logger.Info("Exit inspector normally")
-		return nil
+		return handleSNSEvent(ctx, args, event)
 	})
 }
 
-func handleTask(ctx context.Context, args Arguments, task deepalert.Task) error {
+func handleSNSEvent(ctx context.Context, args Arguments, event events.SNSEvent) error {
+	Logger.WithFields(logrus.Fields{
+		"event":           event,
+		"Author":          args.Author,
+		"AttrQueueURL":    args.AttrQueueURL,
+		"ContentQueueURL": args.ContentQueueURL,
+	}).Info("Start inspector")
+
+	for _, record := range event.Records {
+		var task deepalert.Task
+		msg := record.SNS.Message
+		if err := json.Unmarshal([]byte(msg), &task); err != nil {
+			return errors.Wrapf(err, "Fail to unmarshal task: %s", msg)
+		}
+
+		if err := HandleTask(ctx, args, task); err != nil {
+			return err
+		}
+	}
+
+	Logger.Info("Exit inspector normally")
+	return nil
+}
+
+// HandleTask is called with task by task. It's exported for testing
+func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error {
 	Logger.WithField("task", task).Trace("Start handler")
+
+	// Check Arguments
+	if args.Handler == nil {
+		return fmt.Errorf("Handler is not set in emitter.Argument")
+	}
+	if args.Author == "" {
+		return fmt.Errorf("Author is not set in emitter.Argument")
+	}
+	if args.AttrQueueURL == "" {
+		return fmt.Errorf("AttrQueueURL is not set in emitter.Argument")
+	}
+	if args.ContentQueueURL == "" {
+		return fmt.Errorf("ContentQueueURL is not set in emitter.Argument")
+	}
+
+	if args.NewSQS == nil {
+		args.NewSQS = newAwsSQSClient
+	}
+
 	newCtx := context.WithValue(ctx, contextKey, &task.ReportID)
 
 	result, err := args.Handler(newCtx, task.Attribute)
@@ -120,7 +133,7 @@ func handleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 		}
 		Logger.WithField("section", section).Trace("Sending section")
 
-		if err := sendSQS(section, args.ContentQueueURL); err != nil {
+		if err := sendSQS(args.NewSQS, section, args.ContentQueueURL); err != nil {
 			return errors.Wrapf(err, "Fail to publish ReportContent to %s: %v", args.ContentQueueURL, section)
 		}
 	}
@@ -143,7 +156,7 @@ func handleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 		}
 
 		Logger.WithField("ReportAttribute", attrReport).Trace("Sending new attributes")
-		if err := sendSQS(attrReport, args.AttrQueueURL); err != nil {
+		if err := sendSQS(args.NewSQS, attrReport, args.AttrQueueURL); err != nil {
 			return errors.Wrapf(err, "Fail to publish ReportAttribute to %s: %v", args.AttrQueueURL, attrReport)
 		}
 	}
