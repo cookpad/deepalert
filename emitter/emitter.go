@@ -16,18 +16,22 @@ type Handler func(ctx context.Context, report deepalert.Report) error
 // Start is a wrapper of Emitter.
 func Start(handler Handler) {
 	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
-		for _, record := range event.Records {
-			var report deepalert.Report
-			msg := record.SNS.Message
-			if err := json.Unmarshal([]byte(msg), &report); err != nil {
-				return errors.Wrapf(err, "Fail to unmarshal report: %s", msg)
-			}
+		return startWithSNSEvent(ctx, handler, event)
+	})
+}
 
-			if err := handler(ctx, report); err != nil {
-				return errors.Wrapf(err, "Fail to handle report: %v", report)
-			}
+func startWithSNSEvent(ctx context.Context, handler Handler, event events.SNSEvent) error {
+	for _, record := range event.Records {
+		var report deepalert.Report
+		msg := record.SNS.Message
+		if err := json.Unmarshal([]byte(msg), &report); err != nil {
+			return errors.Wrapf(err, "Fail to unmarshal report: %s", msg)
 		}
 
-		return nil
-	})
+		if err := handler(ctx, report); err != nil {
+			return errors.Wrapf(err, "Fail to handle report: %v", report)
+		}
+	}
+
+	return nil
 }

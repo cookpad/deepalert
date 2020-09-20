@@ -9,7 +9,7 @@ import (
 )
 
 func lookupHostname(value string) *string {
-	response := "resolved.hostname" // It's jsut example, OK?
+	response := "resolved.hostname.example.com" // It's jsut example, OK?
 	return &response
 }
 
