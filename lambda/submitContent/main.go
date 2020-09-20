@@ -21,7 +21,11 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	repo := args.Repository()
+
+	repo, err := args.Repository()
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now()
 
 	for _, msg := range messages {

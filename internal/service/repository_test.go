@@ -218,7 +218,8 @@ func TestDynamoDBRepository(t *testing.T) {
 		t.Skip("Either of DEEPALERT_TEST_REGION and DEEPALERT_TEST_TABLE are not set")
 	}
 
-	repo := repository.NewDynamoDB(region, tableName)
+	repo, err := repository.NewDynamoDB(region, tableName)
+	require.NoError(t, err)
 	svc := service.NewRepositoryService(repo, commonTTL)
 
 	testRepositoryService(t, svc)

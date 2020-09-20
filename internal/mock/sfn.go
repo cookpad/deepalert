@@ -17,6 +17,7 @@ type SFnClient struct {
 }
 
 // StartExecution of mock SFnClient only stores sfn.StartExecutionInput
-func (x *SFnClient) StartExecution(*sfn.StartExecutionInput) (*sfn.StartExecutionOutput, error) {
+func (x *SFnClient) StartExecution(input *sfn.StartExecutionInput) (*sfn.StartExecutionOutput, error) {
+	x.input = append(x.input, input)
 	return &sfn.StartExecutionOutput{}, nil
 }

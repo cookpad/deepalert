@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/google/uuid"
 	"github.com/m-mizutani/deepalert"
 	"github.com/m-mizutani/deepalert/inspector"
@@ -49,15 +48,6 @@ func TestInspectorHandler(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, 1, len(result.Contents))
 	assert.Equal(t, 1, len(result.NewAttributes))
-}
-
-type dummySQSClient struct {
-	Requests []*sqs.SendMessageInput
-}
-
-func (x *dummySQSClient) SendMessage(req *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
-	x.Requests = append(x.Requests, req)
-	return &sqs.SendMessageOutput{}, nil
 }
 
 func convert(src interface{}, dst interface{}) error {

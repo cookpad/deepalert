@@ -17,7 +17,10 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		return nil, err
 	}
 
-	svc := args.Repository()
+	svc, err := args.Repository()
+	if err != nil {
+		return nil, err
+	}
 
 	sections, err := svc.FetchReportSection(report.ID)
 	if err != nil {

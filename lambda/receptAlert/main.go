@@ -25,7 +25,10 @@ func HandleRequest(args *handler.Arguments) (handler.Response, error) {
 		return nil, err
 	}
 
-	repo := args.Repository()
+	repo, err := args.Repository()
+	if err != nil {
+		return nil, err
+	}
 	snsSvc := args.SNSService()
 	sfnSvc := args.SFnService()
 	now := time.Now()

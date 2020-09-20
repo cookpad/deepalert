@@ -37,13 +37,16 @@ func extractSNSRegion(topicARN string) (string, *errors.Error) {
 }
 
 // Publish is wrapper of sns:Publish of AWS
-func (x *SNSService) Publish(topicARN string, msg interface{}) *errors.Error {
+func (x *SNSService) Publish(topicARN string, msg interface{}) error {
 	region, daErr := extractSNSRegion(topicARN)
 	if daErr != nil {
 		return daErr
 	}
 
-	client := x.newSNS(region)
+	client, err := x.newSNS(region)
+	if err != nil {
+		return err
+	}
 
 	raw, err := json.Marshal(msg)
 	if err != nil {

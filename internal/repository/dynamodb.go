@@ -43,8 +43,12 @@ type DynamoDBRepositry struct {
 }
 
 // NewDynamoDB is constructor of DynamoDBRepositry
-func NewDynamoDB(region, tableName string) adaptor.Repository {
-	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
+func NewDynamoDB(region, tableName string) (adaptor.Repository, error) {
+	ssn, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed session.NewSession for DynamoDB").With("region", region)
+	}
+	db := dynamo.New(ssn)
 	x := &DynamoDBRepositry{
 		tableName:  tableName,
 		region:     region,
@@ -52,7 +56,7 @@ func NewDynamoDB(region, tableName string) adaptor.Repository {
 		timeToLive: time.Hour * 3,
 	}
 
-	return x
+	return x, nil
 }
 
 func (x *DynamoDBRepositry) PutAlertEntry(entry *models.AlertEntry, ts time.Time) error {

@@ -19,8 +19,12 @@ func main() {
 }
 
 func handleRequest(args *handler.Arguments) (handler.Response, error) {
-	repo := args.Repository()
 	snsSvc := args.SNSService()
+	repo, err := args.Repository()
+	if err != nil {
+		return nil, err
+	}
+
 	now := time.Now()
 
 	sqsMessages, err := args.DecapSQSEvent()

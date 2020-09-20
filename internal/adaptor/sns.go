@@ -7,7 +7,7 @@ import (
 )
 
 // SNSClientFactory is interface SNSClient constructor
-type SNSClientFactory func(region string) SNSClient
+type SNSClientFactory func(region string) (SNSClient, error)
 
 // SNSClient is interface of AWS SDK SQS
 type SNSClient interface {
@@ -15,7 +15,10 @@ type SNSClient interface {
 }
 
 // NewSNSClient creates actual AWS SNS SDK client
-func NewSNSClient(region string) SNSClient {
-	ssn := session.New(&aws.Config{Region: aws.String(region)})
-	return sns.New(ssn)
+func NewSNSClient(region string) (SNSClient, error) {
+	ssn, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	if err != nil {
+		return nil, err
+	}
+	return sns.New(ssn), nil
 }

@@ -6,8 +6,8 @@ import (
 )
 
 // NewSNSClient creates mock SNS client
-func NewSNSClient(region string) adaptor.SNSClient {
-	return &SNSClient{region: region}
+func NewSNSClient(region string) (adaptor.SNSClient, error) {
+	return &SNSClient{region: region}, nil
 }
 
 // SNSClient is mock
@@ -17,6 +17,7 @@ type SNSClient struct {
 }
 
 // Publish of mock SNSClient only stores sns.PublishInput
-func (x *SNSClient) Publish(*sns.PublishInput) (*sns.PublishOutput, error) {
+func (x *SNSClient) Publish(input *sns.PublishInput) (*sns.PublishOutput, error) {
+	x.input = append(x.input, input)
 	return &sns.PublishOutput{}, nil
 }

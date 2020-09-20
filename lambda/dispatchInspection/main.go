@@ -19,7 +19,10 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	}
 
 	now := time.Now()
-	repo := args.Repository()
+	repo, err := args.Repository()
+	if err != nil {
+		return nil, err
+	}
 	snsSvc := args.SNSService()
 	for _, alert := range report.Alerts {
 		for _, attr := range alert.Attributes {

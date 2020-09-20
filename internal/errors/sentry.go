@@ -27,7 +27,8 @@ func handleSentryError(err *Error) {
 	if sentryEnabled {
 		eventID := sentry.CaptureException(err)
 		if eventID != nil {
-			err.With("sentry,eventID", eventID)
+			// Add sentry eventID to original error
+			_ = err.With("sentry.eventID", eventID)
 		}
 	}
 }

@@ -16,11 +16,11 @@ type AttrType string
 
 const (
 	TypeIPAddr        AttrType = "ipaddr"
-	TypeDomainName             = "domain"
-	TypeUserName               = "username"
-	TypeFileHashValue          = "filehashvalue"
-	TypeJSON                   = "json"
-	TypeURL                    = "url"
+	TypeDomainName    AttrType = "domain"
+	TypeUserName      AttrType = "username"
+	TypeFileHashValue AttrType = "filehashvalue"
+	TypeJSON          AttrType = "json"
+	TypeURL           AttrType = "url"
 )
 
 // AttrContext describes context of the attribute.
@@ -51,7 +51,7 @@ const (
 	CtxServer = "server"
 
 	// CtxFile means the attribute comes from file object.
-	CtxFile   = "file"
+	CtxFile = "file"
 
 	// CtxAdditionalInfo means the attribute is meta contexts
 	CtxAdditionalInfo = "additional"
@@ -118,7 +118,10 @@ func (x *Alert) AlertID() string {
 	}, ":")
 
 	hasher := sha256.New()
-	hasher.Write([]byte(key))
+	_, err := hasher.Write([]byte(key))
+	if err != nil {
+		log.Fatalf("Failed sha256.Write: %v", err)
+	}
 	return fmt.Sprintf("alert:%x", hasher.Sum(nil))
 }
 
@@ -150,10 +153,13 @@ func (x Attribute) Hash() string {
 	raw, err := json.Marshal(x)
 	if err != nil {
 		// Must marshal
-		log.Fatal("Fail to unmarshal attribute", x, err)
+		log.Fatalf("Fail to unmarshal attribute: %v %v", x, err)
 	}
+
 	hasher := sha256.New()
-	hasher.Write(raw)
+	if _, err := hasher.Write(raw); err != nil {
+		log.Fatalf("Failed sha256.Write: %v", err)
+	}
 	sha := fmt.Sprintf("%x", hasher.Sum(nil))
 
 	return sha
