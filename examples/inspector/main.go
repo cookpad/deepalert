@@ -13,7 +13,7 @@ func lookupHostname(value string) *string {
 	return &response
 }
 
-func handler(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error) {
+func Handler(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error) {
 	// Check type of the attribute
 	if attr.Type != deepalert.TypeIPAddr {
 		return nil, nil
@@ -38,7 +38,7 @@ func handler(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResu
 
 func main() {
 	inspector.Start(inspector.Arguments{
-		Handler:         handler,
+		Handler:         Handler,
 		Author:          "testInspector",
 		ContentQueueURL: os.Getenv("CONTENT_QUEUE"),
 		AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
