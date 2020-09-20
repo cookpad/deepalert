@@ -40,21 +40,24 @@ func ReportIDFromCtx(ctx context.Context) (*deepalert.ReportID, bool) {
 	return lc, ok
 }
 
-// Arguments is parameters to invoke Start(). All arguments are required.
+// Arguments is parameters to invoke Start().
 type Arguments struct {
-	// Handler is callback function of Start(). Handler mayu be called multiply.
+	// Handler is callback function of Start(). Handler mayu be called multiply. (Required)
 	Handler InspectHandler
 
-	// Author indicates owner of new attributes and contents. It does not require explicit unique name, but unique name helps your debugging and troubleshooting.
+	// HandlerData is data for Handler. deepalert/inspector never access HandlerData and set additional argument if you need in Handler (optional)
+	HandlerData interface{}
+
+	// Author indicates owner of new attributes and contents. It does not require explicit unique name, but unique name helps your debugging and troubleshooting. (Required)
 	Author string
 
-	// AttrQueueURL is URL to send new attributes discovered inspector (e.g. a new related IP address). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-AttributeQueue to your inspector CloudFormation stack.
+	// AttrQueueURL is URL to send new attributes discovered inspector (e.g. a new related IP address). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-AttributeQueue to your inspector CloudFormation stack. (Requird)
 	AttrQueueURL string
 
-	// ContentQueueURL is also URL to send contents generated inspector (e.g. IP address is blacklisted or not). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-ContentQueue to your inspector CloudFormation stack.
+	// ContentQueueURL is also URL to send contents generated inspector (e.g. IP address is blacklisted or not). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-ContentQueue to your inspector CloudFormation stack. (Required)
 	ContentQueueURL string
 
-	// NewSQS is constructor of SQSClient that is interface of AWS SDK. This function is to set stub for testing. If NewSQS is nil, use default constructor, newAwsSQSClient.
+	// NewSQS is constructor of SQSClient that is interface of AWS SDK. This function is to set stub for testing. If NewSQS is nil, use default constructor, newAwsSQSClient. (Optional)
 	NewSQS SQSClientFactory
 }
 
