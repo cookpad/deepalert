@@ -15,12 +15,18 @@ import (
 type AttrType string
 
 const (
-	TypeIPAddr        AttrType = "ipaddr"
-	TypeDomainName    AttrType = "domain"
-	TypeUserName      AttrType = "username"
+	// TypeIPAddr means IP address (v4/v6)
+	TypeIPAddr AttrType = "ipaddr"
+	// TypeDomainName means domain name
+	TypeDomainName AttrType = "domain"
+	// TypeUserName means user name on the system
+	TypeUserName AttrType = "username"
+	// TypeFileHashValue means hash value of a file. Hash algorithm is not specified for now.
 	TypeFileHashValue AttrType = "filehashvalue"
-	TypeJSON          AttrType = "json"
-	TypeURL           AttrType = "url"
+	// TypeJSON means raw JSON data. It should be displayed as preformatted text
+	TypeJSON AttrType = "json"
+	// TypeURL means URL of some object
+	TypeURL AttrType = "url"
 )
 
 // AttrContext describes context of the attribute.
