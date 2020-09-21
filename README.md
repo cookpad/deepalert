@@ -32,7 +32,7 @@ See [example](./examples/reviewer) and deploy it as Lambda Function.
 Clone this repository and create two config files, `deploy.jsonnet` and `stack.jsonnet` under `deepalert` directory.
 
 ```
-$ git clone https://github.com/m-mizutani/deepalert.git
+$ git clone https://github.com/deepalert/deepalert.git
 $ cd deepalert
 ```
 

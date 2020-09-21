@@ -6,10 +6,12 @@ import * as sqs from "@aws-cdk/aws-sqs";
 import * as dynamodb from "@aws-cdk/aws-dynamodb";
 import * as sfn from "@aws-cdk/aws-stepfunctions";
 import * as tasks from "@aws-cdk/aws-stepfunctions-tasks";
+import * as apigateway from "@aws-cdk/aws-apigateway";
 import {
   SqsEventSource,
   SnsEventSource,
 } from "@aws-cdk/aws-lambda-event-sources";
+
 import * as path from "path";
 
 // import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
@@ -205,6 +207,44 @@ export class DeepAlertStack extends cdk.Stack {
       }),
       deadLetterQueue: this.deadLetterQueue,
     });
+
+    // API handler
+    const apiHandler = new lambda.Function(this, "apiHandler", {
+      runtime: lambda.Runtime.GO_1_X,
+      handler: "apiHandler",
+      code: buildPath,
+      role: lambdaRole,
+      timeout: cdk.Duration.seconds(120),
+      memorySize: 2048,
+      environment: baseEnvVars,
+    });
+
+    const api = new apigateway.LambdaRestApi(this, "deepalertAPI", {
+      handler: apiHandler,
+      proxy: false,
+      cloudWatchRole: false,
+      endpointTypes: [apigateway.EndpointType.PRIVATE],
+      policy: new iam.PolicyDocument({
+        statements: [
+          new iam.PolicyStatement({
+            actions: ["execute-api:Invoke"],
+            resources: ["execute-api:/*/*"],
+            effect: iam.Effect.ALLOW,
+            principals: [new iam.AnyPrincipal()],
+          }),
+        ],
+      }),
+    });
+
+    const v1 = api.root.addResource("api").addResource("v1");
+    const reportAPI = v1.addResource("report");
+    reportAPI.addMethod("POST");
+
+    const reportAPIwithID = reportAPI.addResource("{report_id}");
+    reportAPIwithID.addMethod("GET");
+    reportAPIwithID.addResource("alert").addMethod("GET");
+    reportAPIwithID.addResource("attribute").addMethod("GET");
+    reportAPIwithID.addResource("section").addMethod("GET");
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);

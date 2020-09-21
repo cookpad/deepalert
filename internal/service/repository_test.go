@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/internal/mock"
+	"github.com/deepalert/deepalert/internal/repository"
+	"github.com/deepalert/deepalert/internal/service"
 	"github.com/google/uuid"
-	"github.com/m-mizutani/deepalert"
-	"github.com/m-mizutani/deepalert/internal/mock"
-	"github.com/m-mizutani/deepalert/internal/repository"
-	"github.com/m-mizutani/deepalert/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -3,7 +3,7 @@ package adaptor
 import (
 	"time"
 
-	"github.com/m-mizutani/deepalert/internal/models"
+	"github.com/deepalert/deepalert/internal/models"
 )
 
 // RepositoryFactory is interface Repository constructor

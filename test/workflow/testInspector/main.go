@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/m-mizutani/deepalert"
-	"github.com/m-mizutani/deepalert/inspector"
+	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/inspector"
 )
 
 func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error) {

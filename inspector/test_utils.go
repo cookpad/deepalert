@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/deepalert/deepalert"
 	"github.com/google/uuid"
-	"github.com/m-mizutani/deepalert"
 	"github.com/pkg/errors"
 )
 

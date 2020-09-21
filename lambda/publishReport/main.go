@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/m-mizutani/deepalert"
-	"github.com/m-mizutani/deepalert/internal/errors"
-	"github.com/m-mizutani/deepalert/internal/handler"
-	"github.com/m-mizutani/deepalert/internal/logging"
+	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/deepalert/deepalert/internal/logging"
 )
 
 var logger = logging.Logger

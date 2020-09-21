@@ -6,10 +6,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/deepalert/deepalert/internal/adaptor"
+	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/deepalert/deepalert/internal/models"
 	"github.com/guregu/dynamo"
-	"github.com/m-mizutani/deepalert/internal/adaptor"
-	"github.com/m-mizutani/deepalert/internal/errors"
-	"github.com/m-mizutani/deepalert/internal/models"
 )
 
 /*

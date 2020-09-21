@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/m-mizutani/deepalert/internal/errors"
+	"github.com/deepalert/deepalert/internal/errors"
 
 	"github.com/sirupsen/logrus"
 )

@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/deepalert/deepalert"
+	main "github.com/deepalert/deepalert/examples/inspector"
+	"github.com/deepalert/deepalert/inspector"
 	"github.com/google/uuid"
-	"github.com/m-mizutani/deepalert"
-	main "github.com/m-mizutani/deepalert/examples/inspector"
-	"github.com/m-mizutani/deepalert/inspector"
 	"github.com/stretchr/testify/require"
 )
 

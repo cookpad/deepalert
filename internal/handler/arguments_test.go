@@ -3,7 +3,7 @@ package handler_test
 import (
 	"testing"
 
-	"github.com/m-mizutani/deepalert/internal/handler"
+	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/go-playground/assert.v1"
 )

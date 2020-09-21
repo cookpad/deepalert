@@ -1,4 +1,4 @@
-module github.com/m-mizutani/deepalert
+module github.com/deepalert/deepalert
 
 go 1.12
 

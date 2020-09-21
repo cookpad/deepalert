@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/m-mizutani/deepalert"
+	"github.com/deepalert/deepalert"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

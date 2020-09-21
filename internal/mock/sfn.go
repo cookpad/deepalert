@@ -2,7 +2,7 @@ package mock
 
 import (
 	"github.com/aws/aws-sdk-go/service/sfn"
-	"github.com/m-mizutani/deepalert/internal/adaptor"
+	"github.com/deepalert/deepalert/internal/adaptor"
 )
 
 // NewSFnClient creates mock SNS client

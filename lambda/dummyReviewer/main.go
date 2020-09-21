@@ -5,8 +5,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"github.com/m-mizutani/deepalert"
-	"github.com/m-mizutani/deepalert/internal/logging"
+	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/internal/logging"
 )
 
 func main() {

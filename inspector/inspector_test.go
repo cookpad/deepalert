@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/inspector"
 	"github.com/google/uuid"
-	"github.com/m-mizutani/deepalert"
-	"github.com/m-mizutani/deepalert/inspector"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

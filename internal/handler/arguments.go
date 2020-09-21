@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/m-mizutani/deepalert/internal/adaptor"
-	"github.com/m-mizutani/deepalert/internal/errors"
-	"github.com/m-mizutani/deepalert/internal/repository"
-	"github.com/m-mizutani/deepalert/internal/service"
+	"github.com/deepalert/deepalert/internal/adaptor"
+	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/deepalert/deepalert/internal/repository"
+	"github.com/deepalert/deepalert/internal/service"
 )
 
 // Arguments has environment variables, Event record and adaptor

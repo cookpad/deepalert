@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/m-mizutani/deepalert"
+	"github.com/deepalert/deepalert"
 )
 
 // Example to evaluate security alert of suspicious activity on AWS

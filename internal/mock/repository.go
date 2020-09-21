@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/m-mizutani/deepalert/internal/adaptor"
-	"github.com/m-mizutani/deepalert/internal/models"
+	"github.com/deepalert/deepalert/internal/adaptor"
+	"github.com/deepalert/deepalert/internal/models"
 )
 
 type Repository struct {

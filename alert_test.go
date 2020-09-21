@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	da "github.com/m-mizutani/deepalert"
+	da "github.com/deepalert/deepalert"
 )
 
 func TestLookupAttribute(t *testing.T) {

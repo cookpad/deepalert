@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/m-mizutani/deepalert"
+	"github.com/deepalert/deepalert"
 )
 
 type RecordBase struct {
