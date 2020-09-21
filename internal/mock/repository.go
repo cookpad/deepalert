@@ -8,6 +8,7 @@ import (
 	"github.com/deepalert/deepalert/internal/models"
 )
 
+// Repository is mock data store. Behaviour of the mock.Repository must be same with repository.DynamoDBRepositry
 type Repository struct {
 	region    string
 	tableName string
@@ -15,10 +16,22 @@ type Repository struct {
 }
 
 func NewRepository(region, tableName string) adaptor.Repository {
+	return newMockRepository(region, tableName)
+}
+
+func newMockRepository(region, tableName string) *Repository {
 	return &Repository{
 		region:    region,
 		tableName: tableName,
 		data:      make(map[string]map[string]interface{}),
+	}
+}
+
+// NewMockRepositorySet provides a pair of mock.Repository and RepositoryFactory of the mock.Repository. Saved data can be accessed via mock.Repository.
+func NewMockRepositorySet() (*Repository, adaptor.RepositoryFactory) {
+	repo := newMockRepository("test-region", "test-table")
+	return repo, func(_, _ string) adaptor.Repository {
+		return repo
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/errors"
@@ -24,7 +23,7 @@ func NewSFnService(newSFn adaptor.SFnClientFactory) *SFnService {
 }
 
 // Exec invokes sfn.StartExecution with data
-func (x *SFnService) Exec(arn string, data interface{}) *errors.Error {
+func (x *SFnService) Exec(arn string, data interface{}) error {
 	raw, err := json.Marshal(data)
 	if err != nil {
 		return errors.Wrap(err, "Fail to marshal report data")
@@ -35,10 +34,10 @@ func (x *SFnService) Exec(arn string, data interface{}) *errors.Error {
 		return daErr
 	}
 
-	ssn := session.Must(session.NewSession(&aws.Config{
-		Region: aws.String(region),
-	}))
-	svc := sfn.New(ssn)
+	svc, err := x.newSFn(region)
+	if err != nil {
+		return errors.Wrap(err, "Failed to create new SFn adaptor")
+	}
 
 	input := sfn.StartExecutionInput{
 		Input:           aws.String(string(raw)),

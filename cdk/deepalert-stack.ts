@@ -223,7 +223,7 @@ export class DeepAlertStack extends cdk.Stack {
       handler: apiHandler,
       proxy: false,
       cloudWatchRole: false,
-      endpointTypes: [apigateway.EndpointType.PRIVATE],
+      endpointTypes: [apigateway.EndpointType.REGIONAL],
       policy: new iam.PolicyDocument({
         statements: [
           new iam.PolicyStatement({
@@ -237,9 +237,10 @@ export class DeepAlertStack extends cdk.Stack {
     });
 
     const v1 = api.root.addResource("api").addResource("v1");
-    const reportAPI = v1.addResource("report");
-    reportAPI.addMethod("POST");
+    const alertAPI = v1.addResource("alert");
+    alertAPI.addMethod("POST");
 
+    const reportAPI = v1.addResource("report");
     const reportAPIwithID = reportAPI.addResource("{report_id}");
     reportAPIwithID.addMethod("GET");
     reportAPIwithID.addResource("alert").addMethod("GET");

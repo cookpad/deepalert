@@ -13,6 +13,7 @@ type Error struct {
 func New(msg string) *Error {
 	err := &Error{
 		Message: msg,
+		Context: make(map[string]interface{}),
 	}
 	handleSentryError(err)
 	return err

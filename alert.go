@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -129,6 +130,20 @@ func (x *Alert) AlertID() string {
 		log.Fatalf("Failed sha256.Write: %v", err)
 	}
 	return fmt.Sprintf("alert:%x", hasher.Sum(nil))
+}
+
+// Validate checks own parameters of Alert and returns error if something wrong
+func (x *Alert) Validate() error {
+	if x.Detector == "" {
+		return errors.New("Alert.Detector is required")
+	}
+	if x.RuleName == "" {
+		return errors.New("Alert.RuleName is required")
+	}
+	if x.RuleID == "" {
+		return errors.New("Alert.RuleID is required")
+	}
+	return nil
 }
 
 // Match checks attribute type and context.

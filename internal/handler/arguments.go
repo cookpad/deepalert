@@ -15,7 +15,7 @@ type Arguments struct {
 	EnvVars
 	Event interface{}
 
-	NewSQS        adaptor.SNSClientFactory  `json:"-"`
+	NewSNS        adaptor.SNSClientFactory  `json:"-"`
 	NewSFn        adaptor.SFnClientFactory  `json:"-"`
 	NewRepository adaptor.RepositoryFactory `json:"-"`
 }
@@ -81,8 +81,8 @@ func (x *Arguments) BindEvent(ev interface{}) error {
 
 // SNSService provides service.SNSService with SQS adaptor
 func (x *Arguments) SNSService() *service.SNSService {
-	if x.NewSQS != nil {
-		return service.NewSNSService(x.NewSQS)
+	if x.NewSNS != nil {
+		return service.NewSNSService(x.NewSNS)
 	}
 	return service.NewSNSService(adaptor.NewSNSClient)
 }

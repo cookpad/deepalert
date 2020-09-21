@@ -6,8 +6,8 @@ import (
 )
 
 // NewSFnClient creates mock SNS client
-func NewSFnClient(region string) adaptor.SFnClient {
-	return &SFnClient{region: region}
+func NewSFnClient(region string) (adaptor.SFnClient, error) {
+	return &SFnClient{region: region}, nil
 }
 
 // SFnClient is mock

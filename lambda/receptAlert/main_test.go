@@ -14,7 +14,7 @@ import (
 
 func TestReceptAlert(t *testing.T) {
 	t.Run("Recept single alert", func(tt *testing.T) {
-		dummySFn := mock.NewSFnClient("")
+		dummySFn, _ := mock.NewSFnClient("")
 		dummyRepo := mock.NewRepository("", "")
 		args := &handler.Arguments{
 			NewRepository: func(string, string) adaptor.Repository { return dummyRepo },
