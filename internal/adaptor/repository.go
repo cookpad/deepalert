@@ -3,6 +3,7 @@ package adaptor
 import (
 	"time"
 
+	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/models"
 )
 
@@ -19,6 +20,8 @@ type Repository interface {
 	GetReportSection(pk string) ([]*models.ReportSectionRecord, error)
 	PutAttributeCache(attr *models.AttributeCache, ts time.Time) error
 	GetAttributeCaches(pk string) ([]*models.AttributeCache, error)
+	PutReport(pk string, report *deepalert.Report) error
+	GetReport(pk string) (*deepalert.Report, error)
 
 	IsConditionalCheckErr(err error) bool
 }

@@ -115,7 +115,7 @@ export class DeepAlertStack extends cdk.Stack {
       SENTRY_ENVIRONMENT: props.sentryEnv || "",
       LOG_LEVEL: props.logLevel || "",
     };
-    const buildPath = lambda.Code.asset(path.join(__dirname, "../build"));
+    const buildPath = lambda.Code.fromAsset(path.join(__dirname, "../build"));
 
     this.submitContent = new lambda.Function(this, "submitContent", {
       runtime: lambda.Runtime.GO_1_X,

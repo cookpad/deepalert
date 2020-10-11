@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/models"
@@ -105,6 +106,36 @@ func (x *DynamoDBRepositry) GetAttributeCaches(pk string) ([]*models.AttributeCa
 	}
 
 	return attrs, nil
+}
+
+func (x *DynamoDBRepositry) PutReport(pk string, report *deepalert.Report) error {
+	var entry models.ReportEntry
+	if err := entry.Import(report); err != nil {
+		return err
+	}
+	entry.PKey = pk
+	entry.SKey = "-"
+
+	if err := x.table.Put(&entry).Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (x *DynamoDBRepositry) GetReport(pk string) (*deepalert.Report, error) {
+	var entry models.ReportEntry
+	if err := x.table.Get("pk", pk).Range("sk", dynamo.Equal, "-").One(&entry); err != nil {
+		if err == dynamo.ErrNotFound {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "Failed to get report").With("pk", pk)
+	}
+
+	report, err := entry.Export()
+	if err != nil {
+		return nil, err
+	}
+	return report, nil
 }
 
 // Error handling

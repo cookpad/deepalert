@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/models"
 )
@@ -128,6 +129,19 @@ func (x *Repository) GetAttributeCaches(pk string) ([]*models.AttributeCache, er
 		out = append(out, v.(*models.AttributeCache))
 	}
 	return out, nil
+}
+
+func (x *Repository) PutReport(pk string, report *deepalert.Report) error {
+	x.data[pk] = map[string]interface{}{"-": report}
+	return nil
+}
+
+func (x *Repository) GetReport(pk string) (*deepalert.Report, error) {
+	report, ok := x.data[pk]
+	if !ok {
+		return nil, nil
+	}
+	return report["-"].(*deepalert.Report), nil
 }
 
 func (x *Repository) IsConditionalCheckErr(err error) bool {

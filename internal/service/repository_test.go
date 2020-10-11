@@ -17,6 +17,24 @@ import (
 const commonTTL = int64(10)
 
 func testRepositoryService(t *testing.T, svc *service.RepositoryService) {
+	t.Run("TakeReport", func(tt *testing.T) {
+		testTakeReport(tt, svc)
+	})
+	t.Run("AlertCache", func(tt *testing.T) {
+		testAlertCache(tt, svc)
+	})
+	t.Run("ReportSection", func(tt *testing.T) {
+		testReportSection(tt, svc)
+	})
+	t.Run("AttributeCache", func(tt *testing.T) {
+		testAttributeCache(tt, svc)
+	})
+	t.Run("Report", func(tt *testing.T) {
+		testRpoert(tt, svc)
+	})
+}
+
+func testTakeReport(t *testing.T, svc *service.RepositoryService) {
 	now := time.Now()
 
 	t.Run("Take new reports with diffent keys", func(tt *testing.T) {
@@ -58,7 +76,9 @@ func testRepositoryService(t *testing.T, svc *service.RepositoryService) {
 
 		assert.Equal(tt, r1.ID, r2.ID)
 	})
+}
 
+func testAlertCache(t *testing.T, svc *service.RepositoryService) {
 	t.Run("Save and fetch alert cache", func(tt *testing.T) {
 		id1 := deepalert.ReportID(uuid.New().String())
 		id2 := deepalert.ReportID(uuid.New().String())
@@ -89,7 +109,9 @@ func testRepositoryService(t *testing.T, svc *service.RepositoryService) {
 		assert.Contains(tt, cache, alert2)
 		assert.NotContains(tt, cache, alert3)
 	})
+}
 
+func testReportSection(t *testing.T, svc *service.RepositoryService) {
 	t.Run("Savea and Fetch report section", func(tt *testing.T) {
 		id1 := deepalert.ReportID(uuid.New().String())
 		id2 := deepalert.ReportID(uuid.New().String())
@@ -127,10 +149,6 @@ func testRepositoryService(t *testing.T, svc *service.RepositoryService) {
 		assert.Contains(tt, sections, s1)
 		assert.Contains(tt, sections, s2)
 		assert.NotContains(tt, sections, s3)
-	})
-
-	t.Run("AttributeCache", func(tt *testing.T) {
-		testAttributeCache(tt, svc)
 	})
 }
 
@@ -209,6 +227,107 @@ func testAttributeCache(t *testing.T, svc *service.RepositoryService) {
 		assert.Equal(tt, 1, len(attrs))
 		attrs[0].Timestamp = nil
 		assert.Equal(tt, attr1, attrs[0])
+	})
+}
+
+func testRpoert(t *testing.T, svc *service.RepositoryService) {
+	t.Run("Put and Get", func(tt *testing.T) {
+		r1 := &deepalert.Report{
+			ID: deepalert.ReportID(uuid.New().String()),
+			Alerts: []deepalert.Alert{
+				{
+					AlertKey: "cxz",
+					Detector: "saber",
+					RuleID:   "s1",
+					Attributes: []deepalert.Attribute{
+						{
+							Type: deepalert.TypeIPAddr,
+							Context: deepalert.AttrContexts{
+								deepalert.CtxRemote,
+							},
+							Key:   "srcAddr",
+							Value: "10.1.2.3",
+						},
+					},
+				},
+				{
+					AlertKey: "bnc",
+					Detector: "archer",
+					RuleID:   "a1",
+					Attributes: []deepalert.Attribute{
+						{
+							Type: deepalert.TypeIPAddr,
+							Context: deepalert.AttrContexts{
+								deepalert.CtxLocal,
+							},
+							Key:   "dstAddr",
+							Value: "192.168.2.3",
+						},
+					},
+				},
+			},
+			Attributes: []deepalert.Attribute{
+				{
+					Type: deepalert.TypeIPAddr,
+					Context: deepalert.AttrContexts{
+						deepalert.CtxRemote,
+					},
+					Key:   "srcAddr",
+					Value: "10.1.2.3",
+				},
+				{
+					Type: deepalert.TypeIPAddr,
+					Context: deepalert.AttrContexts{
+						deepalert.CtxLocal,
+					},
+					Key:   "dstAddr",
+					Value: "192.168.2.3",
+				},
+			},
+			Sections: []deepalert.ReportSection{
+				{
+					ReportID: "hoge",
+					Attribute: deepalert.Attribute{
+						Type: deepalert.TypeIPAddr,
+						Context: deepalert.AttrContexts{
+							deepalert.CtxLocal,
+						},
+						Key:   "dstAddr",
+						Value: "192.168.2.3",
+					},
+					Type:   deepalert.ContentUser,
+					Author: "caster",
+					Content: deepalert.ReportUser{
+						Activities: []deepalert.EntityActivity{
+							{
+								Action:     "hoge",
+								RemoteAddr: "10.5.6.7",
+							},
+						},
+					},
+				},
+			},
+			Result: deepalert.ReportResult{
+				Severity: deepalert.SevSafe,
+				Reason:   "no reason",
+			},
+			Status:    deepalert.StatusPublished,
+			CreatedAt: time.Now(),
+		}
+
+		err := svc.PutReport(r1)
+		require.NoError(tt, err)
+		r2, err := svc.GetReport(r1.ID)
+		require.NoError(tt, err)
+		assert.Equal(tt, r1.ID, r2.ID)
+		assert.Contains(tt, r2.Attributes, r1.Attributes[1])
+	})
+
+	t.Run("Not found", func(tt *testing.T) {
+		id := deepalert.ReportID(uuid.New().String())
+		r0, err := svc.GetReport(id)
+		require.NoError(tt, err)
+		assert.Nil(tt, r0)
 	})
 }
 

@@ -209,6 +209,10 @@ func toAttributeCacheKey(reportID deepalert.ReportID) string {
 	return fmt.Sprintf("attribute/%s", reportID)
 }
 
+func toReportKey(reportID deepalert.ReportID) string {
+	return fmt.Sprintf("report/%s", reportID)
+}
+
 // PutAttributeCache puts attributeCache to DB and returns true. If the attribute alrady exists,
 // it returns false.
 func (x *RepositoryService) PutAttributeCache(reportID deepalert.ReportID, attr deepalert.Attribute, now time.Time) (bool, error) {
@@ -267,4 +271,23 @@ func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]
 	}
 
 	return attrs, nil
+}
+
+// PutReport puts report with a key based on report.ID
+func (x *RepositoryService) PutReport(report *deepalert.Report) error {
+	pk := toReportKey(report.ID)
+	if err := x.repo.PutReport(pk, report); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetReport gets a report by a key based on report.ID
+func (x *RepositoryService) GetReport(reportID deepalert.ReportID) (*deepalert.Report, error) {
+	pk := toReportKey(reportID)
+	report, err := x.repo.GetReport(pk)
+	if err != nil {
+		return nil, err
+	}
+	return report, nil
 }
