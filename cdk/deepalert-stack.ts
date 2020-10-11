@@ -10,6 +10,7 @@ import * as apigateway from "@aws-cdk/aws-apigateway";
 import {
   SqsEventSource,
   SnsEventSource,
+  DynamoEventSource,
 } from "@aws-cdk/aws-lambda-event-sources";
 
 import * as path from "path";
@@ -48,6 +49,7 @@ export class DeepAlertStack extends cdk.Stack {
   readonly feedbackAttribute: lambda.Function;
   readonly compileReport: lambda.Function;
   readonly dummyReviewer: lambda.Function;
+  readonly submitReport: lambda.Function;
   readonly publishReport: lambda.Function;
   readonly lambdaError: lambda.Function;
 
@@ -74,6 +76,7 @@ export class DeepAlertStack extends cdk.Stack {
       partitionKey: { name: "pk", type: dynamodb.AttributeType.STRING },
       sortKey: { name: "sk", type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: "expires_at",
+      stream: dynamodb.StreamViewType.NEW_IMAGE,
     });
 
     // ----------------------------------------------------------------
@@ -161,6 +164,14 @@ export class DeepAlertStack extends cdk.Stack {
       role: lambdaRole,
       deadLetterQueue: this.deadLetterQueue,
     });
+    this.submitReport = new lambda.Function(this, "submitReport", {
+      runtime: lambda.Runtime.GO_1_X,
+      handler: "submitReport",
+      code: buildPath,
+      role: lambdaRole,
+      environment: baseEnvVars,
+      deadLetterQueue: this.deadLetterQueue,
+    });
     this.publishReport = new lambda.Function(this, "publishReport", {
       runtime: lambda.Runtime.GO_1_X,
       handler: "publishReport",
@@ -168,6 +179,12 @@ export class DeepAlertStack extends cdk.Stack {
       role: lambdaRole,
       environment: baseEnvVars,
       deadLetterQueue: this.deadLetterQueue,
+      events: [
+        new DynamoEventSource(this.cacheTable, {
+          startingPosition: lambda.StartingPosition.LATEST,
+          batchSize: 1,
+        }),
+      ],
     });
     this.lambdaError = new lambda.Function(this, "lambdaError", {
       runtime: lambda.Runtime.GO_1_X,
@@ -189,7 +206,7 @@ export class DeepAlertStack extends cdk.Stack {
       this,
       this.compileReport,
       props.reviewer || this.dummyReviewer,
-      this.publishReport,
+      this.submitReport,
       props.reviewDelay,
       sfnRole
     );
@@ -291,7 +308,7 @@ function buildReviewMachine(
   scope: cdk.Construct,
   compileReport: lambda.Function,
   reviewer: lambda.Function,
-  publishReport: lambda.Function,
+  submitReport: lambda.Function,
   delay?: cdk.Duration,
   sfnRole?: iam.IRole
 ): sfn.StateMachine {
@@ -314,8 +331,8 @@ function buildReviewMachine(
       })
     )
     .next(
-      new tasks.LambdaInvoke(scope, "invokePublishReport", {
-        lambdaFunction: publishReport,
+      new tasks.LambdaInvoke(scope, "invokeSubmitReport", {
+        lambdaFunction: submitReport,
       })
     );
 
