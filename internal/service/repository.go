@@ -124,9 +124,9 @@ func (x *RepositoryService) SaveAlertCache(reportID deepalert.ReportID, alert de
 	return nil
 }
 
-func (x *RepositoryService) FetchAlertCache(reportID deepalert.ReportID) ([]deepalert.Alert, error) {
+func (x *RepositoryService) FetchAlertCache(reportID deepalert.ReportID) ([]*deepalert.Alert, error) {
 	pk, _ := toAlertCacheKey(reportID)
-	var alerts []deepalert.Alert
+	var alerts []*deepalert.Alert
 
 	caches, err := x.repo.GetAlertCaches(pk)
 	if err != nil {
@@ -138,7 +138,7 @@ func (x *RepositoryService) FetchAlertCache(reportID deepalert.ReportID) ([]deep
 		if err := json.Unmarshal(cache.AlertData, &alert); err != nil {
 			return nil, errors.Wrap(err, "Fail to unmarshal alert").With("data", string(cache.AlertData))
 		}
-		alerts = append(alerts, alert)
+		alerts = append(alerts, &alert)
 	}
 
 	return alerts, nil
@@ -148,23 +148,23 @@ func (x *RepositoryService) FetchAlertCache(reportID deepalert.ReportID) ([]deep
 // Control reportRecord to manage report contents by inspector
 //
 
-func toReportSectionRecord(reportID deepalert.ReportID, section *deepalert.ReportSection) (string, string) {
+func toInspectReportKeys(reportID deepalert.ReportID, inspect *deepalert.InspectReport) (string, string) {
 	pk := fmt.Sprintf("content/%s", reportID)
 	sk := ""
-	if section != nil {
-		sk = fmt.Sprintf("%s/%s", section.Attribute.Hash(), uuid.New().String())
+	if inspect != nil {
+		sk = fmt.Sprintf("%s/%s", inspect.Attribute.Hash(), uuid.New().String())
 	}
 	return pk, sk
 }
 
-func (x *RepositoryService) SaveReportSection(section deepalert.ReportSection, now time.Time) error {
+func (x *RepositoryService) SaveInspectReport(section deepalert.InspectReport, now time.Time) error {
 	raw, err := json.Marshal(section)
 	if err != nil {
 		return errors.Wrapf(err, "Fail to marshal ReportSection: %v", section)
 	}
 
-	pk, sk := toReportSectionRecord(section.ReportID, &section)
-	record := &models.ReportSectionRecord{
+	pk, sk := toInspectReportKeys(section.ReportID, &section)
+	record := &models.InspectorReportRecord{
 		RecordBase: models.RecordBase{
 			PKey:      pk,
 			SKey:      sk,
@@ -173,32 +173,79 @@ func (x *RepositoryService) SaveReportSection(section deepalert.ReportSection, n
 		Data: raw,
 	}
 
-	if err := x.repo.PutReportSectionRecord(record); err != nil {
+	if err := x.repo.PutInspectorReport(record); err != nil {
 		return errors.Wrap(err, "Fail to put report record")
 	}
 
 	return nil
 }
 
-func (x *RepositoryService) FetchReportSection(reportID deepalert.ReportID) ([]deepalert.ReportSection, error) {
-	pk, _ := toReportSectionRecord(reportID, nil)
+func (x *RepositoryService) FetchInspectReport(reportID deepalert.ReportID) ([]*deepalert.ReportSection, error) {
+	pk, _ := toInspectReportKeys(reportID, nil)
 
-	records, err := x.repo.GetReportSection(pk)
+	records, err := x.repo.GetInspectorReports(pk)
 	if err != nil {
 		return nil, err
 	}
 
-	var sections []deepalert.ReportSection
+	var reports []*deepalert.InspectReport
 	for _, record := range records {
-		var section deepalert.ReportSection
+		var section deepalert.InspectReport
 		if err := json.Unmarshal(record.Data, &section); err != nil {
 			return nil, errors.Wrapf(err, "Fail to unmarshal report content: %v %s", record, string(record.Data))
 		}
 
-		sections = append(sections, section)
+		reports = append(reports, &section)
 	}
 
+	sections, err := remapSection(reports)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to remap InspectReport")
+	}
 	return sections, nil
+}
+
+func remapSection(inspectReports []*deepalert.InspectReport) ([]*deepalert.ReportSection, error) {
+	sections := map[string]*deepalert.ReportSection{}
+
+	for _, ir := range inspectReports {
+		hv := ir.Attribute.Hash()
+		section, ok := sections[hv]
+		if !ok {
+			section = &deepalert.ReportSection{
+				OriginAttr: &ir.Attribute,
+			}
+			sections[hv] = section
+		}
+		switch ir.Type {
+		case deepalert.ContentHost:
+			c, ok := ir.Content.(*deepalert.ReportHost)
+			if !ok {
+				return nil, errors.New("Can not cast content to deepalert.ReportHost")
+			}
+			section.Hosts = append(section.Hosts, c)
+
+		case deepalert.ContentUser:
+			c, ok := ir.Content.(*deepalert.ReportUser)
+			if !ok {
+				return nil, errors.New("Can not cast content to deepalert.ReportUser")
+			}
+			section.Users = append(section.Users, c)
+
+		case deepalert.ContentBinary:
+			c, ok := ir.Content.(*deepalert.ReportBinary)
+			if !ok {
+				return nil, errors.New("Can not cast content to deepalert.ReportHost")
+			}
+			section.Binaries = append(section.Binaries, c)
+		}
+	}
+
+	var sectionList []*deepalert.ReportSection
+	for _, section := range sections {
+		sectionList = append(sectionList, section)
+	}
+	return sectionList, nil
 }
 
 // -----------------------------------------------------------
@@ -249,7 +296,7 @@ func (x *RepositoryService) PutAttributeCache(reportID deepalert.ReportID, attr 
 }
 
 // FetchAttributeCache retrieves all cached attribute from DB.
-func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]deepalert.Attribute, error) {
+func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]*deepalert.Attribute, error) {
 	pk := toAttributeCacheKey(reportID)
 
 	caches, err := x.repo.GetAttributeCaches(pk)
@@ -257,7 +304,7 @@ func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]
 		return nil, errors.Wrapf(err, "Fail to retrieve attributeCache: %s", reportID)
 	}
 
-	var attrs []deepalert.Attribute
+	var attrs []*deepalert.Attribute
 	for _, cache := range caches {
 		attr := deepalert.Attribute{
 			Type:      deepalert.AttrType(cache.AttrType),
@@ -267,7 +314,7 @@ func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]
 			Timestamp: &cache.Timestamp,
 		}
 
-		attrs = append(attrs, attr)
+		attrs = append(attrs, &attr)
 	}
 
 	return attrs, nil

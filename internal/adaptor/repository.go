@@ -16,8 +16,8 @@ type Repository interface {
 	GetAlertEntry(pk, sk string) (*models.AlertEntry, error)
 	PutAlertCache(cache *models.AlertCache) error
 	GetAlertCaches(pk string) ([]*models.AlertCache, error)
-	PutReportSectionRecord(record *models.ReportSectionRecord) error
-	GetReportSection(pk string) ([]*models.ReportSectionRecord, error)
+	PutInspectorReport(record *models.InspectorReportRecord) error
+	GetInspectorReports(pk string) ([]*models.InspectorReportRecord, error)
 	PutAttributeCache(attr *models.AttributeCache, ts time.Time) error
 	GetAttributeCaches(pk string) ([]*models.AttributeCache, error)
 	PutReport(pk string, report *deepalert.Report) error

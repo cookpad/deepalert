@@ -72,19 +72,19 @@ func (x *DynamoDBRepositry) GetAlertCaches(pk string) ([]*models.AlertCache, err
 	return caches, nil
 }
 
-func (x *DynamoDBRepositry) PutReportSectionRecord(record *models.ReportSectionRecord) error {
+func (x *DynamoDBRepositry) PutInspectorReport(record *models.InspectorReportRecord) error {
 	if err := x.table.Put(record).Run(); err != nil {
-		return errors.Wrap(err, "Failed PutReportSectionRecord").With("record", record)
+		return errors.Wrap(err, "Failed PutInspectorReport").With("record", record)
 	}
 
 	return nil
 }
 
-func (x *DynamoDBRepositry) GetReportSection(pk string) ([]*models.ReportSectionRecord, error) {
-	var records []*models.ReportSectionRecord
+func (x *DynamoDBRepositry) GetInspectorReports(pk string) ([]*models.InspectorReportRecord, error) {
+	var records []*models.InspectorReportRecord
 
 	if err := x.table.Get("pk", pk).All(&records); err != nil {
-		return nil, errors.Wrap(err, "Failed GetReportSection").With("pk", pk)
+		return nil, errors.Wrap(err, "Failed GetInspectorReports").With("pk", pk)
 	}
 
 	return records, nil

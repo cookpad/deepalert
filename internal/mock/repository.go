@@ -101,15 +101,15 @@ func (x *Repository) GetAlertCaches(pk string) ([]*models.AlertCache, error) {
 	return out, nil
 }
 
-func (x *Repository) PutReportSectionRecord(record *models.ReportSectionRecord) error {
+func (x *Repository) PutInspectorReport(record *models.InspectorReportRecord) error {
 	x.put(record.PKey, record.SKey, record)
 	return nil
 }
 
-func (x *Repository) GetReportSection(pk string) ([]*models.ReportSectionRecord, error) {
-	var out []*models.ReportSectionRecord
+func (x *Repository) GetInspectorReports(pk string) ([]*models.InspectorReportRecord, error) {
+	var out []*models.InspectorReportRecord
 	for _, v := range x.getAll(pk) {
-		out = append(out, v.(*models.ReportSectionRecord))
+		out = append(out, v.(*models.InspectorReportRecord))
 	}
 	return out, nil
 }

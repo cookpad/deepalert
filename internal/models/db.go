@@ -27,7 +27,7 @@ type AlertCache struct {
 	ExpiresAt int64  `dynamo:"expires_at"`
 }
 
-type ReportSectionRecord struct {
+type InspectorReportRecord struct {
 	RecordBase
 	Data []byte `dynamo:"data"`
 }
@@ -69,7 +69,7 @@ func (x *ReportEntry) Import(report *deepalert.Report) error {
 
 	raw, err = json.Marshal(report.Sections)
 	if err != nil {
-		return errors.Wrap(err, "Failed to marshal report.Sections").With("report", report)
+		return errors.Wrap(err, "Failed to marshal report.Contents").With("report", report)
 	}
 	x.Sections = string(raw)
 
@@ -102,7 +102,7 @@ func (x *ReportEntry) Export() (*deepalert.Report, error) {
 	}
 
 	if err := json.Unmarshal([]byte(x.Sections), &report.Sections); err != nil {
-		return nil, errors.Wrap(err, "Failed to unmarshal reprot.Sections").With("entry", *x)
+		return nil, errors.Wrap(err, "Failed to unmarshal reprot.Contents").With("entry", *x)
 	}
 
 	if err := json.Unmarshal([]byte(x.Result), &report.Result); err != nil {

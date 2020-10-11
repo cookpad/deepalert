@@ -14,7 +14,7 @@ func TestReportEntry(t *testing.T) {
 	t.Run("Import and Export", func(tt *testing.T) {
 		r1 := &deepalert.Report{
 			ID: "xba123",
-			Alerts: []deepalert.Alert{
+			Alerts: []*deepalert.Alert{
 				{
 					AlertKey: "cxz",
 					Detector: "saber",
@@ -46,7 +46,7 @@ func TestReportEntry(t *testing.T) {
 					},
 				},
 			},
-			Attributes: []deepalert.Attribute{
+			Attributes: []*deepalert.Attribute{
 				{
 					Type: deepalert.TypeIPAddr,
 					Context: deepalert.AttrContexts{
@@ -64,10 +64,9 @@ func TestReportEntry(t *testing.T) {
 					Value: "192.168.2.3",
 				},
 			},
-			Sections: []deepalert.ReportSection{
+			Sections: []*deepalert.ReportSection{
 				{
-					ReportID: "hoge",
-					Attribute: deepalert.Attribute{
+					OriginAttr: &deepalert.Attribute{
 						Type: deepalert.TypeIPAddr,
 						Context: deepalert.AttrContexts{
 							deepalert.CtxLocal,
@@ -75,18 +74,20 @@ func TestReportEntry(t *testing.T) {
 						Key:   "dstAddr",
 						Value: "192.168.2.3",
 					},
-					Type:   deepalert.ContentUser,
-					Author: "caster",
-					Content: deepalert.ReportUser{
-						Activities: []deepalert.EntityActivity{
-							{
-								Action:     "hoge",
-								RemoteAddr: "10.5.6.7",
+
+					Users: []*deepalert.ReportUser{
+						{
+							Activities: []deepalert.EntityActivity{
+								{
+									Action:     "hoge",
+									RemoteAddr: "10.5.6.7",
+								},
 							},
 						},
 					},
 				},
 			},
+
 			Result: deepalert.ReportResult{
 				Severity: deepalert.SevSafe,
 				Reason:   "no reason",
@@ -112,16 +113,11 @@ func TestReportEntry(t *testing.T) {
 		assert.Contains(tt, r2.Attributes, r1.Attributes[0])
 		assert.Contains(tt, r2.Attributes, r1.Attributes[1])
 
-		contents, err := r2.ExtractContents()
-		require.NoError(tt, err)
-		require.Equal(tt, 1, len(contents.Attributes))
-		require.Equal(tt, 1, len(contents.Users))
-		assert.Equal(tt, 0, len(contents.Hosts))
-		assert.Equal(tt, 0, len(contents.Binaries))
-		for _, users := range contents.Users {
-			require.Equal(tt, 1, len(users))
-			assert.Equal(tt, r1.Sections[0].Content, users[0])
-		}
+		assert.Equal(tt, r1.Sections[0].OriginAttr, r2.Sections[0].OriginAttr)
+		require.Equal(tt, 1, len(r2.Sections[0].Users))
+		assert.Equal(tt, 0, len(r2.Sections[0].Hosts))
+		assert.Equal(tt, 0, len(r2.Sections[0].Binaries))
+		assert.Equal(tt, r1.Sections[0].Users[0], r2.Sections[0].Users[0])
 
 		// Result, status, createdAt
 		assert.Equal(tt, r1.Result, r2.Result)

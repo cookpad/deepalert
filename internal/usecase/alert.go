@@ -42,7 +42,7 @@ func HandleAlert(args *handler.Arguments, alert deepalert.Alert, now time.Time) 
 		"AlertID":  alert.AlertID(),
 	}).Info("ReportID has been retrieved")
 
-	report.Alerts = []deepalert.Alert{alert}
+	report.Alerts = []*deepalert.Alert{&alert}
 
 	if err := repo.SaveAlertCache(report.ID, alert, now); err != nil {
 		return nil, errors.Wrap(err, "Fail to save alert cache")

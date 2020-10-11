@@ -22,7 +22,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		return nil, err
 	}
 
-	sections, err := svc.FetchReportSection(report.ID)
+	sections, err := svc.FetchInspectReport(report.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "FetchReportSection").With("report", report)
 	}
@@ -38,8 +38,8 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	}
 
 	report.Alerts = alerts
-	report.Sections = sections
 	report.Attributes = attrs
+	report.Sections = sections
 
 	logging.Logger.WithField("report", report).Info("Compiled report")
 

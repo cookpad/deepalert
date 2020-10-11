@@ -39,7 +39,7 @@ func getReportSections(c *gin.Context) {
 		return
 	}
 
-	sections, err := repo.FetchReportSection(reportID)
+	sections, err := repo.FetchInspectReport(reportID)
 	if err != nil {
 		resp(c, wrapSystemError(err, "Failed to fetch sections"))
 		return

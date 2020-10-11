@@ -17,13 +17,8 @@ func handleAlert(ctx context.Context, report deepalert.Report) (*deepalert.Repor
 	}
 
 	// Extract results of Inspector
-	reportMap, err := report.ExtractContents()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, hostReports := range reportMap.Hosts {
-		for _, host := range hostReports {
+	for _, section := range report.Sections {
+		for _, host := range section.Hosts {
 			for _, owner := range host.Owner {
 				// If source host is owned by your company
 				if owner == "YOUR_COMPANY" {

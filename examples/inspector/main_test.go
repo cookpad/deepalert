@@ -28,7 +28,7 @@ func TestInspectorExample(t *testing.T) {
 
 		task := deepalert.Task{
 			ReportID: deepalert.ReportID(uuid.New().String()),
-			Attribute: deepalert.Attribute{
+			Attribute: &deepalert.Attribute{
 				Type:  deepalert.TypeIPAddr,
 				Key:   "dst",
 				Value: "192.10.0.1",
@@ -48,7 +48,7 @@ func TestInspectorExample(t *testing.T) {
 
 		task := deepalert.Task{
 			ReportID: deepalert.ReportID(uuid.New().String()),
-			Attribute: deepalert.Attribute{
+			Attribute: &deepalert.Attribute{
 				Type:  deepalert.TypeUserName,
 				Key:   "login-name",
 				Value: "mizutani",

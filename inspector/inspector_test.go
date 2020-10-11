@@ -30,7 +30,7 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 
 	return &deepalert.TaskResult{
 		Contents:      []deepalert.ReportContent{&hostReport},
-		NewAttributes: []deepalert.Attribute{newAttr},
+		NewAttributes: []*deepalert.Attribute{&newAttr},
 	}, nil
 }
 
@@ -74,7 +74,7 @@ func TestSQS(t *testing.T) {
 
 	task := deepalert.Task{
 		ReportID: deepalert.ReportID(uuid.New().String()),
-		Attribute: deepalert.Attribute{
+		Attribute: &deepalert.Attribute{
 			Type:  deepalert.TypeIPAddr,
 			Key:   "dst",
 			Value: "192.10.0.1",
@@ -90,7 +90,7 @@ func TestSQS(t *testing.T) {
 	cq := mock.InputMap[contentURL][0]
 	aq := mock.InputMap[attrURL][0]
 
-	var req1 deepalert.ReportSection
+	var req1 deepalert.InspectReport
 	err = json.Unmarshal([]byte(*cq.MessageBody), &req1)
 	require.NoError(t, err)
 	assert.Equal(t, contentURL, aws.StringValue(cq.QueueUrl))

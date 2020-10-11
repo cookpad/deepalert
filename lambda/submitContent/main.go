@@ -29,15 +29,15 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	now := time.Now()
 
 	for _, msg := range messages {
-		var section deepalert.ReportSection
-		if err := json.Unmarshal(msg, &section); err != nil {
-			return nil, errors.Wrapf(err, "Fail to unmarshal ReportContent from SubmitNotification").With("%s", string(msg))
+		var ir deepalert.InspectReport
+		if err := json.Unmarshal(msg, &ir); err != nil {
+			return nil, errors.Wrapf(err, "Fail to unmarshal InspectReport from SubmitNotification").With("%s", string(msg))
 		}
 
-		if err := repo.SaveReportSection(section, now); err != nil {
-			return nil, errors.Wrapf(err, "Fail to save ReportContent: %v", section)
+		if err := repo.SaveInspectReport(ir, now); err != nil {
+			return nil, errors.Wrapf(err, "Fail to save InspectReport: %v", ir)
 		}
-		logger.WithField("section", section).Info("Saved content")
+		logger.WithField("section", ir).Info("Saved content")
 	}
 
 	return nil, nil

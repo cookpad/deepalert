@@ -25,7 +25,7 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 
 	return &deepalert.TaskResult{
 		Contents:      []deepalert.ReportContent{&hostReport},
-		NewAttributes: []deepalert.Attribute{newAttr},
+		NewAttributes: []*deepalert.Attribute{&newAttr},
 	}, nil
 }
 

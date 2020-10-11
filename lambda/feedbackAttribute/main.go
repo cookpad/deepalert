@@ -41,7 +41,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		logger.WithField("reportedAttr", reportedAttr).Info("unmarshaled reported attribute")
 
 		for _, attr := range reportedAttr.Attributes {
-			sendable, err := repo.PutAttributeCache(reportedAttr.ReportID, attr, now)
+			sendable, err := repo.PutAttributeCache(reportedAttr.ReportID, *attr, now)
 			if err != nil {
 				return nil, errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
 			}

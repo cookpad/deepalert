@@ -1,7 +1,6 @@
 package deepalert
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -52,25 +51,25 @@ type ReportContentType string
 
 // Report is a container to deliver contents and inspection results of the alert.
 type Report struct {
-	ID         ReportID        `json:"id"`
-	Alerts     []Alert         `json:"alerts"`
-	Attributes []Attribute     `json:"attributes"`
-	Sections   []ReportSection `json:"sections"`
-	Result     ReportResult    `json:"result"`
-	Status     ReportStatus    `json:"status"`
-	CreatedAt  time.Time       `json:"created_at"`
+	ID         ReportID         `json:"id"`
+	Alerts     []*Alert         `json:"alerts"`
+	Attributes []*Attribute     `json:"attributes"`
+	Sections   []*ReportSection `json:"sections"`
+	Result     ReportResult     `json:"result"`
+	Status     ReportStatus     `json:"status"`
+	CreatedAt  time.Time        `json:"created_at"`
 }
 
-// ReportMaps is mapping Attributes and Hosts. Key of the maps are hash value of Attribute.
-type ReportMaps struct {
-	Attributes map[string]Attribute
-	Hosts      map[string][]ReportHost
-	Users      map[string][]ReportUser
-	Binaries   map[string][]ReportBinary
-}
-
-// ReportSection is base structure of report entity.
+// ReportSection is set of Report content (user, host and binary)
 type ReportSection struct {
+	OriginAttr *Attribute      `json:"origin_attr"`
+	Users      []*ReportUser   `json:"users,omitempty"`
+	Hosts      []*ReportHost   `json:"hosts,omitempty"`
+	Binaries   []*ReportBinary `json:"binaries,omitempty"`
+}
+
+// InspectReport is base structure of report entity.
+type InspectReport struct {
 	ReportID  ReportID          `json:"report_id"`
 	Author    string            `json:"author"`
 	Attribute Attribute         `json:"attribute"`
@@ -101,50 +100,6 @@ func (x *Report) IsMore() bool { return x.Status == StatusMore }
 
 // IsPublished returns status of the report
 func (x *Report) IsPublished() bool { return x.Status == StatusPublished }
-
-// ExtractContents extract report contents (host/user/binary) and merge them to ReportMaps
-func (x *Report) ExtractContents() (*ReportMaps, error) {
-	maps := ReportMaps{
-		Attributes: make(map[string]Attribute),
-		Hosts:      make(map[string][]ReportHost),
-		Users:      make(map[string][]ReportUser),
-		Binaries:   make(map[string][]ReportBinary),
-	}
-
-	for _, section := range x.Sections {
-		raw, err := json.Marshal(section.Content)
-		if err != nil {
-			return nil, err
-		}
-		hv := section.Attribute.Hash()
-		maps.Attributes[hv] = section.Attribute
-
-		switch section.Type {
-		case ContentUser:
-			var user ReportUser
-			if err := json.Unmarshal(raw, &user); err != nil {
-				return nil, err
-			}
-			maps.Users[hv] = append(maps.Users[hv], user)
-
-		case ContentHost:
-			var host ReportHost
-			if err := json.Unmarshal(raw, &host); err != nil {
-				return nil, err
-			}
-			maps.Hosts[hv] = append(maps.Hosts[hv], host)
-
-		case ContentBinary:
-			var binary ReportBinary
-			if err := json.Unmarshal(raw, &binary); err != nil {
-				return nil, err
-			}
-			maps.Binaries[hv] = append(maps.Binaries[hv], binary)
-		}
-	}
-
-	return &maps, nil
-}
 
 // -----------------------------------------------
 // Entities
@@ -255,8 +210,8 @@ type EntitySoftware struct {
 
 // ReportAttribute has attribute(S) that are found newly by inspector.
 type ReportAttribute struct {
-	ReportID   ReportID    `json:"report_id"`
-	Author     string      `json:"author"`
-	Original   Attribute   `json:"original"`
-	Attributes []Attribute `json:"attributes"`
+	ReportID   ReportID     `json:"report_id"`
+	Author     string       `json:"author"`
+	OriginAttr Attribute    `json:"origin_attr"`
+	Attributes []*Attribute `json:"attributes"`
 }

@@ -23,8 +23,8 @@ func testRepositoryService(t *testing.T, svc *service.RepositoryService) {
 	t.Run("AlertCache", func(tt *testing.T) {
 		testAlertCache(tt, svc)
 	})
-	t.Run("ReportSection", func(tt *testing.T) {
-		testReportSection(tt, svc)
+	t.Run("InspectReport", func(tt *testing.T) {
+		testInspectReport(tt, svc)
 	})
 	t.Run("AttributeCache", func(tt *testing.T) {
 		testAttributeCache(tt, svc)
@@ -105,18 +105,18 @@ func testAlertCache(t *testing.T, svc *service.RepositoryService) {
 
 		cache, err := svc.FetchAlertCache(id1)
 		require.NoError(tt, err)
-		assert.Contains(tt, cache, alert1)
-		assert.Contains(tt, cache, alert2)
-		assert.NotContains(tt, cache, alert3)
+		assert.Contains(tt, cache, &alert1)
+		assert.Contains(tt, cache, &alert2)
+		assert.NotContains(tt, cache, &alert3)
 	})
 }
 
-func testReportSection(t *testing.T, svc *service.RepositoryService) {
+func testInspectReport(t *testing.T, svc *service.RepositoryService) {
 	t.Run("Savea and Fetch report section", func(tt *testing.T) {
 		id1 := deepalert.ReportID(uuid.New().String())
 		id2 := deepalert.ReportID(uuid.New().String())
 		now := time.Now()
-		s1 := deepalert.ReportSection{
+		s1 := deepalert.InspectReport{
 			ReportID: id1,
 			Author:   "a1",
 			Attribute: deepalert.Attribute{
@@ -124,7 +124,7 @@ func testReportSection(t *testing.T, svc *service.RepositoryService) {
 				Value: "10.0.0.1",
 			},
 		}
-		s2 := deepalert.ReportSection{
+		s2 := deepalert.InspectReport{
 			ReportID: id1,
 			Author:   "a2",
 			Attribute: deepalert.Attribute{
@@ -132,7 +132,7 @@ func testReportSection(t *testing.T, svc *service.RepositoryService) {
 				Value: "10.0.0.2",
 			},
 		}
-		s3 := deepalert.ReportSection{
+		s3 := deepalert.InspectReport{
 			ReportID: id2,
 			Author:   "a3",
 			Attribute: deepalert.Attribute{
@@ -140,15 +140,17 @@ func testReportSection(t *testing.T, svc *service.RepositoryService) {
 				Value: "10.0.0.3",
 			},
 		}
-		require.NoError(tt, svc.SaveReportSection(s1, now))
-		require.NoError(tt, svc.SaveReportSection(s2, now))
-		require.NoError(tt, svc.SaveReportSection(s3, now))
 
-		sections, err := svc.FetchReportSection(id1)
+		attrs := []*deepalert.Attribute{&s1.Attribute, &s2.Attribute, &s3.Attribute}
+		require.NoError(tt, svc.SaveInspectReport(s1, now))
+		require.NoError(tt, svc.SaveInspectReport(s2, now))
+		require.NoError(tt, svc.SaveInspectReport(s3, now))
+
+		sections, err := svc.FetchInspectReport(id1)
 		require.NoError(tt, err)
-		assert.Contains(tt, sections, s1)
-		assert.Contains(tt, sections, s2)
-		assert.NotContains(tt, sections, s3)
+		require.Equal(tt, 2, len(sections))
+		assert.Contains(tt, attrs, sections[0].OriginAttr)
+		assert.Contains(tt, attrs, sections[1].OriginAttr)
 	})
 }
 
@@ -192,15 +194,15 @@ func testAttributeCache(t *testing.T, svc *service.RepositoryService) {
 		attrs, err := svc.FetchAttributeCache(id1)
 		require.NoError(tt, err)
 
-		var attrList []deepalert.Attribute
+		var attrList []*deepalert.Attribute
 		for _, attr := range attrs {
 			a := attr
 			a.Timestamp = nil
 			attrList = append(attrList, a)
 		}
-		assert.Contains(tt, attrList, attr1)
-		assert.Contains(tt, attrList, attr2)
-		assert.NotContains(tt, attrList, attr3)
+		assert.Contains(tt, attrList, &attr1)
+		assert.Contains(tt, attrList, &attr2)
+		assert.NotContains(tt, attrList, &attr3)
 	})
 
 	t.Run("Duplicated attribute", func(tt *testing.T) {
@@ -226,7 +228,7 @@ func testAttributeCache(t *testing.T, svc *service.RepositoryService) {
 		require.NoError(tt, err)
 		assert.Equal(tt, 1, len(attrs))
 		attrs[0].Timestamp = nil
-		assert.Equal(tt, attr1, attrs[0])
+		assert.Equal(tt, attr1, *attrs[0])
 	})
 }
 
@@ -234,7 +236,7 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 	t.Run("Put and Get", func(tt *testing.T) {
 		r1 := &deepalert.Report{
 			ID: deepalert.ReportID(uuid.New().String()),
-			Alerts: []deepalert.Alert{
+			Alerts: []*deepalert.Alert{
 				{
 					AlertKey: "cxz",
 					Detector: "saber",
@@ -266,7 +268,7 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 					},
 				},
 			},
-			Attributes: []deepalert.Attribute{
+			Attributes: []*deepalert.Attribute{
 				{
 					Type: deepalert.TypeIPAddr,
 					Context: deepalert.AttrContexts{
@@ -284,10 +286,9 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 					Value: "192.168.2.3",
 				},
 			},
-			Sections: []deepalert.ReportSection{
+			Sections: []*deepalert.ReportSection{
 				{
-					ReportID: "hoge",
-					Attribute: deepalert.Attribute{
+					OriginAttr: &deepalert.Attribute{
 						Type: deepalert.TypeIPAddr,
 						Context: deepalert.AttrContexts{
 							deepalert.CtxLocal,
@@ -295,13 +296,13 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 						Key:   "dstAddr",
 						Value: "192.168.2.3",
 					},
-					Type:   deepalert.ContentUser,
-					Author: "caster",
-					Content: deepalert.ReportUser{
-						Activities: []deepalert.EntityActivity{
-							{
-								Action:     "hoge",
-								RemoteAddr: "10.5.6.7",
+					Users: []*deepalert.ReportUser{
+						{
+							Activities: []deepalert.EntityActivity{
+								{
+									Action:     "hoge",
+									RemoteAddr: "10.5.6.7",
+								},
 							},
 						},
 					},

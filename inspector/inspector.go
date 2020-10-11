@@ -116,7 +116,7 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 
 	newCtx := context.WithValue(ctx, contextKey, &task.ReportID)
 
-	result, err := args.Handler(newCtx, task.Attribute)
+	result, err := args.Handler(newCtx, *task.Attribute)
 	if err != nil {
 		return errors.Wrapf(err, "Fail to handle task: %v", task)
 	}
@@ -127,9 +127,9 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 
 	// Sending entities
 	for _, entity := range result.Contents {
-		section := deepalert.ReportSection{
+		section := deepalert.InspectReport{
 			ReportID:  task.ReportID,
-			Attribute: task.Attribute,
+			Attribute: *task.Attribute,
 			Author:    args.Author,
 			Type:      entity.Type(),
 			Content:   entity,
@@ -141,7 +141,7 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 		}
 	}
 
-	var newAttrs []deepalert.Attribute
+	var newAttrs []*deepalert.Attribute
 	for _, attr := range result.NewAttributes {
 		if attr.Timestamp == nil {
 			attr.Timestamp = task.Attribute.Timestamp
@@ -153,7 +153,7 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 	if len(result.NewAttributes) > 0 {
 		attrReport := deepalert.ReportAttribute{
 			ReportID:   task.ReportID,
-			Original:   task.Attribute,
+			OriginAttr: *task.Attribute,
 			Attributes: newAttrs,
 			Author:     args.Author,
 		}

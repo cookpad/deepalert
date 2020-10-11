@@ -41,7 +41,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 
 			task := deepalert.Task{
 				ReportID:  report.ID,
-				Attribute: attr,
+				Attribute: &attr,
 			}
 
 			if err := snsSvc.Publish(args.TaskTopic, &task); err != nil {
