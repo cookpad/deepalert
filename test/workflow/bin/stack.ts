@@ -7,6 +7,8 @@ import * as lambda from "@aws-cdk/aws-lambda";
 import { DeepAlertStack } from "../../../cdk/deepalert-stack";
 import { SnsEventSource } from "@aws-cdk/aws-lambda-event-sources";
 
+import 'process';
+
 interface properties extends cdk.StackProps {
   readonly deepalert: DeepAlertStack;
 }
@@ -21,11 +23,11 @@ export class WorkflowStack extends cdk.Stack {
       sortKey: { name: "sk", type: dynamodb.AttributeType.STRING },
     });
 
-    const buildPath = lambda.Code.asset("./build");
+    const buildPath = lambda.Code.fromAsset("./build");
 
     const testInspector = new lambda.Function(this, "testInspector", {
       runtime: lambda.Runtime.GO_1_X,
-      handler: "testInspector",
+      handler: "inspector",
       timeout: cdk.Duration.seconds(30),
       code: buildPath,
       events: [new SnsEventSource(props.deepalert.taskTopic)],
@@ -38,7 +40,7 @@ export class WorkflowStack extends cdk.Stack {
 
     const testEmitter = new lambda.Function(this, "testEmitter", {
       runtime: lambda.Runtime.GO_1_X,
-      handler: "testEmitter",
+      handler: "emitter",
       timeout: cdk.Duration.seconds(30),
       code: buildPath,
       events: [new SnsEventSource(props.deepalert.reportTopic)],

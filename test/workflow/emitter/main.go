@@ -1,6 +1,15 @@
 package main
 
-/*
+import (
+	"context"
+	"os"
+
+	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/emitter"
+	"github.com/deepalert/deepalert/test/workflow"
+	"github.com/sirupsen/logrus"
+)
+
 var logger = logrus.New()
 
 func emit(ctx context.Context, report deepalert.Report) error {
@@ -21,4 +30,3 @@ func main() {
 
 	emitter.Start(emit)
 }
-*/
