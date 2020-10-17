@@ -34,16 +34,17 @@ func (x *baseResult) setKeys(pk, sk string) {
 }
 
 // NewRepository is constructor of repository to access DynamoDB
-func NewRepository(region, tableName string) *Repository {
-	db := dynamo.New(session.New(), &aws.Config{Region: aws.String(region)})
+func NewRepository(region, tableName string) (*Repository, error) {
+	ssn, err := session.NewSession(&aws.Config{Region: aws.String(region)})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed session.NewSession")
+	}
+
+	db := dynamo.New(ssn, &aws.Config{Region: aws.String(region)})
 
 	return &Repository{
 		table: db.Table(tableName),
-	}
-}
-
-func toDynamoKeys(alertKey, testTable string) (string, string) {
-	return fmt.Sprintf("alert:%s", alertKey), testTable
+	}, nil
 }
 
 // EmitterResult is record of Emitter test

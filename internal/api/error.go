@@ -66,6 +66,7 @@ func wrapSystemError(err error, msg string, args ...interface{}) apiError {
 	}
 }
 
+/*
 func newSystemError(msg string, args ...interface{}) apiError {
 	return &systemError{
 		baseError: baseError{
@@ -74,3 +75,4 @@ func newSystemError(msg string, args ...interface{}) apiError {
 		},
 	}
 }
+*/

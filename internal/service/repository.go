@@ -3,8 +3,10 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/errors"
@@ -65,8 +67,8 @@ func (x *RepositoryService) TakeReport(alert deepalert.Alert, now time.Time) (*d
 		RecordBase: models.RecordBase{
 			PKey:      "alertmap/" + alertID,
 			SKey:      fixedKey,
-			ExpiresAt: now.Add(x.ttl).Unix(),
-			CreatedAt: now,
+			ExpiresAt: now.UTC().Add(x.ttl).Unix(),
+			CreatedAt: now.UTC().Unix(),
 		},
 		ReportID: newReportID(),
 	}
@@ -81,7 +83,7 @@ func (x *RepositoryService) TakeReport(alert deepalert.Alert, now time.Time) (*d
 			return &deepalert.Report{
 				ID:        existedEntry.ReportID,
 				Status:    deepalert.StatusMore,
-				CreatedAt: existedEntry.CreatedAt,
+				CreatedAt: time.Unix(existedEntry.CreatedAt, 0),
 			}, nil
 		}
 
@@ -111,10 +113,12 @@ func (x *RepositoryService) SaveAlertCache(reportID deepalert.ReportID, alert de
 
 	pk, sk := toAlertCacheKey(reportID)
 	cache := &models.AlertCache{
-		PKey:      pk,
-		SKey:      sk,
+		RecordBase: models.RecordBase{
+			PKey:      pk,
+			SKey:      sk,
+			ExpiresAt: now.UTC().Add(x.ttl).Unix(),
+		},
 		AlertData: raw,
-		ExpiresAt: now.UTC().Add(x.ttl).Unix(),
 	}
 
 	if err := x.repo.PutAlertCache(cache); err != nil {
@@ -258,6 +262,15 @@ func toAttributeCacheKey(reportID deepalert.ReportID) string {
 
 func toReportKey(reportID deepalert.ReportID) string {
 	return fmt.Sprintf("report/%s", reportID)
+}
+
+// IsReportStreamEvent checks if the record has reportKey
+func IsReportStreamEvent(record *events.DynamoDBEventRecord) bool {
+	pk, ok := record.Change.Keys[models.DynamoPKeyName]
+	if !ok {
+		return false
+	}
+	return strings.HasPrefix(pk.String(), "report/")
 }
 
 // PutAttributeCache puts attributeCache to DB and returns true. If the attribute alrady exists,

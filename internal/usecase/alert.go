@@ -13,21 +13,20 @@ import (
 var logger = handler.Logger
 
 // HandleAlert creates a report from alert and invoke delay machines
-func HandleAlert(args *handler.Arguments, alert deepalert.Alert, now time.Time) (*deepalert.Report, error) {
+func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time) (*deepalert.Report, error) {
 	logger.WithField("alert", alert).Info("Taking report")
 
 	if err := alert.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid alert format")
 	}
 
-	snsSvc := args.SNSService()
 	sfnSvc := args.SFnService()
 	repo, err := args.Repository()
 	if err != nil {
 		return nil, err
 	}
 
-	report, err := repo.TakeReport(alert, now)
+	report, err := repo.TakeReport(*alert, now)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Fail to take reportID for alert").With("alert", alert)
 	}
@@ -42,9 +41,9 @@ func HandleAlert(args *handler.Arguments, alert deepalert.Alert, now time.Time) 
 		"AlertID":  alert.AlertID(),
 	}).Info("ReportID has been retrieved")
 
-	report.Alerts = []*deepalert.Alert{&alert}
+	report.Alerts = []*deepalert.Alert{alert}
 
-	if err := repo.SaveAlertCache(report.ID, alert, now); err != nil {
+	if err := repo.SaveAlertCache(report.ID, *alert, now); err != nil {
 		return nil, errors.Wrap(err, "Fail to save alert cache")
 	}
 
@@ -58,8 +57,8 @@ func HandleAlert(args *handler.Arguments, alert deepalert.Alert, now time.Time) 
 		}
 	}
 
-	if err := snsSvc.Publish(args.ReportTopic, &report); err != nil {
-		return nil, errors.Wrap(err, "Fail to publish report")
+	if err := repo.PutReport(report); err != nil {
+		return nil, errors.Wrap(err, "Fail PutReport")
 	}
 
 	return report, nil

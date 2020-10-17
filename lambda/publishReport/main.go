@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/deepalert/deepalert"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/deepalert/deepalert/internal/logging"
+	"github.com/deepalert/deepalert/internal/models"
+	"github.com/deepalert/deepalert/internal/service"
 )
 
 var logger = logging.Logger
@@ -14,21 +16,37 @@ func main() {
 }
 
 func handleRequest(args *handler.Arguments) (handler.Response, error) {
-	var report deepalert.Report
-	if err := args.BindEvent(&report); err != nil {
+	var event events.DynamoDBEvent
+
+	if err := args.BindEvent(&event); err != nil {
 		return nil, err
 	}
-	snsSvc := args.SNSService()
 
-	report.Status = deepalert.StatusPublished
-	if report.Result.Severity == "" {
-		report.Result.Severity = deepalert.SevUnclassified
-	}
+	for _, record := range event.Records {
+		logger.WithField("event", event).Info("Recv DynamoDB event")
 
-	logger.WithField("report", report).Info("Publishing report")
+		if !service.IsReportStreamEvent(&record) {
+			continue
+		}
 
-	if err := snsSvc.Publish(args.ReportTopic, &report); err != nil {
-		return nil, errors.Wrap(err, "Fail to publish report")
+		var reportEntry models.ReportEntry
+		if err := reportEntry.ImportDynamoRecord(&record); err != nil {
+			if err != models.ErrRecordIsNotReport {
+				return nil, err
+			}
+			continue
+		}
+
+		report, err := reportEntry.Export()
+		if err != nil {
+			return nil, err
+		}
+
+		logger.WithField("report", report).Info("Publishing report")
+
+		if err := args.SNSService().Publish(args.ReportTopic, &report); err != nil {
+			return nil, errors.Wrap(err, "Fail to publish report")
+		}
 	}
 
 	return nil, nil

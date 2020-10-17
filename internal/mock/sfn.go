@@ -13,11 +13,11 @@ func NewSFnClient(region string) (adaptor.SFnClient, error) {
 // SFnClient is mock
 type SFnClient struct {
 	region string
-	input  []*sfn.StartExecutionInput
+	Input  []*sfn.StartExecutionInput
 }
 
 // StartExecution of mock SFnClient only stores sfn.StartExecutionInput
 func (x *SFnClient) StartExecution(input *sfn.StartExecutionInput) (*sfn.StartExecutionOutput, error) {
-	x.input = append(x.input, input)
+	x.Input = append(x.Input, input)
 	return &sfn.StartExecutionOutput{}, nil
 }

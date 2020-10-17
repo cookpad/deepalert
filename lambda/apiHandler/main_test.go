@@ -1,4 +1,4 @@
-package main_test
+package main
 
 import (
 	"encoding/json"
@@ -11,8 +11,6 @@ import (
 	"github.com/deepalert/deepalert/internal/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	main "github.com/deepalert/deepalert/lambda/receptAlert"
 )
 
 func TestReceptAlert(t *testing.T) {
@@ -35,18 +33,18 @@ func TestReceptAlert(t *testing.T) {
 				InspectorMashine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
 				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:orange",
 			},
-			Event: events.SNSEvent{
-				Records: []events.SNSEventRecord{
-					{
-						SNS: events.SNSEntity{Message: string(raw)},
-					},
-				},
+			Event: events.APIGatewayProxyRequest{
+				HTTPMethod: "POST",
+				Path:       "/api/v1/alert",
+				Body:       string(raw),
 			},
 		}
 
-		resp, err := main.HandleRequest(args)
+		resp, err := handleRequest(args)
 		require.NoError(tt, err)
-		assert.Nil(tt, resp)
+		assert.NotNil(tt, resp)
+		httpResp, ok := resp.(events.APIGatewayProxyResponse)
+		assert.Equal(tt, 200, httpResp.StatusCode)
 
 		// Check only execution of StepFunctions. More detailed test are in internal/usecase
 		sfn, ok := dummySFn.(*mock.SFnClient)

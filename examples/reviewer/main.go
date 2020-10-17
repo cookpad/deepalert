@@ -7,8 +7,12 @@ import (
 	"github.com/deepalert/deepalert"
 )
 
+func main() {
+	lambda.Start(evaluate)
+}
+
 // Example to evaluate security alert of suspicious activity on AWS
-func handleAlert(ctx context.Context, report deepalert.Report) (*deepalert.ReportResult, error) {
+func evaluate(ctx context.Context, report deepalert.Report) (*deepalert.ReportResult, error) {
 	for _, alert := range report.Alerts {
 		// Skip if alert ruleID is not matched
 		if alert.RuleID != "your_alert_rule_id" {
@@ -33,8 +37,4 @@ func handleAlert(ctx context.Context, report deepalert.Report) (*deepalert.Repor
 	}
 
 	return nil, nil
-}
-
-func main() {
-	lambda.Start(handleAlert)
 }

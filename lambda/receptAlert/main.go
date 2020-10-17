@@ -27,12 +27,14 @@ func HandleRequest(args *handler.Arguments) (handler.Response, error) {
 	now := time.Now().UTC()
 
 	for _, msg := range messages {
+		logger.WithField("message", string(msg)).Debug("Start handle alert")
+
 		var alert deepalert.Alert
 		if err := json.Unmarshal(msg, &alert); err != nil {
 			return nil, errors.Wrap(err, "Fail to unmarshal alert").With("alert", string(msg))
 		}
 
-		_, err = usecase.HandleAlert(args, alert, now)
+		_, err = usecase.HandleAlert(args, &alert, now)
 		if err != nil {
 			return nil, err
 		}

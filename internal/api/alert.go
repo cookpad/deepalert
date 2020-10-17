@@ -18,12 +18,11 @@ func postAlert(c *gin.Context) {
 		return
 	}
 
-	report, err := usecase.HandleAlert(args, alert, now)
+	report, err := usecase.HandleAlert(args, &alert, now)
 	if err != nil {
 		resp(c, err)
 		return
 	}
 
 	resp(c, report)
-	return
 }

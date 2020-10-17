@@ -6,14 +6,14 @@ import "fmt"
 type Error struct {
 	Wrapped error                  `json:"wrapped"`
 	Message string                 `json:"message"`
-	Context map[string]interface{} `json:"context"`
+	Values  map[string]interface{} `json:"values"`
 }
 
 // New creates a new error with message
 func New(msg string) *Error {
 	err := &Error{
 		Message: msg,
-		Context: make(map[string]interface{}),
+		Values:  make(map[string]interface{}),
 	}
 	handleSentryError(err)
 	return err
@@ -41,13 +41,13 @@ func Wrapf(err error, msgfmt string, args ...interface{}) *Error {
 // Error returns error message for error interface
 func (x *Error) Error() string {
 	if x.Wrapped != nil {
-		return fmt.Sprintf("%s %+v", x.Message, x.Wrapped)
+		return fmt.Sprintf("%s: %v", x.Message, x.Wrapped)
 	}
 	return x.Message
 }
 
 // With adds key and value related to the error event
 func (x *Error) With(key string, value interface{}) *Error {
-	x.Context[key] = value
+	x.Values[key] = value
 	return x
 }

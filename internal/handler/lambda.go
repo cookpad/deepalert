@@ -49,7 +49,7 @@ func StartLambda(handler Handler) {
 			}
 
 			if daErr, ok := err.(*errors.Error); ok {
-				fields["context"] = daErr.Context
+				fields["values"] = daErr.Values
 			}
 			Logger.WithFields(fields).Error("Failed Handler")
 			return nil, err

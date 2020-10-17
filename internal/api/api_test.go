@@ -63,6 +63,17 @@ func TestCreateReport(t *testing.T) {
 		require.NoError(tt, json.Unmarshal([]byte(postResp.Body), &report))
 		assert.NotEqual(tt, deepalert.ReportID(""), report.ID)
 
+		getReportResp, err := handleRequest(args, events.APIGatewayProxyRequest{
+			Path:       fmt.Sprintf("/api/v1/report/%s", report.ID),
+			HTTPMethod: "GET",
+		})
+		require.NoError(tt, err)
+		var getReport deepalert.Report
+		require.NoError(tt, json.Unmarshal([]byte(getReportResp.Body), &getReport))
+		assert.Equal(tt, report.ID, getReport.ID)
+		require.Equal(tt, 1, len(getReport.Alerts))
+		assert.Equal(tt, alert, getReport.Alerts[0])
+
 		getResp, err := handleRequest(args, events.APIGatewayProxyRequest{
 			Path:       fmt.Sprintf("/api/v1/report/%s/alert", report.ID),
 			HTTPMethod: "GET",

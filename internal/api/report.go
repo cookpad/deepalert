@@ -5,6 +5,25 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func getReport(c *gin.Context) {
+	args := getArguments(c)
+	reportID := deepalert.ReportID(c.Param(paramReportID))
+
+	repo, err := args.Repository()
+	if err != nil {
+		resp(c, wrapSystemError(err, "Failed to create Repository"))
+		return
+	}
+
+	report, err := repo.GetReport(reportID)
+	if err != nil {
+		resp(c, wrapSystemError(err, "Failed GetReport"))
+		return
+	}
+
+	resp(c, report)
+}
+
 func getReportAlerts(c *gin.Context) {
 	args := getArguments(c)
 	reportID := deepalert.ReportID(c.Param(paramReportID))
@@ -26,7 +45,6 @@ func getReportAlerts(c *gin.Context) {
 	}
 
 	resp(c, alerts)
-	return
 }
 
 func getReportSections(c *gin.Context) {
@@ -50,7 +68,6 @@ func getReportSections(c *gin.Context) {
 	}
 
 	resp(c, sections)
-	return
 }
 
 func getReportAttributes(c *gin.Context) {
@@ -74,5 +91,4 @@ func getReportAttributes(c *gin.Context) {
 	}
 
 	resp(c, attributes)
-	return
 }

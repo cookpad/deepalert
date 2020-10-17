@@ -103,25 +103,18 @@ func TestReportEntry(t *testing.T) {
 		require.NoError(tt, err)
 		assert.Equal(tt, r1.ID, r2.ID)
 
-		// Alert
-		assert.Equal(tt, 2, len(r2.Alerts))
-		assert.Contains(tt, r2.Alerts, r1.Alerts[0])
-		assert.Contains(tt, r2.Alerts, r1.Alerts[1])
+		tt.Run("Fetched report does not have Alert, Attribute and Section", func(ttt *testing.T) {
+			// Because they should be fetched by FetchAlertCache, FetchAttributeCache and FetchInspectReport
+			assert.Equal(tt, 0, len(r2.Alerts))
+			assert.Equal(tt, 0, len(r2.Attributes))
+			assert.Equal(tt, 0, len(r2.Sections))
+		})
 
-		// Attribute
-		assert.Equal(tt, 2, len(r2.Attributes))
-		assert.Contains(tt, r2.Attributes, r1.Attributes[0])
-		assert.Contains(tt, r2.Attributes, r1.Attributes[1])
-
-		assert.Equal(tt, r1.Sections[0].OriginAttr, r2.Sections[0].OriginAttr)
-		require.Equal(tt, 1, len(r2.Sections[0].Users))
-		assert.Equal(tt, 0, len(r2.Sections[0].Hosts))
-		assert.Equal(tt, 0, len(r2.Sections[0].Binaries))
-		assert.Equal(tt, r1.Sections[0].Users[0], r2.Sections[0].Users[0])
-
-		// Result, status, createdAt
-		assert.Equal(tt, r1.Result, r2.Result)
-		assert.Equal(tt, r1.Status, r2.Status)
-		assert.Equal(tt, r1.CreatedAt.UTC().Unix(), r2.CreatedAt.Unix())
+		tt.Run("Result, Status and CreatedAt should be matched with original report", func(ttt *testing.T) {
+			// Result, status, createdAt
+			assert.Equal(tt, r1.Result, r2.Result)
+			assert.Equal(tt, r1.Status, r2.Status)
+			assert.Equal(tt, r1.CreatedAt.UTC().Unix(), r2.CreatedAt.Unix())
+		})
 	})
 }

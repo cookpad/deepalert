@@ -46,10 +46,6 @@ func getRequestID(c *gin.Context) string {
 	return reqID
 }
 
-type errorResponse struct {
-	Error interface{} `json:"error"`
-}
-
 func resp(c *gin.Context, data interface{}) {
 	reqID := getRequestID(c)
 	c.Header("DeepAlert-Request-ID", reqID)
@@ -86,6 +82,7 @@ func SetupRoute(r *gin.RouterGroup, args *handler.Arguments) {
 	})
 
 	r.POST("/alert", postAlert)
+	r.GET("/report/:"+paramReportID, getReport)
 	r.GET("/report/:"+paramReportID+"/alert", getReportAlerts)
 	r.GET("/report/:"+paramReportID+"/section", getReportSections)
 	r.GET("/report/:"+paramReportID+"/attribute", getReportAttributes)
