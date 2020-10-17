@@ -44,6 +44,7 @@ func TestReceptAlert(t *testing.T) {
 		require.NoError(tt, err)
 		assert.NotNil(tt, resp)
 		httpResp, ok := resp.(events.APIGatewayProxyResponse)
+		require.True(tt, ok)
 		assert.Equal(tt, 200, httpResp.StatusCode)
 
 		// Check only execution of StepFunctions. More detailed test are in internal/usecase
