@@ -15,6 +15,7 @@ clean:
 	rm $(FUNCTIONS)
 
 deploy: build
+	make -f ../../Makefile
 	cdk deploy "*"
 
 test: $(OUTPUT_FILE)
