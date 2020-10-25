@@ -258,7 +258,6 @@ export class DeepAlertStack extends cdk.Stack {
       value: getAPIKey(props.apiKeyPath),
     })
     api.addUsagePlan('UsagePlan', {
-      name: 'normal',
       apiKey: apiKey,
     }).addApiStage({
       stage: api.deploymentStage,
