@@ -47,10 +47,10 @@ $(CODE_DIR)/build/feedbackAttribute: $(CODE_DIR)/lambda/feedbackAttribute/*.go $
 
 
 # Base Tasks -------------------------------------
-build: $(FUNCTIONS)
+build: $(FUNCTIONS) $(CDK_STACK)
 
-$(CDK_STACK): cdk/*.ts
-	tsc
+$(CDK_STACK): $(CODE_DIR)/cdk/*.ts
+	cd $(CODE_DIR) && tsc && cd $(CWD)
 
 deploy: $(FUNCTIONS) $(CDK_STACK)
 	cdk deploy

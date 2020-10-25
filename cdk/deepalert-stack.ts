@@ -14,6 +14,7 @@ import {
 } from "@aws-cdk/aws-lambda-event-sources";
 
 import * as path from "path";
+import * as fs from "fs";
 
 // import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
 
@@ -24,6 +25,7 @@ export interface property extends cdk.StackProps {
   inspectDelay?: cdk.Duration;
   reviewDelay?: cdk.Duration;
 
+  apiKeyPath?: string;
   sentryDsn?: string;
   sentryEnv?: string;
   logLevel?: string;
@@ -252,17 +254,27 @@ export class DeepAlertStack extends cdk.Stack {
         ],
       }),
     });
+    const apiKey = api.addApiKey('APIKey', {
+      value: getAPIKey(props.apiKeyPath),
+    })
+    api.addUsagePlan('UsagePlan', {
+      name: 'normal',
+      apiKey: apiKey,
+    }).addApiStage({
+      stage: api.deploymentStage,
+    })
 
-    const v1 = api.root.addResource("api").addResource("v1");
+    const apiOpt = { apiKeyRequired: true};
+    const v1 = api.root.addResource("api").addResource("v1",);
     const alertAPI = v1.addResource("alert");
-    alertAPI.addMethod("POST");
+    alertAPI.addMethod("POST", undefined, apiOpt);
 
     const reportAPI = v1.addResource("report");
     const reportAPIwithID = reportAPI.addResource("{report_id}");
-    reportAPIwithID.addMethod("GET");
-    reportAPIwithID.addResource("alert").addMethod("GET");
-    reportAPIwithID.addResource("attribute").addMethod("GET");
-    reportAPIwithID.addResource("section").addMethod("GET");
+    reportAPIwithID.addMethod("GET", undefined, apiOpt);
+    reportAPIwithID.addResource("alert").addMethod("GET", undefined, apiOpt);
+    reportAPIwithID.addResource("attribute").addMethod("GET", undefined, apiOpt);
+    reportAPIwithID.addResource("section").addMethod("GET", undefined, apiOpt);
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);
@@ -340,4 +352,24 @@ function buildReviewMachine(
     definition,
     role: sfnRole,
   });
+}
+
+function getAPIKey(apiKeyPath?: string): string {
+  if (apiKeyPath === undefined) {
+    apiKeyPath = path.join(__dirname, "apikey.json");
+  }
+
+  if (fs.existsSync(apiKeyPath)) {
+    console.log("Read API key from: ", apiKeyPath);
+    const buf = fs.readFileSync(apiKeyPath)
+    const keyData = JSON.parse(buf.toString());
+    return keyData['X-API-KEY'];
+  } else {
+    const literals = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const length = 32;
+    const apiKey = Array.from(Array(length)).map(()=>literals[Math.floor(Math.random()*literals.length)]).join('');
+    fs.writeFileSync(apiKeyPath, JSON.stringify({'X-API-KEY': apiKey}))
+    console.log("Generatedd and wrote API key to: ", apiKeyPath);
+    return apiKey;
+  }
 }
