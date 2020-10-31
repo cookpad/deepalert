@@ -98,13 +98,17 @@ func (x *Arguments) SFnService() *service.SFnService {
 // Repository provides data store accessor created by NewDynamoDB. If Arguments.NewRepository is set, this function returns repository object created by NewRepository.
 func (x *Arguments) Repository() (*service.RepositoryService, error) {
 	var ttl int64 = 1800
+	var repo adaptor.Repository
+
 	if x.NewRepository != nil {
-		return service.NewRepositoryService(x.NewRepository(x.CacheTable, x.AwsRegion), ttl), nil
+		repo = x.NewRepository(x.AwsRegion, x.CacheTable)
+	} else {
+		dynamodb, err := repository.NewDynamoDB(x.AwsRegion, x.CacheTable)
+		if err != nil {
+			return nil, err
+		}
+		repo = dynamodb
 	}
 
-	repo, err := repository.NewDynamoDB(x.CacheTable, x.AwsRegion)
-	if err != nil {
-		return nil, err
-	}
 	return service.NewRepositoryService(repo, ttl), nil
 }

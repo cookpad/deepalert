@@ -69,7 +69,7 @@ func TestWorkflow(t *testing.T) {
 	respRaw, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	t.Log(string(respRaw))
+	// t.Log(string(respRaw))
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	require.NoError(t, json.Unmarshal(respRaw, &report))

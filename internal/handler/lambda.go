@@ -5,12 +5,13 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/deepalert/deepalert/internal/logging"
 
 	"github.com/sirupsen/logrus"
 )
 
 // Logger is common logger gateway
-var Logger = logrus.New()
+var Logger = logging.Logger
 
 // Handler has main logic of the lambda function
 type Handler func(*Arguments) (Response, error)
@@ -31,11 +32,9 @@ func StartLambda(handler Handler) {
 			return nil, err
 		}
 
-		/*
-			if args.LogLevel != "" {
-				internal.SetLogLevel(args.LogLevel)
-			}
-		*/
+		if args.LogLevel != "" {
+			logging.SetLogLevel(args.LogLevel)
+		}
 
 		Logger.WithFields(logrus.Fields{"args": args, "event": event}).Debug("Start handler")
 		args.Event = event

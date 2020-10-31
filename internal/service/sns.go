@@ -8,10 +8,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/deepalert/deepalert/internal/logging"
 )
 
-var logger = logrus.New()
+var logger = logging.Logger
 
 // SNSService is accessor to SQS
 type SNSService struct {
