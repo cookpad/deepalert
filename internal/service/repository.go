@@ -87,7 +87,8 @@ func (x *RepositoryService) TakeReport(alert deepalert.Alert, now time.Time) (*d
 			}, nil
 		}
 
-		return nil, errors.Wrapf(err, "Fail to get cached reportID, AlertID=%s", alertID)
+		return nil, errors.Wrap(err, "Fail to create new alert entry").
+			With("AlertID", alertID).With("repo", x.repo)
 	}
 
 	return &deepalert.Report{

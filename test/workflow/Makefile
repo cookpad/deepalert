@@ -1,5 +1,7 @@
 COMMON=result.go
-FUNCTIONS=build/inspector build/emitter
+ASSETS=build/inspector build/emitter
+CDKOUT=cdk.out/cdk.out
+DEEPALERT_CODES=../../*.go ../../internal/**/*.go ../../lambda/**/*.go ../../cdk/*.ts
 
 all: build
 
@@ -9,14 +11,16 @@ build/emitter: emitter/* $(COMMON)
 	env GOARCH=amd64 GOOS=linux go build -o ./build/emitter ./emitter
 
 # Base Tasks -------------------------------------
-build: $(FUNCTIONS)
+build: $(ASSETS)
 
 clean:
-	rm $(FUNCTIONS)
+	rm $(ASSETS)
 
-deploy: build
+$(CDKOUT): build $(DEEPALERT_CODES)
 	make -f ../../Makefile
 	cdk deploy "*"
 
-test: $(OUTPUT_FILE)
-	go test -count=1 -v test
+deploy: $(CDKOUT)
+
+test: $(CDKOUT)
+	go test -count=1 -v .

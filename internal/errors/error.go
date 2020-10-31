@@ -4,9 +4,10 @@ import "fmt"
 
 // Error is error interface for deepalert to handle related variables
 type Error struct {
-	Wrapped error                  `json:"wrapped"`
-	Message string                 `json:"message"`
-	Values  map[string]interface{} `json:"values"`
+	Wrapped    error                  `json:"wrapped"`
+	Message    string                 `json:"message"`
+	Values     map[string]interface{} `json:"values"`
+	StatusCode int                    `json:"status_code"`
 }
 
 // New creates a new error with message
@@ -49,5 +50,11 @@ func (x *Error) Error() string {
 // With adds key and value related to the error event
 func (x *Error) With(key string, value interface{}) *Error {
 	x.Values[key] = value
+	return x
+}
+
+// Status sets HTTP status code
+func (x *Error) Status(code int) *Error {
+	x.StatusCode = code
 	return x
 }

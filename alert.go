@@ -137,9 +137,6 @@ func (x *Alert) Validate() error {
 	if x.Detector == "" {
 		return errors.New("Alert.Detector is required")
 	}
-	if x.RuleName == "" {
-		return errors.New("Alert.RuleName is required")
-	}
 	if x.RuleID == "" {
 		return errors.New("Alert.RuleID is required")
 	}

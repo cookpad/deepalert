@@ -1,6 +1,9 @@
 package api
 
 import (
+	"net/http"
+
+	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -46,19 +49,30 @@ func getRequestID(c *gin.Context) string {
 	return reqID
 }
 
+func wrapErr(msg string) map[string]string {
+	return map[string]string{
+		"error": msg,
+	}
+}
+
 func resp(c *gin.Context, data interface{}) {
 	reqID := getRequestID(c)
 	c.Header("DeepAlert-Request-ID", reqID)
 
-	switch v := data.(type) {
-	case apiError:
-		logger.WithError(v).WithField("message", v.Message()).Error("API Error")
-		c.JSON(v.StatusCode(), v.Error())
-	case error:
-		logger.WithError(v).Error("API Error (not apiError type)")
-		c.JSON(500, "SystemError")
-	default:
-		c.JSON(200, data)
+	if err, ok := data.(error); ok {
+		logger.WithError(err).Error("Request Error")
+
+		if e, ok := err.(*errors.Error); ok {
+			if 400 <= e.StatusCode && e.StatusCode < 500 {
+				c.JSON(e.StatusCode, wrapErr(e.Error()))
+			} else {
+				c.JSON(http.StatusInternalServerError, wrapErr("Internal Server Error"))
+			}
+		} else {
+			c.JSON(http.StatusInternalServerError, wrapErr("SystemError"))
+		}
+	} else {
+		c.JSON(http.StatusOK, data)
 	}
 }
 

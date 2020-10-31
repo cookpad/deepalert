@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/deepalert/deepalert"
@@ -17,7 +18,8 @@ func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time)
 	logger.WithField("alert", alert).Info("Taking report")
 
 	if err := alert.Validate(); err != nil {
-		return nil, errors.Wrap(err, "Invalid alert format")
+		return nil, errors.Wrap(err, "Invalid alert format").
+			Status(http.StatusBadRequest)
 	}
 
 	sfnSvc := args.SFnService()
@@ -31,7 +33,9 @@ func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time)
 		return nil, errors.Wrapf(err, "Fail to take reportID for alert").With("alert", alert)
 	}
 	if report == nil {
-		return nil, errors.Wrapf(err, "No report in cache").With("alert", alert)
+		return nil, errors.Wrapf(err, "No report in cache").
+			With("alert", alert)
+
 	}
 
 	logger.WithFields(logrus.Fields{
@@ -45,6 +49,7 @@ func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time)
 
 	if err := repo.SaveAlertCache(report.ID, *alert, now); err != nil {
 		return nil, errors.Wrap(err, "Fail to save alert cache")
+
 	}
 
 	if err := sfnSvc.Exec(args.InspectorMashine, &report); err != nil {
@@ -59,6 +64,7 @@ func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time)
 
 	if err := repo.PutReport(report); err != nil {
 		return nil, errors.Wrap(err, "Fail PutReport")
+
 	}
 
 	return report, nil

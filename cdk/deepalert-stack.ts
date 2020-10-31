@@ -54,6 +54,7 @@ export class DeepAlertStack extends cdk.Stack {
   readonly submitReport: lambda.Function;
   readonly publishReport: lambda.Function;
   readonly lambdaError: lambda.Function;
+  readonly apiHandler: lambda.Function;
 
   // StepFunctions
   readonly inspectionMachine: sfn.StateMachine;
@@ -228,7 +229,7 @@ export class DeepAlertStack extends cdk.Stack {
     });
 
     // API handler
-    const apiHandler = new lambda.Function(this, "apiHandler", {
+    this.apiHandler = new lambda.Function(this, "apiHandler", {
       runtime: lambda.Runtime.GO_1_X,
       handler: "apiHandler",
       code: buildPath,
@@ -239,7 +240,7 @@ export class DeepAlertStack extends cdk.Stack {
     });
 
     const api = new apigateway.LambdaRestApi(this, "deepalertAPI", {
-      handler: apiHandler,
+      handler: this.apiHandler,
       proxy: false,
       cloudWatchRole: false,
       endpointTypes: [apigateway.EndpointType.REGIONAL],
@@ -277,8 +278,11 @@ export class DeepAlertStack extends cdk.Stack {
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);
+      this.inspectionMachine.grantStartExecution(this.apiHandler);
       this.reviewMachine.grantStartExecution(this.receptAlert);
+      this.reviewMachine.grantStartExecution(this.apiHandler);
       this.taskTopic.grantPublish(this.dispatchInspection);
+      this.reportTopic.grantPublish(this.submitReport);
 
       // DynamoDB
       this.cacheTable.grantReadWriteData(this.receptAlert);
@@ -286,6 +290,7 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.feedbackAttribute);
       this.cacheTable.grantReadWriteData(this.submitContent);
       this.cacheTable.grantReadWriteData(this.compileReport);
+      this.cacheTable.grantReadWriteData(this.apiHandler);
     }
   }
 }

@@ -1,7 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,13 +14,15 @@ func getReport(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed to create Repository"))
+		resp(c, errors.Wrap(err, "Failed to create Repository").
+			Status(http.StatusInternalServerError))
 		return
 	}
 
 	report, err := repo.GetReport(reportID)
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed GetReport"))
+		resp(c, errors.Wrap(err, "Failed GetReport").
+			Status(http.StatusInternalServerError))
 		return
 	}
 
@@ -30,17 +35,20 @@ func getReportAlerts(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed to set up Repository"))
+		resp(c, errors.Wrap(err, "Failed to set up Repository").
+			Status(http.StatusInternalServerError))
 		return
 	}
 
 	alerts, err := repo.FetchAlertCache(reportID)
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed to fetch alerts"))
+		resp(c, errors.Wrap(err, "Failed to fetch alerts").
+			Status(http.StatusInternalServerError))
 		return
 	}
 	if alerts == nil {
-		resp(c, newUserError("alerts not found").SetStatusCode(404))
+		resp(c, errors.New("alerts not found").
+			Status(http.StatusNotFound))
 		return
 	}
 
@@ -53,17 +61,20 @@ func getReportSections(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed to set up Repository"))
+		resp(c, errors.Wrap(err, "Failed to set up Repository").
+			Status(http.StatusInternalServerError))
 		return
 	}
 
 	sections, err := repo.FetchInspectReport(reportID)
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed to fetch sections"))
+		resp(c, errors.Wrap(err, "Failed to fetch sections").
+			Status(http.StatusInternalServerError))
 		return
 	}
 	if sections == nil {
-		resp(c, newUserError("sections not found").SetStatusCode(404))
+		resp(c, errors.New("sections not found").
+			Status(http.StatusNotFound))
 		return
 	}
 
@@ -76,17 +87,20 @@ func getReportAttributes(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed to set up Repository"))
+		resp(c, errors.Wrap(err, "Failed to set up Repository").
+			Status(http.StatusInternalServerError))
 		return
 	}
 
 	attributes, err := repo.FetchAttributeCache(reportID)
 	if err != nil {
-		resp(c, wrapSystemError(err, "Failed to fetch attributes"))
+		resp(c, errors.Wrap(err, "Failed to fetch attributes").
+			Status(http.StatusInternalServerError))
 		return
 	}
 	if attributes == nil {
-		resp(c, newUserError("attributes not found").SetStatusCode(404))
+		resp(c, errors.New("attributes not found").
+			Status(http.StatusNotFound))
 		return
 	}
 

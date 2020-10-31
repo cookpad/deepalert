@@ -1,9 +1,11 @@
 package api
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/usecase"
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +16,7 @@ func postAlert(c *gin.Context) {
 
 	var alert deepalert.Alert
 	if err := c.BindJSON(&alert); err != nil {
-		resp(c, wrapUserError(err, "Failed to pase deepalert.Alert"))
+		resp(c, errors.Wrap(err, "Failed to pase deepalert.Alert").Status(http.StatusBadRequest))
 		return
 	}
 
