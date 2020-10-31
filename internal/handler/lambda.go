@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepalert/deepalert/internal/errors"
@@ -45,6 +46,7 @@ func StartLambda(handler Handler) {
 				"args":  args,
 				"event": event,
 				"error": err,
+				"trace": fmt.Sprintf("%+v", err),
 			}
 
 			if daErr, ok := err.(*errors.Error); ok {
