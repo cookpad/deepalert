@@ -75,7 +75,12 @@ func (x *ReportEntry) ImportDynamoRecord(record *events.DynamoDBEventRecord) err
 	x.Result = getString("result")
 	x.Status = getString("status")
 
-	v, err := strconv.ParseInt(getString("created_at"), 10, 64)
+	createdAtValue, ok := record.Change.NewImage["created_at"]
+	if !ok {
+		return errors.New("created_at is not available in DynamDB event").With("record", record)
+	}
+
+	v, err := strconv.ParseInt(createdAtValue.Number(), 10, 64)
 	if err != nil {
 		return errors.Wrap(err, "Failed to parse createdAt of DynamoRecord").
 			With("record", record)

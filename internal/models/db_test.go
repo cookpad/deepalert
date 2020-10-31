@@ -1,9 +1,11 @@
 package models_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/models"
 	"github.com/stretchr/testify/assert"
@@ -116,5 +118,66 @@ func TestReportEntry(t *testing.T) {
 			assert.Equal(tt, r1.Status, r2.Status)
 			assert.Equal(tt, r1.CreatedAt.UTC().Unix(), r2.CreatedAt.Unix())
 		})
+	})
+}
+
+func TestImportDynamoRecord(t *testing.T) {
+	sample := `{
+	"awsRegion": "ap-northeast-1",
+	"dynamodb": {
+		"ApproximateCreationDateTime": 1604111356,
+		"Keys": {
+			"pk": {
+				"S": "report/20c62a1d-99a2-45b5-bca1-2f6949b6ee61"
+			},
+			"sk": {
+				"S": "-"
+			}
+		},
+		"NewImage": {
+			"created_at": {
+				"N": "1604111355"
+			},
+			"expires_at": {
+				"N": "0"
+			},
+			"id": {
+				"S": "20c62a1d-99a2-45b5-bca1-2f6949b6ee61"
+			},
+			"pk": {
+				"S": "report/20c62a1d-99a2-45b5-bca1-2f6949b6ee61"
+			},
+			"result": {
+				"S": "{\"severity\":\"safe\",\"reason\":\"not sane\"}"
+			},
+			"sk": {
+				"S": "-"
+			},
+			"status": {
+				"S": "new"
+			}
+		},
+		"SequenceNumber": "366860700000000000755927238",
+		"SizeBytes": 203,
+		"StreamViewType": "NEW_IMAGE"
+	},
+	"eventID": "f4963c472adeda5d90748601e6affbc8",
+	"eventName": "INSERT",
+	"eventSource": "aws:dynamodb",
+	"eventSourceARN": "arn:aws:dynamodb:ap-northeast-1:783957204773:table/DeepAlertTestStack-cacheTable730E8AED-1FEYS10RXIN14/stream/2020-10-12T13:48:05.842",
+	"eventVersion": "1.1"
+}`
+	var record events.DynamoDBEventRecord
+	require.NoError(t, json.Unmarshal([]byte(sample), &record))
+
+	t.Run("Normal case", func(t *testing.T) {
+		var entry models.ReportEntry
+		require.NoError(t, entry.ImportDynamoRecord(&record))
+		report, err := entry.Export()
+		require.NoError(t, err)
+		assert.Equal(t, int64(1604111355), report.CreatedAt.Unix())
+		assert.Equal(t, deepalert.ReportID("20c62a1d-99a2-45b5-bca1-2f6949b6ee61"), report.ID)
+		assert.Equal(t, deepalert.SevSafe, report.Result.Severity)
+		assert.Equal(t, deepalert.StatusNew, report.Status)
 	})
 }
