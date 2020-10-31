@@ -1,7 +1,7 @@
 package workflow
 
 import (
-	"fmt"
+	"encoding/json"
 	"math"
 	"time"
 
@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/google/uuid"
 	"github.com/guregu/dynamo"
 )
 
@@ -25,6 +26,7 @@ type baseResult struct {
 	PKey string `dynamo:"pk"`
 	SKey string `dynamo:"sk"`
 	TTL  int64  `dynamo:"ttl"`
+	Data string `dynamo:"data"`
 }
 
 func (x *baseResult) setKeys(pk, sk string) {
@@ -54,41 +56,40 @@ type EmitterResult struct {
 }
 
 // PutEmitterResult puts EmitterResult to DynamoDB
-func (x *Repository) PutEmitterResult(reportID deepalert.ReportID) error {
-	values := EmitterResult{
+func (x *Repository) PutEmitterResult(report *deepalert.Report) error {
+	raw, err := json.Marshal(report)
+	if err != nil {
+		return errors.Wrap(err, "Failed to marshal report").With("report", report)
+	}
+
+	value := EmitterResult{
 		Timestamp: time.Now().UTC(),
+		baseResult: baseResult{
+			PKey: "emitter/" + string(report.ID),
+			SKey: uuid.New().String(),
+			Data: string(raw),
+		},
 	}
-	return x.put("emitter/"+string(reportID), "@", &values)
-}
 
-// GetEmitterResult looks up EmitterResult from DynamoDB
-func (x *Repository) GetEmitterResult(reportID deepalert.ReportID) (*EmitterResult, error) {
-	var values EmitterResult
-	if err := x.get("emitter/"+string(reportID), "@", &values); err != nil {
-		return nil, err
-	}
-	return &values, nil
-}
-
-// Internal methods
-func (x *Repository) put(pk, sk string, res result) error {
-	res.setKeys(pk, sk)
-
-	if err := x.table.Put(res).Run(); err != nil {
-		return errors.Wrap(err, "Fail to put result").With("res", res)
+	if err := x.table.Put(value).Run(); err != nil {
+		return errors.Wrap(err, "Fail to put result").With("value", value)
 	}
 
 	return nil
 }
 
-func (x *Repository) get(pk, sk string, res result) error {
+// GetEmitterResult looks up EmitterResult from DynamoDB
+func (x *Repository) GetEmitterResult(reportID deepalert.ReportID) ([]*EmitterResult, error) {
+	var values []*EmitterResult
+
 	const maxRetry = 30
 	start := time.Now()
+	pk := "emitter/" + string(reportID)
 
 	for i := 0; i < maxRetry; i++ {
-		if err := x.table.Get("pk", pk).Range("sk", dynamo.Equal, sk).One(res); err != nil {
+		if err := x.table.Get("pk", pk).All(&values); err != nil {
 			if err != dynamo.ErrNotFound {
-				return errors.Wrap(err, "Fail to get result").With("pk", pk).With("sk", sk)
+				return nil, errors.Wrap(err, "Fail to get result").With("pk", pk)
 			}
 
 			sleep := math.Pow(1.1, float64(i))
@@ -97,11 +98,11 @@ func (x *Repository) get(pk, sk string, res result) error {
 			}
 			time.Sleep(time.Second * time.Duration(sleep))
 		} else {
-			return nil
+			return values, nil
 		}
 	}
 
 	end := time.Now()
-
-	return fmt.Errorf("Timeout to get value (waited %f sec): %v + %v", end.Sub(start).Seconds(), pk, sk)
+	sec := end.Sub(start).Seconds()
+	return nil, errors.New("Timeout to get value").With("waited", sec).With("pk", pk)
 }

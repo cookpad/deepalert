@@ -16,7 +16,7 @@ build: $(ASSETS)
 clean:
 	rm $(ASSETS)
 
-$(CDKOUT): build $(DEEPALERT_CODES)
+$(CDKOUT): build $(DEEPALERT_CODES) $(ASSETS)
 	make -f ../../Makefile
 	cdk deploy "*"
 

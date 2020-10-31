@@ -282,7 +282,7 @@ export class DeepAlertStack extends cdk.Stack {
       this.reviewMachine.grantStartExecution(this.receptAlert);
       this.reviewMachine.grantStartExecution(this.apiHandler);
       this.taskTopic.grantPublish(this.dispatchInspection);
-      this.reportTopic.grantPublish(this.submitReport);
+      this.reportTopic.grantPublish(this.publishReport);
 
       // DynamoDB
       this.cacheTable.grantReadWriteData(this.receptAlert);
@@ -290,6 +290,8 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.feedbackAttribute);
       this.cacheTable.grantReadWriteData(this.submitContent);
       this.cacheTable.grantReadWriteData(this.compileReport);
+      this.cacheTable.grantReadWriteData(this.submitReport);
+      this.cacheTable.grantReadWriteData(this.publishReport);
       this.cacheTable.grantReadWriteData(this.apiHandler);
     }
   }
@@ -338,12 +340,16 @@ function buildReviewMachine(
     .next(
       new tasks.LambdaInvoke(scope, "invokeCompileReport", {
         lambdaFunction: compileReport,
+        outputPath: "$",
+        payloadResponseOnly: true,
       })
     )
     .next(
       new tasks.LambdaInvoke(scope, "invokeReviewer", {
         lambdaFunction: reviewer,
         resultPath: "$.result",
+        outputPath: "$",
+        payloadResponseOnly: true,
       })
     )
     .next(

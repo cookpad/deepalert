@@ -21,7 +21,7 @@ func emit(ctx context.Context, report deepalert.Report) error {
 		return errors.Wrap(err, "Failed workflow.NewRepository")
 	}
 
-	if err := repo.PutEmitterResult(report.ID); err != nil {
+	if err := repo.PutEmitterResult(&report); err != nil {
 		return err
 	}
 
