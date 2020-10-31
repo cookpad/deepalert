@@ -31,11 +31,11 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	for _, msg := range messages {
 		var ir deepalert.InspectReport
 		if err := json.Unmarshal(msg, &ir); err != nil {
-			return nil, errors.Wrapf(err, "Fail to unmarshal InspectReport from SubmitNotification").With("%s", string(msg))
+			return nil, errors.Wrap(err, "Fail to unmarshal InspectReport from SubmitNotification").With("msg", string(msg))
 		}
 
 		if err := repo.SaveInspectReport(ir, now); err != nil {
-			return nil, errors.Wrapf(err, "Fail to save InspectReport: %v", ir)
+			return nil, errors.Wrap(err, "Fail to save InspectReport").With("report", ir)
 		}
 		logger.WithField("section", ir).Info("Saved content")
 	}

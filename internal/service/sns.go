@@ -50,7 +50,7 @@ func (x *SNSService) Publish(topicARN string, msg interface{}) error {
 
 	raw, err := json.Marshal(msg)
 	if err != nil {
-		return errors.Wrapf(err, "Fail to marshal message: %v", msg)
+		return errors.Wrap(err, "Fail to marshal message").With("msg", msg)
 	}
 
 	input := sns.PublishInput{
@@ -60,7 +60,7 @@ func (x *SNSService) Publish(topicARN string, msg interface{}) error {
 	resp, err := client.Publish(&input)
 
 	if err != nil {
-		return errors.Wrapf(err, "Fail to send SQS message").With("input", input)
+		return errors.Wrap(err, "Fail to send SQS message").With("input", input)
 	}
 
 	logger.WithField("resp", resp).Trace("Sent SQS message")

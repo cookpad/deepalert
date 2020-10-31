@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/deepalert/deepalert/internal/errors"
@@ -60,15 +61,23 @@ func resp(c *gin.Context, data interface{}) {
 	c.Header("DeepAlert-Request-ID", reqID)
 
 	if err, ok := data.(error); ok {
-		logger.WithError(err).Error("Request Error")
-
 		if e, ok := err.(*errors.Error); ok {
+			fields := logrus.Fields{
+				"trace": fmt.Sprintf("%+v", e),
+			}
+			for k, v := range e.Values {
+				fields[k] = v
+			}
+			logger.WithFields(fields).WithError(err).Error("Request Error")
+
 			if 400 <= e.StatusCode && e.StatusCode < 500 {
 				c.JSON(e.StatusCode, wrapErr(e.Error()))
 			} else {
 				c.JSON(http.StatusInternalServerError, wrapErr("Internal Server Error"))
 			}
 		} else {
+			logger.WithError(err).Error("Request Error (not errors.Error")
+
 			c.JSON(http.StatusInternalServerError, wrapErr("SystemError"))
 		}
 	} else {

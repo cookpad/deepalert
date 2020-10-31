@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 )
 
 // StartTest emulates inspector.Start, but

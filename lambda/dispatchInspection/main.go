@@ -28,7 +28,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		for _, attr := range alert.Attributes {
 			sendable, err := repo.PutAttributeCache(report.ID, attr, now)
 			if err != nil {
-				return nil, errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
+				return nil, errors.Wrap(err, "Fail to manage attribute cache").With("attr", attr)
 			}
 
 			if !sendable {
@@ -45,7 +45,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 			}
 
 			if err := snsSvc.Publish(args.TaskTopic, &task); err != nil {
-				return nil, errors.Wrapf(err, "Fail to publihsh task notification: %v", task)
+				return nil, errors.Wrap(err, "Fail to publihsh task notification").With("task", task)
 			}
 		}
 	}

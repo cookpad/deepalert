@@ -75,7 +75,7 @@ func (x *Repository) put(pk, sk string, res result) error {
 	res.setKeys(pk, sk)
 
 	if err := x.table.Put(res).Run(); err != nil {
-		return errors.Wrapf(err, "Fail to put result: %v", res)
+		return errors.Wrap(err, "Fail to put result").With("res", res)
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (x *Repository) get(pk, sk string, res result) error {
 	for i := 0; i < maxRetry; i++ {
 		if err := x.table.Get("pk", pk).Range("sk", dynamo.Equal, sk).One(res); err != nil {
 			if err != dynamo.ErrNotFound {
-				return errors.Wrapf(err, "Fail to get result: %v + %v", pk, sk)
+				return errors.Wrap(err, "Fail to get result").With("pk", pk).With("sk", sk)
 			}
 
 			sleep := math.Pow(1.1, float64(i))

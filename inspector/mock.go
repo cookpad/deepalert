@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/deepalert/deepalert"
-	"github.com/pkg/errors"
+	"github.com/deepalert/deepalert/internal/errors"
 )
 
 // MockSQSClient is for testing. Just storing sqs.SendMessageInput

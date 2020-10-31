@@ -30,10 +30,10 @@ func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time)
 
 	report, err := repo.TakeReport(*alert, now)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Fail to take reportID for alert").With("alert", alert)
+		return nil, errors.Wrap(err, "Fail to take reportID for alert").With("alert", alert)
 	}
 	if report == nil {
-		return nil, errors.Wrapf(err, "No report in cache").
+		return nil, errors.Wrap(err, "No report in cache").
 			With("alert", alert)
 
 	}

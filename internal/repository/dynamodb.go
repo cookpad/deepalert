@@ -102,7 +102,7 @@ func (x *DynamoDBRepositry) GetAttributeCaches(pk string) ([]*models.AttributeCa
 	var attrs []*models.AttributeCache
 
 	if err := x.table.Get("pk", pk).All(&attrs); err != nil {
-		return nil, errors.Wrapf(err, "Failed GetAttributeCaches").With("pk", pk)
+		return nil, errors.Wrap(err, "Failed GetAttributeCaches").With("pk", pk)
 	}
 
 	return attrs, nil

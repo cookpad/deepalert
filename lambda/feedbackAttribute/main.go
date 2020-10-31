@@ -35,7 +35,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	for _, msg := range sqsMessages {
 		var reportedAttr deepalert.ReportAttribute
 		if err := json.Unmarshal(msg, &reportedAttr); err != nil {
-			return nil, errors.Wrapf(err, "Unmarshal ReportAttribute").With("msg", string(msg))
+			return nil, errors.Wrap(err, "Unmarshal ReportAttribute").With("msg", string(msg))
 		}
 
 		logger.WithField("reportedAttr", reportedAttr).Info("unmarshaled reported attribute")
@@ -43,7 +43,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		for _, attr := range reportedAttr.Attributes {
 			sendable, err := repo.PutAttributeCache(reportedAttr.ReportID, *attr, now)
 			if err != nil {
-				return nil, errors.Wrapf(err, "Fail to manage attribute cache: %v", attr)
+				return nil, errors.Wrap(err, "Fail to manage attribute cache").With("attr", attr)
 			}
 
 			logger.WithFields(logrus.Fields{"sendable": sendable, "attr": attr}).Info("attribute")

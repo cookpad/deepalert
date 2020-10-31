@@ -109,7 +109,7 @@ func toAlertCacheKey(reportID deepalert.ReportID) (string, string) {
 func (x *RepositoryService) SaveAlertCache(reportID deepalert.ReportID, alert deepalert.Alert, now time.Time) error {
 	raw, err := json.Marshal(alert)
 	if err != nil {
-		return errors.Wrapf(err, "Fail to marshal alert: %v", alert)
+		return errors.Wrap(err, "Fail to marshal alert").With("alert", alert)
 	}
 
 	pk, sk := toAlertCacheKey(reportID)
@@ -165,7 +165,7 @@ func toInspectReportKeys(reportID deepalert.ReportID, inspect *deepalert.Inspect
 func (x *RepositoryService) SaveInspectReport(section deepalert.InspectReport, now time.Time) error {
 	raw, err := json.Marshal(section)
 	if err != nil {
-		return errors.Wrapf(err, "Fail to marshal ReportSection: %v", section)
+		return errors.Wrap(err, "Fail to marshal ReportSection").With("section", section)
 	}
 
 	pk, sk := toInspectReportKeys(section.ReportID, &section)
@@ -197,7 +197,9 @@ func (x *RepositoryService) FetchInspectReport(reportID deepalert.ReportID) ([]*
 	for _, record := range records {
 		var section deepalert.InspectReport
 		if err := json.Unmarshal(record.Data, &section); err != nil {
-			return nil, errors.Wrapf(err, "Fail to unmarshal report content: %v %s", record, string(record.Data))
+			return nil, errors.Wrap(err, "Fail to unmarshal report content").
+				With("record", record).
+				With("data", string(record.Data))
 		}
 
 		reports = append(reports, &section)
@@ -303,7 +305,9 @@ func (x *RepositoryService) PutAttributeCache(reportID deepalert.ReportID, attr 
 			return false, nil
 		}
 
-		return false, errors.Wrapf(err, "Fail to put attr cache reportID=%s, %v", reportID, attr)
+		return false, errors.Wrap(err, "Fail to put attr cache").
+			With("reportID", reportID).
+			With("attr", attr)
 	}
 
 	return true, nil
@@ -315,7 +319,7 @@ func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]
 
 	caches, err := x.repo.GetAttributeCaches(pk)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Fail to retrieve attributeCache: %s", reportID)
+		return nil, errors.Wrap(err, "Fail to retrieve attributeCache").With("reportID", reportID)
 	}
 
 	var attrs []*deepalert.Attribute

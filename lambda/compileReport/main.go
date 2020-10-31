@@ -29,7 +29,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 
 	alerts, err := svc.FetchAlertCache(report.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "FetchAlertCache").With("report", report)
+		return nil, errors.Wrap(err, "FetchAlertCache").With("report", report)
 	}
 
 	attrs, err := svc.FetchAttributeCache(report.ID)

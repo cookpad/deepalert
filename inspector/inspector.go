@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepalert/deepalert"
-	"github.com/pkg/errors"
+	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -80,7 +80,7 @@ func handleSNSEvent(ctx context.Context, args Arguments, event events.SNSEvent) 
 		var task deepalert.Task
 		msg := record.SNS.Message
 		if err := json.Unmarshal([]byte(msg), &task); err != nil {
-			return errors.Wrapf(err, "Fail to unmarshal task: %s", msg)
+			return errors.Wrap(err, "Fail to unmarshal task").With("msg", msg)
 		}
 
 		if err := HandleTask(ctx, args, task); err != nil {
@@ -118,7 +118,7 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 
 	result, err := args.Handler(newCtx, *task.Attribute)
 	if err != nil {
-		return errors.Wrapf(err, "Fail to handle task: %v", task)
+		return errors.Wrap(err, "Fail to handle task").With("task", task)
 	}
 
 	if result == nil {
@@ -137,7 +137,7 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 		Logger.WithField("section", section).Trace("Sending section")
 
 		if err := sendSQS(args.NewSQS, section, args.ContentQueueURL); err != nil {
-			return errors.Wrapf(err, "Fail to publish ReportContent to %s: %v", args.ContentQueueURL, section)
+			return errors.Wrap(err, "Fail to publish ReportContent").With("url", args.ContentQueueURL).With("section", section)
 		}
 	}
 
@@ -160,7 +160,7 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 
 		Logger.WithField("ReportAttribute", attrReport).Trace("Sending new attributes")
 		if err := sendSQS(args.NewSQS, attrReport, args.AttrQueueURL); err != nil {
-			return errors.Wrapf(err, "Fail to publish ReportAttribute to %s: %v", args.AttrQueueURL, attrReport)
+			return errors.Wrap(err, "Fail to publish ReportAttribute").With("url", args.AttrQueueURL).With("report", attrReport)
 		}
 	}
 
