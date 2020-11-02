@@ -18,21 +18,10 @@ type Repository struct {
 	table dynamo.Table
 }
 
-type result interface {
-	setKeys(pk, sk string)
-}
-
 type baseResult struct {
 	PKey string `dynamo:"pk"`
 	SKey string `dynamo:"sk"`
-	TTL  int64  `dynamo:"ttl"`
 	Data string `dynamo:"data"`
-}
-
-func (x *baseResult) setKeys(pk, sk string) {
-	x.PKey = pk
-	x.SKey = sk
-	x.TTL = time.Now().UTC().Add(time.Hour * 12).Unix()
 }
 
 // NewRepository is constructor of repository to access DynamoDB

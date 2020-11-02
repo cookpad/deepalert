@@ -33,6 +33,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		if err := json.Unmarshal(msg, &ir); err != nil {
 			return nil, errors.Wrap(err, "Fail to unmarshal InspectReport from SubmitNotification").With("msg", string(msg))
 		}
+		logger.WithField("inspectReport", ir).Debug("Handling inspect report")
 
 		if err := repo.SaveInspectReport(ir, now); err != nil {
 			return nil, errors.Wrap(err, "Fail to save InspectReport").With("report", ir)

@@ -7,11 +7,12 @@ import (
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/deepalert/deepalert/internal/logging"
 
 	"github.com/sirupsen/logrus"
 )
 
-var logger = handler.Logger
+var logger = logging.Logger
 
 // HandleAlert creates a report from alert and invoke delay machines
 func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time) (*deepalert.Report, error) {

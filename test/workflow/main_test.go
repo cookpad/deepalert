@@ -4,89 +4,135 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/logging"
+	"github.com/deepalert/deepalert/test/workflow"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	stackName  = "DeepAlertTestStack"
 	apiKeyFile = "apikey.json"
 )
+
+var (
+	logger        = logging.Logger
+	mainStackName = "DeepAlertTestStack"
+	testStackName = "DeepAlertTestWorkflowStack"
+)
+
+func init() {
+	logging.SetLogLevel(os.Getenv("LOG_LEVEL"))
+	if v, ok := os.LookupEnv("DEEPALERT_TEST_STACK_NAME"); ok {
+		mainStackName = v
+	}
+	if v, ok := os.LookupEnv("DEEPALERT_WORKFLOW_STACK_NAME"); ok {
+		testStackName = v
+	}
+}
 
 func TestWorkflow(t *testing.T) {
 	region := os.Getenv("AWS_REGION")
 	if region == "" {
 		t.Skip("AWS_REGION is not set")
 	}
-
-	stacks, err := getStackResources(region, stackName)
-	require.NoError(t, err)
-	restAPIs := stacks.filterByResourceType("AWS::ApiGateway::RestApi")
-	require.Equal(t, 1, len(restAPIs))
-
-	restAPI := restAPIs[0]
-	baseURL := fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/prod/api/v1/", aws.StringValue(restAPI.PhysicalResourceId), region)
-
-	cwd, err := os.Getwd()
-	require.NoError(t, err)
-	apiKeyPath := path.Join(cwd, apiKeyFile)
-	apiKey, err := loadAPIKey(apiKeyPath)
+	client, err := newDAClient(region)
 	require.NoError(t, err)
 
-	header := http.Header{
-		"X-API-KEY":    []string{apiKey["X-API-KEY"]},
-		"content-type": []string{"application/json"},
-	}
-	client := &http.Client{}
-
-	alert := deepalert.Alert{
-		AlertKey: uuid.New().String(),
-		RuleID:   "five",
-		Detector: "blue",
-	}
-	alertData, err := json.Marshal(alert)
+	repo, err := newRepository(region)
 	require.NoError(t, err)
 
-	req, err := http.NewRequest("POST", baseURL+"alert", bytes.NewReader(alertData))
-	require.NoError(t, err)
-	req.Header = header
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	var report deepalert.Report
-	respRaw, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
+	t.Run("Normal case", func(t *testing.T) {
 
-	// t.Log(string(respRaw))
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+		alert := deepalert.Alert{
+			AlertKey: uuid.New().String(),
+			RuleID:   "five",
+			Detector: "blue",
+			Attributes: []deepalert.Attribute{
+				{
+					Type:  deepalert.TypeIPAddr,
+					Value: "198.51.100.1",
+				},
+			},
+		}
 
-	require.NoError(t, json.Unmarshal(respRaw, &report))
-	assert.NotEmpty(t, report.ID)
+		resp, err := client.Request("POST", "alert", alert)
+		require.NoError(t, err)
+
+		var report deepalert.Report
+		respRaw, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		// t.Log(string(respRaw))
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		require.NoError(t, json.Unmarshal(respRaw, &report))
+		assert.NotEmpty(t, report.ID)
+
+		require.NoError(t, expBackOff(10, func(_ uint) bool {
+			respReport, err := client.Request("GET", fmt.Sprintf("report/%s", report.ID), nil)
+			require.NoError(t, err)
+
+			if respReport.StatusCode == 200 {
+				var gotReport deepalert.Report
+				require.NoError(t, unmarshal(respReport.Body, &gotReport))
+				assert.Equal(t, report.ID, gotReport.ID)
+				return true
+			}
+
+			return false
+		}))
+
+		require.NoError(t, expBackOff(10, func(_ uint) bool {
+			results, err := repo.GetEmitterResult(report.ID)
+			require.NoError(t, err)
+
+			if len(results) == 2 {
+				for _, res := range results {
+					var tmp deepalert.Report
+					require.NoError(t, json.Unmarshal([]byte(res.Data), &tmp))
+					assert.Equal(t, report.ID, tmp.ID)
+					t.Log(tmp)
+					if tmp.Status == deepalert.StatusPublished {
+						t.Log(tmp)
+						return true
+					}
+				}
+			}
+			return false
+		}))
+	})
 }
 
-var logger = logging.Logger
+func unmarshal(reader io.Reader, data interface{}) error {
+	raw, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
 
-func init() {
-	// Setup logger
-	logger.SetLevel(logrus.InfoLevel)
+	if err := json.Unmarshal(raw, data); err != nil {
+		return err
+	}
+	return nil
 }
 
-type StackResources []*cloudformation.StackResource
+type stackResources []*cloudformation.StackResource
 
-func (x StackResources) filterByResourceType(resourceType string) StackResources {
-	var result StackResources
+func (x stackResources) filterByResourceType(resourceType string) stackResources {
+	var result stackResources
 	for _, resource := range x {
 		if aws.StringValue(resource.ResourceType) == resourceType {
 			result = append(result, resource)
@@ -95,7 +141,7 @@ func (x StackResources) filterByResourceType(resourceType string) StackResources
 	return result
 }
 
-func getStackResources(region, stackName string) (StackResources, error) {
+func getStackResources(region, stackName string) (stackResources, error) {
 	ssn := session.Must(session.NewSession())
 	cfn := cloudformation.New(ssn, aws.NewConfig().WithRegion(region))
 
@@ -106,8 +152,6 @@ func getStackResources(region, stackName string) (StackResources, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	logger.WithField("resp", resp).Debug("result")
 
 	return resp.StackResources, nil
 }
@@ -125,4 +169,108 @@ func loadAPIKey(path string) (httpHeader, error) {
 	}
 
 	return hdr, nil
+}
+
+type daClient struct {
+	BaseURL string
+	header  map[string][]string
+}
+
+func newDAClient(region string) (*daClient, error) {
+	stacks, err := getStackResources(region, mainStackName)
+	if err != nil {
+		return nil, err
+	}
+
+	restAPIs := stacks.filterByResourceType("AWS::ApiGateway::RestApi")
+	if len(restAPIs) != 1 {
+		return nil, fmt.Errorf("Invalid number of AWS::ApiGateway::RestApi")
+	}
+
+	restAPI := restAPIs[0]
+	baseURL := fmt.Sprintf("https://%s.execute-api.%s.amazonaws.com/prod/api/v1/", aws.StringValue(restAPI.PhysicalResourceId), region)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	apiKeyPath := path.Join(cwd, apiKeyFile)
+	apiKey, err := loadAPIKey(apiKeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &daClient{
+		BaseURL: baseURL,
+		header: http.Header{
+			"X-API-KEY":    []string{apiKey["X-API-KEY"]},
+			"content-type": []string{"application/json"},
+		},
+	}
+
+	return client, nil
+}
+
+func (x *daClient) Request(method, path string, data interface{}) (*http.Response, error) {
+	var reader io.Reader
+	if data != nil {
+		raw, err := json.Marshal(data)
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader(raw)
+	}
+
+	url := x.BaseURL + path
+	req, err := http.NewRequest(method, url, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	for key, values := range x.header {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+
+	return client.Do(req)
+}
+
+// Exponential backoff timer
+var errRetryMaxExceeded = fmt.Errorf("RetryMax is exceeded")
+
+func expBackOff(retryMax uint, callback func(count uint) bool) error {
+
+	for i := uint(0); i < retryMax; i++ {
+		logger.Tracef("Callback(%d, %p)", i, callback)
+		if exit := callback(i); exit {
+			return nil
+		}
+
+		if i+1 < retryMax {
+			wait := math.Pow(float64(i)/3.14, 2)
+			if wait > 10 {
+				wait = 10
+			}
+			time.Sleep(time.Duration(wait * float64(time.Second)))
+		}
+	}
+
+	return errRetryMaxExceeded
+}
+
+func newRepository(region string) (*workflow.Repository, error) {
+	stacks, err := getStackResources(region, testStackName)
+	if err != nil {
+		return nil, err
+	}
+
+	tables := stacks.filterByResourceType("AWS::DynamoDB::Table")
+	if len(tables) != 1 {
+		return nil, fmt.Errorf("Invalid number of AWS::DynamoDB::Table")
+	}
+
+	logger.WithField("table", *tables[0]).Debug("Test table")
+	return workflow.NewRepository(region, *tables[0].PhysicalResourceId)
 }

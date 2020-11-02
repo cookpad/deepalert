@@ -6,6 +6,7 @@ import (
 
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/deepalert/deepalert/internal/logging"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -16,7 +17,7 @@ const (
 	contextRequestID   = "request.id"
 )
 
-var logger = handler.Logger
+var logger = logging.Logger
 
 func getArguments(c *gin.Context) *handler.Arguments {
 	// In API code, handler.Arguments must be retrieved. If failed, the process must fail

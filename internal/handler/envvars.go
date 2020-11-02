@@ -25,7 +25,7 @@ type EnvVars struct {
 // BindEnvVars loads environments variables and set them to EnvVars
 func (x *EnvVars) BindEnvVars() error {
 	if _, err := env.UnmarshalFromEnviron(x); err != nil {
-		Logger.WithError(err).Error("Failed UnmarshalFromEviron")
+		logger.WithError(err).Error("Failed UnmarshalFromEviron")
 		return err
 	}
 

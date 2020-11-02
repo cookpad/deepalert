@@ -212,6 +212,18 @@ func (x *RepositoryService) FetchInspectReport(reportID deepalert.ReportID) ([]*
 	return sections, nil
 }
 
+func rebuildCotent(src interface{}, dst interface{}) error {
+	raw, err := json.Marshal(src)
+	if err != nil {
+		return errors.New("Failed to marshal content")
+	}
+	if err := json.Unmarshal(raw, dst); err != nil {
+		return errors.Wrap(err, "Failed to unmarshal marshaled content").With("raw", string(raw))
+	}
+
+	return nil
+}
+
 func remapSection(inspectReports []*deepalert.InspectReport) ([]*deepalert.ReportSection, error) {
 	sections := map[string]*deepalert.ReportSection{}
 
@@ -226,25 +238,25 @@ func remapSection(inspectReports []*deepalert.InspectReport) ([]*deepalert.Repor
 		}
 		switch ir.Type {
 		case deepalert.ContentHost:
-			c, ok := ir.Content.(*deepalert.ReportHost)
-			if !ok {
-				return nil, errors.New("Can not cast content to deepalert.ReportHost")
+			var c deepalert.ReportHost
+			if err := rebuildCotent(ir.Content, &c); err != nil {
+				return nil, errors.Wrap(err, "Invalid deepalert.ReportHost data")
 			}
-			section.Hosts = append(section.Hosts, c)
+			section.Hosts = append(section.Hosts, &c)
 
 		case deepalert.ContentUser:
-			c, ok := ir.Content.(*deepalert.ReportUser)
-			if !ok {
-				return nil, errors.New("Can not cast content to deepalert.ReportUser")
+			var c deepalert.ReportUser
+			if err := rebuildCotent(ir.Content, &c); err != nil {
+				return nil, errors.Wrap(err, "Invalid deepalert.ReportUser data")
 			}
-			section.Users = append(section.Users, c)
+			section.Users = append(section.Users, &c)
 
 		case deepalert.ContentBinary:
-			c, ok := ir.Content.(*deepalert.ReportBinary)
-			if !ok {
-				return nil, errors.New("Can not cast content to deepalert.ReportHost")
+			var c deepalert.ReportBinary
+			if err := rebuildCotent(ir.Content, &c); err != nil {
+				return nil, errors.Wrap(err, "Invalid deepalert.ReportBinary data")
 			}
-			section.Binaries = append(section.Binaries, c)
+			section.Binaries = append(section.Binaries, &c)
 		}
 	}
 

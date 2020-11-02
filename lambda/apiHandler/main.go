@@ -7,9 +7,10 @@ import (
 
 	"github.com/deepalert/deepalert/internal/api"
 	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/deepalert/deepalert/internal/logging"
 )
 
-var logger = handler.Logger
+var logger = logging.Logger
 
 func main() {
 	handler.StartLambda(handleRequest)

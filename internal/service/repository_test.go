@@ -123,6 +123,10 @@ func testInspectReport(t *testing.T, svc *service.RepositoryService) {
 				Type:  deepalert.TypeIPAddr,
 				Value: "10.0.0.1",
 			},
+			Type: deepalert.ContentHost,
+			Content: deepalert.ReportHost{
+				HostName: []string{"h1"},
+			},
 		}
 		s2 := deepalert.InspectReport{
 			ReportID: id1,
@@ -131,6 +135,10 @@ func testInspectReport(t *testing.T, svc *service.RepositoryService) {
 				Type:  deepalert.TypeIPAddr,
 				Value: "10.0.0.2",
 			},
+			Type: deepalert.ContentHost,
+			Content: deepalert.ReportHost{
+				HostName: []string{"h2"},
+			},
 		}
 		s3 := deepalert.InspectReport{
 			ReportID: id2,
@@ -138,6 +146,10 @@ func testInspectReport(t *testing.T, svc *service.RepositoryService) {
 			Attribute: deepalert.Attribute{
 				Type:  deepalert.TypeIPAddr,
 				Value: "10.0.0.3",
+			},
+			Type: deepalert.ContentHost,
+			Content: deepalert.ReportHost{
+				HostName: []string{"h3"},
 			},
 		}
 
