@@ -36,18 +36,17 @@ export class DeepAlertStack extends cdk.Stack {
   // Messaging
   readonly alertTopic: sns.Topic;
   readonly taskTopic: sns.Topic;
-  readonly contentTopic: sns.Topic;
   readonly attributeTopic: sns.Topic;
   readonly reportTopic: sns.Topic;
   // readonly alertQueue: sqs.Queue;
-  readonly contentQueue: sqs.Queue;
+  readonly noteQueue: sqs.Queue;
   readonly attributeQueue: sqs.Queue;
   readonly deadLetterQueue: sqs.Queue;
 
   // Lambda
   readonly receptAlert: lambda.Function;
   readonly dispatchInspection: lambda.Function;
-  readonly submitContent: lambda.Function;
+  readonly submitNote: lambda.Function;
   readonly feedbackAttribute: lambda.Function;
   readonly compileReport: lambda.Function;
   readonly dummyReviewer: lambda.Function;
@@ -86,7 +85,6 @@ export class DeepAlertStack extends cdk.Stack {
     // Messaging Channels
     this.alertTopic = new sns.Topic(this, "alertTopic");
     this.taskTopic = new sns.Topic(this, "taskTopic");
-    this.contentTopic = new sns.Topic(this, "contentTopic");
     this.attributeTopic = new sns.Topic(this, "attributeTopic");
     this.reportTopic = new sns.Topic(this, "reportTopic");
 
@@ -98,9 +96,9 @@ export class DeepAlertStack extends cdk.Stack {
     this.alertTopic.addSubscription(new SqsSubscription(this.alertQueue));
 */
 
-    const contentQueueTimeout = cdk.Duration.seconds(30);
-    this.contentQueue = new sqs.Queue(this, "contentQueue", {
-      visibilityTimeout: contentQueueTimeout,
+    const noteQueueTimeout = cdk.Duration.seconds(30);
+    this.noteQueue = new sqs.Queue(this, "noteQueue", {
+      visibilityTimeout: noteQueueTimeout,
     });
 
     const attributeQueueTimeout = cdk.Duration.seconds(30);
@@ -123,12 +121,12 @@ export class DeepAlertStack extends cdk.Stack {
     };
     const buildPath = lambda.Code.fromAsset(path.join(__dirname, "../build"));
 
-    this.submitContent = new lambda.Function(this, "submitContent", {
+    this.submitNote = new lambda.Function(this, "submitNote", {
       runtime: lambda.Runtime.GO_1_X,
-      handler: "submitContent",
+      handler: "submitNote",
       code: buildPath,
       role: lambdaRole,
-      events: [new SqsEventSource(this.contentQueue)],
+      events: [new SqsEventSource(this.noteQueue)],
       environment: baseEnvVars,
       deadLetterQueue: this.deadLetterQueue,
     });
@@ -288,7 +286,7 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.receptAlert);
       this.cacheTable.grantReadWriteData(this.dispatchInspection);
       this.cacheTable.grantReadWriteData(this.feedbackAttribute);
-      this.cacheTable.grantReadWriteData(this.submitContent);
+      this.cacheTable.grantReadWriteData(this.submitNote);
       this.cacheTable.grantReadWriteData(this.compileReport);
       this.cacheTable.grantReadWriteData(this.submitReport);
       this.cacheTable.grantReadWriteData(this.publishReport);

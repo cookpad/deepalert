@@ -17,7 +17,7 @@ FUNCTIONS= \
 	$(CODE_DIR)/build/errorHandler \
 	$(CODE_DIR)/build/submitReport \
 	$(CODE_DIR)/build/publishReport \
-	$(CODE_DIR)/build/submitContent \
+	$(CODE_DIR)/build/submitNote \
 	$(CODE_DIR)/build/apiHandler \
 	$(CODE_DIR)/build/feedbackAttribute
 
@@ -38,8 +38,8 @@ $(CODE_DIR)/build/publishReport: $(CODE_DIR)/lambda/publishReport/*.go $(COMMON)
 	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/publishReport ./lambda/publishReport && cd $(CWD)
 $(CODE_DIR)/build/submitReport: $(CODE_DIR)/lambda/submitReport/*.go $(COMMON)
 	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/submitReport ./lambda/submitReport && cd $(CWD)
-$(CODE_DIR)/build/submitContent: $(CODE_DIR)/lambda/submitContent/*.go $(COMMON)
-	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/submitContent ./lambda/submitContent && cd $(CWD)
+$(CODE_DIR)/build/submitNote: $(CODE_DIR)/lambda/submitNote/*.go $(COMMON)
+	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/submitNote ./lambda/submitNote && cd $(CWD)
 $(CODE_DIR)/build/apiHandler: $(CODE_DIR)/lambda/apiHandler/*.go $(COMMON)
 	cd $(CODE_DIR) && env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/apiHandler ./lambda/apiHandler && cd $(CWD)
 $(CODE_DIR)/build/feedbackAttribute: $(CODE_DIR)/lambda/feedbackAttribute/*.go $(COMMON)

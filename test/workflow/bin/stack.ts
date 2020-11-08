@@ -33,7 +33,7 @@ export class WorkflowStack extends cdk.Stack {
       events: [new SnsEventSource(props.deepalert.taskTopic)],
       environment: {
         RESULT_TABLE: table.tableName,
-        CONTENT_QUEUE: props.deepalert.contentQueue.queueUrl,
+        CONTENT_QUEUE: props.deepalert.noteQueue.queueUrl,
         ATTRIBUTE_QUEUE: props.deepalert.attributeQueue.queueUrl,
       },
     });
@@ -51,7 +51,7 @@ export class WorkflowStack extends cdk.Stack {
 
     table.grantReadWriteData(testInspector);
     table.grantReadWriteData(testEmitter);
-    props.deepalert.contentQueue.grantSendMessages(testInspector);
+    props.deepalert.noteQueue.grantSendMessages(testInspector);
     props.deepalert.attributeQueue.grantSendMessages(testInspector);
   }
 }
