@@ -55,7 +55,7 @@ func getReportAlerts(c *gin.Context) {
 	resp(c, alerts)
 }
 
-func getReportSections(c *gin.Context) {
+func getSections(c *gin.Context) {
 	args := getArguments(c)
 	reportID := deepalert.ReportID(c.Param(paramReportID))
 
@@ -66,7 +66,7 @@ func getReportSections(c *gin.Context) {
 		return
 	}
 
-	sections, err := repo.FetchInspectReport(reportID)
+	sections, err := repo.FetchInspectionNote(reportID)
 	if err != nil {
 		resp(c, errors.Wrap(err, "Failed to fetch sections").
 			Status(http.StatusInternalServerError))

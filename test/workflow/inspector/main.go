@@ -12,7 +12,7 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 	// tableName := os.Getenv("RESULT_TABLE")
 	// reportID, _ := deepalert.ReportIDFromCtx(ctx)
 
-	hostReport := deepalert.ReportHost{
+	hostReport := deepalert.ContentHost{
 		IPAddr: []string{"198.51.100.2"},
 		Owner:  []string{"superman"},
 	}

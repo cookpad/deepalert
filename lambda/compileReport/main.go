@@ -22,9 +22,9 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		return nil, err
 	}
 
-	sections, err := svc.FetchInspectReport(report.ID)
+	sections, err := svc.FetchInspectionNote(report.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "FetchReportSection").With("report", report)
+		return nil, errors.Wrap(err, "FetchSection").With("report", report)
 	}
 
 	alerts, err := svc.FetchAlertCache(report.ID)

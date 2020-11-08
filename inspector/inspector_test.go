@@ -17,7 +17,7 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 	// tableName := os.Getenv("RESULT_TABLE")
 	// reportID, _ := deepalert.ReportIDFromCtx(ctx)
 
-	hostReport := deepalert.ReportHost{
+	hostReport := deepalert.ContentHost{
 		IPAddr: []string{"10.1.2.3"},
 		Owner:  []string{"superman"},
 	}
@@ -90,13 +90,13 @@ func TestSQS(t *testing.T) {
 	cq := mock.InputMap[contentURL][0]
 	aq := mock.InputMap[attrURL][0]
 
-	var req1 deepalert.InspectReport
+	var req1 deepalert.InspectionNote
 	err = json.Unmarshal([]byte(*cq.MessageBody), &req1)
 	require.NoError(t, err)
 	assert.Equal(t, contentURL, aws.StringValue(cq.QueueUrl))
 	assert.Equal(t, attrURL, aws.StringValue(aq.QueueUrl))
 
-	var host deepalert.ReportHost
+	var host deepalert.ContentHost
 	require.NoError(t, convert(req1.Content, &host))
 	assert.Equal(t, "10.1.2.3", host.IPAddr[0])
 	assert.Equal(t, "superman", host.Owner[0])

@@ -39,15 +39,15 @@ func (x *MockSQSClient) SendMessage(input *sqs.SendMessageInput) (*sqs.SendMessa
 	return &sqs.SendMessageOutput{}, nil
 }
 
-func (x *MockSQSClient) GetSections(url string) ([]*deepalert.ReportSection, error) {
+func (x *MockSQSClient) GetSections(url string) ([]*deepalert.Section, error) {
 	queues, ok := x.InputMap[url]
 	if !ok {
 		return nil, nil
 	}
 
-	var output []*deepalert.ReportSection
+	var output []*deepalert.Section
 	for _, q := range queues {
-		var section deepalert.ReportSection
+		var section deepalert.Section
 		if err := json.Unmarshal([]byte(*q.MessageBody), &section); err != nil {
 			return nil, errors.Wrap(err, "Failed to parse section queue")
 		}

@@ -25,16 +25,16 @@ func TestHandleReport(t *testing.T) {
 		Key:   "username",
 		Value: "blue",
 	}
-	r := deepalert.InspectReport{
+	r := deepalert.InspectionNote{
 		ReportID:  reportID,
 		Attribute: attr,
 		Author:    "tester",
-		Type:      deepalert.ContentHost,
-		Content: &deepalert.ReportHost{
+		Type:      deepalert.ContentTypeHost,
+		Content: &deepalert.ContentHost{
 			HostName: []string{"h1"},
 		},
 	}
-	require.NoError(t, repo.SaveInspectReport(r, now))
+	require.NoError(t, repo.SaveInspectionNote(r, now))
 
 	args := &handler.Arguments{
 		Event: &deepalert.Report{

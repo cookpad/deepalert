@@ -23,8 +23,8 @@ func testRepositoryService(t *testing.T, svc *service.RepositoryService) {
 	t.Run("AlertCache", func(tt *testing.T) {
 		testAlertCache(tt, svc)
 	})
-	t.Run("InspectReport", func(tt *testing.T) {
-		testInspectReport(tt, svc)
+	t.Run("InspectionNote", func(tt *testing.T) {
+		testInspectionNote(tt, svc)
 	})
 	t.Run("AttributeCache", func(tt *testing.T) {
 		testAttributeCache(tt, svc)
@@ -111,54 +111,54 @@ func testAlertCache(t *testing.T, svc *service.RepositoryService) {
 	})
 }
 
-func testInspectReport(t *testing.T, svc *service.RepositoryService) {
+func testInspectionNote(t *testing.T, svc *service.RepositoryService) {
 	t.Run("Savea and Fetch report section", func(tt *testing.T) {
 		id1 := deepalert.ReportID(uuid.New().String())
 		id2 := deepalert.ReportID(uuid.New().String())
 		now := time.Now()
-		s1 := deepalert.InspectReport{
+		s1 := deepalert.InspectionNote{
 			ReportID: id1,
 			Author:   "a1",
 			Attribute: deepalert.Attribute{
 				Type:  deepalert.TypeIPAddr,
 				Value: "10.0.0.1",
 			},
-			Type: deepalert.ContentHost,
-			Content: deepalert.ReportHost{
+			Type: deepalert.ContentTypeHost,
+			Content: deepalert.ContentHost{
 				HostName: []string{"h1"},
 			},
 		}
-		s2 := deepalert.InspectReport{
+		s2 := deepalert.InspectionNote{
 			ReportID: id1,
 			Author:   "a2",
 			Attribute: deepalert.Attribute{
 				Type:  deepalert.TypeIPAddr,
 				Value: "10.0.0.2",
 			},
-			Type: deepalert.ContentHost,
-			Content: deepalert.ReportHost{
+			Type: deepalert.ContentTypeHost,
+			Content: deepalert.ContentHost{
 				HostName: []string{"h2"},
 			},
 		}
-		s3 := deepalert.InspectReport{
+		s3 := deepalert.InspectionNote{
 			ReportID: id2,
 			Author:   "a3",
 			Attribute: deepalert.Attribute{
 				Type:  deepalert.TypeIPAddr,
 				Value: "10.0.0.3",
 			},
-			Type: deepalert.ContentHost,
-			Content: deepalert.ReportHost{
+			Type: deepalert.ContentTypeHost,
+			Content: deepalert.ContentHost{
 				HostName: []string{"h3"},
 			},
 		}
 
 		attrs := []*deepalert.Attribute{&s1.Attribute, &s2.Attribute, &s3.Attribute}
-		require.NoError(tt, svc.SaveInspectReport(s1, now))
-		require.NoError(tt, svc.SaveInspectReport(s2, now))
-		require.NoError(tt, svc.SaveInspectReport(s3, now))
+		require.NoError(tt, svc.SaveInspectionNote(s1, now))
+		require.NoError(tt, svc.SaveInspectionNote(s2, now))
+		require.NoError(tt, svc.SaveInspectionNote(s3, now))
 
-		sections, err := svc.FetchInspectReport(id1)
+		sections, err := svc.FetchInspectionNote(id1)
 		require.NoError(tt, err)
 		require.Equal(tt, 2, len(sections))
 		assert.Contains(tt, attrs, sections[0].OriginAttr)
@@ -298,7 +298,7 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 					Value: "192.168.2.3",
 				},
 			},
-			Sections: []*deepalert.ReportSection{
+			Sections: []*deepalert.Section{
 				{
 					OriginAttr: &deepalert.Attribute{
 						Type: deepalert.TypeIPAddr,
@@ -308,7 +308,7 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 						Key:   "dstAddr",
 						Value: "192.168.2.3",
 					},
-					Users: []*deepalert.ReportUser{
+					Users: []*deepalert.ContentUser{
 						{
 							Activities: []deepalert.EntityActivity{
 								{

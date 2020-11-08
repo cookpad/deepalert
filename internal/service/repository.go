@@ -153,7 +153,7 @@ func (x *RepositoryService) FetchAlertCache(reportID deepalert.ReportID) ([]*dee
 // Control reportRecord to manage report contents by inspector
 //
 
-func toInspectReportKeys(reportID deepalert.ReportID, inspect *deepalert.InspectReport) (string, string) {
+func toInspectionNoteKeys(reportID deepalert.ReportID, inspect *deepalert.InspectionNote) (string, string) {
 	pk := fmt.Sprintf("content/%s", reportID)
 	sk := ""
 	if inspect != nil {
@@ -162,13 +162,13 @@ func toInspectReportKeys(reportID deepalert.ReportID, inspect *deepalert.Inspect
 	return pk, sk
 }
 
-func (x *RepositoryService) SaveInspectReport(section deepalert.InspectReport, now time.Time) error {
+func (x *RepositoryService) SaveInspectionNote(section deepalert.InspectionNote, now time.Time) error {
 	raw, err := json.Marshal(section)
 	if err != nil {
-		return errors.Wrap(err, "Fail to marshal ReportSection").With("section", section)
+		return errors.Wrap(err, "Fail to marshal Section").With("section", section)
 	}
 
-	pk, sk := toInspectReportKeys(section.ReportID, &section)
+	pk, sk := toInspectionNoteKeys(section.ReportID, &section)
 	record := &models.InspectorReportRecord{
 		RecordBase: models.RecordBase{
 			PKey:      pk,
@@ -185,17 +185,17 @@ func (x *RepositoryService) SaveInspectReport(section deepalert.InspectReport, n
 	return nil
 }
 
-func (x *RepositoryService) FetchInspectReport(reportID deepalert.ReportID) ([]*deepalert.ReportSection, error) {
-	pk, _ := toInspectReportKeys(reportID, nil)
+func (x *RepositoryService) FetchInspectionNote(reportID deepalert.ReportID) ([]*deepalert.Section, error) {
+	pk, _ := toInspectionNoteKeys(reportID, nil)
 
 	records, err := x.repo.GetInspectorReports(pk)
 	if err != nil {
 		return nil, err
 	}
 
-	var reports []*deepalert.InspectReport
+	var reports []*deepalert.InspectionNote
 	for _, record := range records {
-		var section deepalert.InspectReport
+		var section deepalert.InspectionNote
 		if err := json.Unmarshal(record.Data, &section); err != nil {
 			return nil, errors.Wrap(err, "Fail to unmarshal report content").
 				With("record", record).
@@ -207,7 +207,7 @@ func (x *RepositoryService) FetchInspectReport(reportID deepalert.ReportID) ([]*
 
 	sections, err := remapSection(reports)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to remap InspectReport")
+		return nil, errors.Wrap(err, "Failed to remap InspectionNote")
 	}
 	return sections, nil
 }
@@ -224,43 +224,43 @@ func rebuildCotent(src interface{}, dst interface{}) error {
 	return nil
 }
 
-func remapSection(inspectReports []*deepalert.InspectReport) ([]*deepalert.ReportSection, error) {
-	sections := map[string]*deepalert.ReportSection{}
+func remapSection(inspectReports []*deepalert.InspectionNote) ([]*deepalert.Section, error) {
+	sections := map[string]*deepalert.Section{}
 
 	for _, ir := range inspectReports {
 		hv := ir.Attribute.Hash()
 		section, ok := sections[hv]
 		if !ok {
-			section = &deepalert.ReportSection{
+			section = &deepalert.Section{
 				OriginAttr: &ir.Attribute,
 			}
 			sections[hv] = section
 		}
 		switch ir.Type {
-		case deepalert.ContentHost:
-			var c deepalert.ReportHost
+		case deepalert.ContentTypeHost:
+			var c deepalert.ContentHost
 			if err := rebuildCotent(ir.Content, &c); err != nil {
-				return nil, errors.Wrap(err, "Invalid deepalert.ReportHost data")
+				return nil, errors.Wrap(err, "Invalid deepalert.ContentHost data")
 			}
 			section.Hosts = append(section.Hosts, &c)
 
-		case deepalert.ContentUser:
-			var c deepalert.ReportUser
+		case deepalert.ContentTypeUser:
+			var c deepalert.ContentUser
 			if err := rebuildCotent(ir.Content, &c); err != nil {
-				return nil, errors.Wrap(err, "Invalid deepalert.ReportUser data")
+				return nil, errors.Wrap(err, "Invalid deepalert.ContentUser data")
 			}
 			section.Users = append(section.Users, &c)
 
-		case deepalert.ContentBinary:
-			var c deepalert.ReportBinary
+		case deepalert.ContentTypeBinary:
+			var c deepalert.ContentBinary
 			if err := rebuildCotent(ir.Content, &c); err != nil {
-				return nil, errors.Wrap(err, "Invalid deepalert.ReportBinary data")
+				return nil, errors.Wrap(err, "Invalid deepalert.ContentBinary data")
 			}
 			section.Binaries = append(section.Binaries, &c)
 		}
 	}
 
-	var sectionList []*deepalert.ReportSection
+	var sectionList []*deepalert.Section
 	for _, section := range sections {
 		sectionList = append(sectionList, section)
 	}

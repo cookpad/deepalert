@@ -27,7 +27,7 @@ func Handler(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResu
 
 	result := deepalert.TaskResult{
 		Contents: []deepalert.ReportContent{
-			&deepalert.ReportHost{
+			&deepalert.ContentHost{
 				HostName: []string{*resp},
 			},
 		},

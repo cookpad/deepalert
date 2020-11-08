@@ -108,6 +108,6 @@ func SetupRoute(r *gin.RouterGroup, args *handler.Arguments) {
 	r.POST("/alert", postAlert)
 	r.GET("/report/:"+paramReportID, getReport)
 	r.GET("/report/:"+paramReportID+"/alert", getReportAlerts)
-	r.GET("/report/:"+paramReportID+"/section", getReportSections)
+	r.GET("/report/:"+paramReportID+"/section", getSections)
 	r.GET("/report/:"+paramReportID+"/attribute", getReportAttributes)
 }

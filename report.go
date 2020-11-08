@@ -51,25 +51,25 @@ type ReportContentType string
 
 // Report is a container to deliver contents and inspection results of the alert.
 type Report struct {
-	ID         ReportID         `json:"id"`
-	Alerts     []*Alert         `json:"alerts"`
-	Attributes []*Attribute     `json:"attributes"`
-	Sections   []*ReportSection `json:"sections"`
-	Result     ReportResult     `json:"result"`
-	Status     ReportStatus     `json:"status"`
-	CreatedAt  time.Time        `json:"created_at"`
+	ID         ReportID     `json:"id"`
+	Alerts     []*Alert     `json:"alerts"`
+	Attributes []*Attribute `json:"attributes"`
+	Sections   []*Section   `json:"sections"`
+	Result     ReportResult `json:"result"`
+	Status     ReportStatus `json:"status"`
+	CreatedAt  time.Time    `json:"created_at"`
 }
 
-// ReportSection is set of Report content (user, host and binary)
-type ReportSection struct {
-	OriginAttr *Attribute      `json:"origin_attr"`
-	Users      []*ReportUser   `json:"users,omitempty"`
-	Hosts      []*ReportHost   `json:"hosts,omitempty"`
-	Binaries   []*ReportBinary `json:"binaries,omitempty"`
+// Section is set of Report content (user, host and binary)
+type Section struct {
+	OriginAttr *Attribute       `json:"origin_attr"`
+	Users      []*ContentUser   `json:"users,omitempty"`
+	Hosts      []*ContentHost   `json:"hosts,omitempty"`
+	Binaries   []*ContentBinary `json:"binaries,omitempty"`
 }
 
-// InspectReport is base structure of report entity.
-type InspectReport struct {
+// InspectionNote is base structure of report entity.
+type InspectionNote struct {
 	ReportID  ReportID          `json:"report_id"`
 	Author    string            `json:"author"`
 	Attribute Attribute         `json:"attribute"`
@@ -78,12 +78,12 @@ type InspectReport struct {
 }
 
 const (
-	// ContentUser means Content field is ReportUser.
-	ContentUser ReportContentType = "user"
-	// ContentHost means Content field is ReportHost.
-	ContentHost ReportContentType = "host"
-	// ContentBinary means Content field is ReportBinary.
-	ContentBinary ReportContentType = "binary"
+	// ContentTypeUser means Content field is ContentUser.
+	ContentTypeUser ReportContentType = "user"
+	// ContentTypeHost means Content field is ContentHost.
+	ContentTypeHost ReportContentType = "host"
+	// ContentTypeBinary means Content field is ContentBinary.
+	ContentTypeBinary ReportContentType = "binary"
 )
 
 // ReportResult shows output of Reviewer invoked to evaluate risk of the alert.
@@ -109,31 +109,31 @@ type ReportContent interface {
 	Type() ReportContentType
 }
 
-// ReportUser describes a user indicator on remote services.
-type ReportUser struct {
+// ContentUser describes a user indicator on remote services.
+type ContentUser struct {
 	Activities []EntityActivity `json:"activities"`
 }
 
-// Type of ReportUser returns ContentUser always
-func (x *ReportUser) Type() ReportContentType {
-	return ContentUser
+// Type of ContentUser returns ContentTypeUser always
+func (x *ContentUser) Type() ReportContentType {
+	return ContentTypeUser
 }
 
-// ReportBinary describes a binary file indicator including executable format.
-type ReportBinary struct {
+// ContentBinary describes a binary file indicator including executable format.
+type ContentBinary struct {
 	RelatedMalware []EntityMalware  `json:"related_malware,omitempty"`
 	Software       []string         `json:"software,omitempty"`
 	OS             []string         `json:"os,omitempty"`
 	Activities     []EntityActivity `json:"activities,omitempty"`
 }
 
-// Type of ReportBinary returns ContentBinary always
-func (x *ReportBinary) Type() ReportContentType {
-	return ContentBinary
+// Type of ContentBinary returns ContentTypeBinary always
+func (x *ContentBinary) Type() ReportContentType {
+	return ContentTypeBinary
 }
 
-// ReportHost describes a host indicator binding IP address, domain name
-type ReportHost struct {
+// ContentHost describes a host indicator binding IP address, domain name
+type ContentHost struct {
 	// Network related entities
 	IPAddr         []string         `json:"ipaddr,omitempty"`
 	Country        []string         `json:"country,omitempty"`
@@ -152,9 +152,9 @@ type ReportHost struct {
 	Software []EntitySoftware `json:"software,omitempty"`
 }
 
-// Type of ReportHost returns ContentHost always
-func (x *ReportHost) Type() ReportContentType {
-	return ContentHost
+// Type of ContentHost returns ContentTypeHost always
+func (x *ContentHost) Type() ReportContentType {
+	return ContentTypeHost
 }
 
 // -----------------------------------------------

@@ -66,7 +66,7 @@ func TestReportEntry(t *testing.T) {
 					Value: "192.168.2.3",
 				},
 			},
-			Sections: []*deepalert.ReportSection{
+			Sections: []*deepalert.Section{
 				{
 					OriginAttr: &deepalert.Attribute{
 						Type: deepalert.TypeIPAddr,
@@ -77,7 +77,7 @@ func TestReportEntry(t *testing.T) {
 						Value: "192.168.2.3",
 					},
 
-					Users: []*deepalert.ReportUser{
+					Users: []*deepalert.ContentUser{
 						{
 							Activities: []deepalert.EntityActivity{
 								{
@@ -106,7 +106,7 @@ func TestReportEntry(t *testing.T) {
 		assert.Equal(tt, r1.ID, r2.ID)
 
 		tt.Run("Fetched report does not have Alert, Attribute and Section", func(ttt *testing.T) {
-			// Because they should be fetched by FetchAlertCache, FetchAttributeCache and FetchInspectReport
+			// Because they should be fetched by FetchAlertCache, FetchAttributeCache and FetchInspectionNote
 			assert.Equal(tt, 0, len(r2.Alerts))
 			assert.Equal(tt, 0, len(r2.Attributes))
 			assert.Equal(tt, 0, len(r2.Sections))

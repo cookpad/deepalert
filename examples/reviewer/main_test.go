@@ -13,9 +13,9 @@ func TestEvaluateAlert(t *testing.T) {
 	t.Run("As SevSafe with your_alert_rule_id amd YOUR_COMPANY PC", func(tt *testing.T) {
 		report := deepalert.Report{
 			Alerts: []*deepalert.Alert{{RuleID: "your_alert_rule_id"}},
-			Sections: []*deepalert.ReportSection{
+			Sections: []*deepalert.Section{
 				{
-					Hosts: []*deepalert.ReportHost{
+					Hosts: []*deepalert.ContentHost{
 						{Owner: []string{"YOUR_COMPANY"}},
 					},
 				},
@@ -32,9 +32,9 @@ func TestEvaluateAlert(t *testing.T) {
 	t.Run("Return nil for an alert with your_alert_rule_id but not YOUR_COMPANY PC", func(tt *testing.T) {
 		report := deepalert.Report{
 			Alerts: []*deepalert.Alert{{RuleID: "your_alert_rule_id"}},
-			Sections: []*deepalert.ReportSection{
+			Sections: []*deepalert.Section{
 				{
-					Hosts: []*deepalert.ReportHost{},
+					Hosts: []*deepalert.ContentHost{},
 				},
 			},
 		}
@@ -47,9 +47,9 @@ func TestEvaluateAlert(t *testing.T) {
 	t.Run("Return nil for an alert with YOUR_COMPANY PC but not your_alert_rule_id", func(tt *testing.T) {
 		report := deepalert.Report{
 			Alerts: []*deepalert.Alert{{RuleID: "some_rule"}},
-			Sections: []*deepalert.ReportSection{
+			Sections: []*deepalert.Section{
 				{
-					Hosts: []*deepalert.ReportHost{},
+					Hosts: []*deepalert.ContentHost{},
 				},
 			},
 		}
