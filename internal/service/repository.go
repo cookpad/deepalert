@@ -37,6 +37,10 @@ import (
 	- attribute/{ReportID}, {AttrHash} -> Attribute (for caching)
 */
 
+const (
+	alertMapfixedKey = "-"
+)
+
 // RepositoryService is interface of data repository. This is designed to be used with DynamoDB, but adaptor.Repository can be replaced with other repository. (e.g. mock.Repository)
 type RepositoryService struct {
 	repo adaptor.Repository
@@ -59,14 +63,17 @@ func newReportID() deepalert.ReportID {
 	return deepalert.ReportID(uuid.New().String())
 }
 
+func toAlertMapPKey(alertID string) string {
+	return "alertmap/" + alertID
+}
+
 func (x *RepositoryService) TakeReport(alert deepalert.Alert, now time.Time) (*deepalert.Report, error) {
-	fixedKey := "Fixed"
 	alertID := alert.AlertID()
 
 	entry := models.AlertEntry{
 		RecordBase: models.RecordBase{
-			PKey:      "alertmap/" + alertID,
-			SKey:      fixedKey,
+			PKey:      toAlertMapPKey(alertID),
+			SKey:      alertMapfixedKey,
 			ExpiresAt: now.UTC().Add(x.ttl).Unix(),
 			CreatedAt: now.UTC().Unix(),
 		},
@@ -96,6 +103,18 @@ func (x *RepositoryService) TakeReport(alert deepalert.Alert, now time.Time) (*d
 		Status:    deepalert.StatusNew,
 		CreatedAt: now,
 	}, nil
+}
+
+func (x *RepositoryService) GetReportID(alertID string) (deepalert.ReportID, error) {
+
+	existedEntry, err := x.repo.GetAlertEntry(toAlertMapPKey(alertID), alertMapfixedKey)
+	if err != nil {
+		return deepalert.NullReportID, errors.Wrap(err, "Fail to get cached reportID").With("AlertID", alertID)
+	} else if existedEntry == nil {
+		return deepalert.NullReportID, nil
+	}
+
+	return existedEntry.ReportID, nil
 }
 
 // -----------------------------------------------------------

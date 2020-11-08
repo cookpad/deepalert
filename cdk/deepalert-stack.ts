@@ -9,9 +9,9 @@ import * as tasks from "@aws-cdk/aws-stepfunctions-tasks";
 import * as apigateway from "@aws-cdk/aws-apigateway";
 import {
   SqsEventSource,
-  SnsEventSource,
   DynamoEventSource,
 } from "@aws-cdk/aws-lambda-event-sources";
+import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 
 import * as path from "path";
 import * as fs from "fs";
@@ -29,16 +29,16 @@ export interface property extends cdk.StackProps {
   sentryDsn?: string;
   sentryEnv?: string;
   logLevel?: string;
+  alertTopicARN?: string;
 }
 
 export class DeepAlertStack extends cdk.Stack {
   readonly cacheTable: dynamodb.Table;
   // Messaging
-  readonly alertTopic: sns.Topic;
   readonly taskTopic: sns.Topic;
   readonly attributeTopic: sns.Topic;
   readonly reportTopic: sns.Topic;
-  // readonly alertQueue: sqs.Queue;
+  readonly alertQueue: sqs.Queue;
   readonly noteQueue: sqs.Queue;
   readonly attributeQueue: sqs.Queue;
   readonly deadLetterQueue: sqs.Queue;
@@ -83,18 +83,20 @@ export class DeepAlertStack extends cdk.Stack {
 
     // ----------------------------------------------------------------
     // Messaging Channels
-    this.alertTopic = new sns.Topic(this, "alertTopic");
     this.taskTopic = new sns.Topic(this, "taskTopic");
     this.attributeTopic = new sns.Topic(this, "attributeTopic");
     this.reportTopic = new sns.Topic(this, "reportTopic");
 
     const alertQueueTimeout = cdk.Duration.seconds(30);
-    /*
+
     this.alertQueue = new sqs.Queue(this, "alertQueue", {
       visibilityTimeout: alertQueueTimeout,
     });
-    this.alertTopic.addSubscription(new SqsSubscription(this.alertQueue));
-*/
+
+    if (props.alertTopicARN !== undefined) {
+      const alertTopic = sns.Topic.fromTopicArn(this, 'AlertTopic', props.alertTopicARN);
+      alertTopic.addSubscription(new SqsSubscription(this.alertQueue));
+    }
 
     const noteQueueTimeout = cdk.Duration.seconds(30);
     this.noteQueue = new sqs.Queue(this, "noteQueue", {
@@ -218,7 +220,7 @@ export class DeepAlertStack extends cdk.Stack {
       code: buildPath,
       timeout: alertQueueTimeout,
       role: lambdaRole,
-      events: [new SnsEventSource(this.alertTopic)],
+      events: [new SqsEventSource(this.alertQueue)],
       environment: Object.assign(baseEnvVars, {
         INSPECTOR_MACHINE: this.inspectionMachine.stateMachineArn,
         REVIEW_MACHINE: this.reviewMachine.stateMachineArn,
@@ -266,6 +268,7 @@ export class DeepAlertStack extends cdk.Stack {
     const v1 = api.root.addResource("api").addResource("v1",);
     const alertAPI = v1.addResource("alert");
     alertAPI.addMethod("POST", undefined, apiOpt);
+    alertAPI.addResource("{alert_id}").addResource("report").addMethod("GET", undefined, apiOpt);
 
     const reportAPI = v1.addResource("report");
     const reportAPIwithID = reportAPI.addResource("{report_id}");

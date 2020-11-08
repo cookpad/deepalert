@@ -49,8 +49,13 @@ func (x *DynamoDBRepositry) PutAlertEntry(entry *models.AlertEntry, ts time.Time
 func (x *DynamoDBRepositry) GetAlertEntry(pk, sk string) (*models.AlertEntry, error) {
 	var output models.AlertEntry
 	if err := x.table.Get("pk", pk).Range("sk", dynamo.Equal, sk).One(&output); err != nil {
+		if err == dynamo.ErrNotFound {
+			return nil, nil
+		}
+
 		return nil, err
 	}
+
 	return &output, nil
 }
 
@@ -66,6 +71,10 @@ func (x *DynamoDBRepositry) GetAlertCaches(pk string) ([]*models.AlertCache, err
 	var caches []*models.AlertCache
 
 	if err := x.table.Get("pk", pk).All(&caches); err != nil {
+		if err == dynamo.ErrNotFound {
+			return nil, nil
+		}
+
 		return nil, errors.Wrap(err, "Failed GetAlertCaches").With("pk", pk)
 	}
 

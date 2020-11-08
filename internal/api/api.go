@@ -15,6 +15,8 @@ import (
 const (
 	contextArgumentKey = "handler.arguments"
 	contextRequestID   = "request.id"
+	paramReportID      = "report_id"
+	paramAlertID       = "alert_id"
 )
 
 var logger = logging.Logger
@@ -86,8 +88,6 @@ func resp(c *gin.Context, data interface{}) {
 	}
 }
 
-const paramReportID = "report_id"
-
 // SetupRoute binds route of gin and API
 func SetupRoute(r *gin.RouterGroup, args *handler.Arguments) {
 	r.Use(func(c *gin.Context) {
@@ -106,6 +106,7 @@ func SetupRoute(r *gin.RouterGroup, args *handler.Arguments) {
 	})
 
 	r.POST("/alert", postAlert)
+	r.GET("/alert/:"+paramAlertID+"/report", getReportByAlertID)
 	r.GET("/report/:"+paramReportID, getReport)
 	r.GET("/report/:"+paramReportID+"/alert", getReportAlerts)
 	r.GET("/report/:"+paramReportID+"/section", getSections)
