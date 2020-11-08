@@ -106,7 +106,7 @@ func TestReportEntry(t *testing.T) {
 		assert.Equal(tt, r1.ID, r2.ID)
 
 		tt.Run("Fetched report does not have Alert, Attribute and Section", func(ttt *testing.T) {
-			// Because they should be fetched by FetchAlertCache, FetchAttributeCache and FetchInspectionNote
+			// Because they should be fetched by FetchAlertCache, FetchAttributeCache and FetchSection
 			assert.Equal(tt, 0, len(r2.Alerts))
 			assert.Equal(tt, 0, len(r2.Attributes))
 			assert.Equal(tt, 0, len(r2.Sections))

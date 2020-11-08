@@ -127,7 +127,7 @@ func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error 
 
 	// Sending entities
 	for _, entity := range result.Contents {
-		note := deepalert.InspectionNote{
+		note := deepalert.Note{
 			ReportID:  task.ReportID,
 			Attribute: *task.Attribute,
 			Author:    args.Author,

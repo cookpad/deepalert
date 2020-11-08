@@ -29,14 +29,14 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 	now := time.Now()
 
 	for _, msg := range messages {
-		var ir deepalert.InspectionNote
+		var ir deepalert.Note
 		if err := json.Unmarshal(msg, &ir); err != nil {
-			return nil, errors.Wrap(err, "Fail to unmarshal InspectionNote from SubmitNotification").With("msg", string(msg))
+			return nil, errors.Wrap(err, "Fail to unmarshal Note from SubmitNotification").With("msg", string(msg))
 		}
 		logger.WithField("inspectReport", ir).Debug("Handling inspect report")
 
-		if err := repo.SaveInspectionNote(ir, now); err != nil {
-			return nil, errors.Wrap(err, "Fail to save InspectionNote").With("report", ir)
+		if err := repo.SaveNote(ir, now); err != nil {
+			return nil, errors.Wrap(err, "Fail to save Note").With("report", ir)
 		}
 		logger.WithField("section", ir).Info("Saved content")
 	}

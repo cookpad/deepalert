@@ -22,7 +22,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 		return nil, err
 	}
 
-	sections, err := svc.FetchInspectionNote(report.ID)
+	sections, err := svc.FetchSection(report.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "FetchSection").With("report", report)
 	}

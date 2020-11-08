@@ -66,7 +66,7 @@ func getSections(c *gin.Context) {
 		return
 	}
 
-	sections, err := repo.FetchInspectionNote(reportID)
+	sections, err := repo.FetchSection(reportID)
 	if err != nil {
 		resp(c, errors.Wrap(err, "Failed to fetch sections").
 			Status(http.StatusInternalServerError))

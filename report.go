@@ -68,8 +68,8 @@ type Section struct {
 	Binaries   []*ContentBinary `json:"binaries,omitempty"`
 }
 
-// InspectionNote is base structure of report entity.
-type InspectionNote struct {
+// Note is a result of inspector. a Note has one Content and metadata.
+type Note struct {
 	ReportID  ReportID          `json:"report_id"`
 	Author    string            `json:"author"`
 	Attribute Attribute         `json:"attribute"`
