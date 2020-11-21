@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/inspector"
 )
@@ -30,10 +32,20 @@ func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.T
 }
 
 func main() {
-	inspector.Start(inspector.Arguments{
-		Handler:         dummyInspector,
-		Author:          "dummyInspector",
-		AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
-		ContentQueueURL: os.Getenv("CONTENT_QUEUE"),
+	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
+		tasks, err := inspector.SNSEventToTasks(event)
+		if err != nil {
+			return err
+		}
+
+		inspector.Start(inspector.Arguments{
+			Context:         ctx,
+			Tasks:           tasks,
+			Handler:         dummyInspector,
+			Author:          "dummyInspector",
+			AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
+			ContentQueueURL: os.Getenv("CONTENT_QUEUE"),
+		})
+		return nil
 	})
 }

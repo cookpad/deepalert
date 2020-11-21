@@ -1,24 +1,18 @@
-package emitter
+package emitter_test
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/emitter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEmitter(t *testing.T) {
 	t.Run("Valid SNS event", func(tt *testing.T) {
-		var reports []*deepalert.Report
-		ctx := context.Background()
-		handler := func(ctx context.Context, report deepalert.Report) error {
-			reports = append(reports, &report)
-			return nil
-		}
 		report := deepalert.Report{
 			ID: deepalert.ReportID("t1"),
 			Result: deepalert.ReportResult{
@@ -38,20 +32,13 @@ func TestEmitter(t *testing.T) {
 			},
 		}
 
-		err = startWithSNSEvent(ctx, handler, event)
-		require.NoError(tt, err)
+		reports, err := emitter.SNSEventToReport(event)
+		require.NoError(t, err)
 		require.Equal(tt, 1, len(reports))
 		assert.Equal(tt, deepalert.ReportID("t1"), reports[0].ID)
 	})
 
 	t.Run("Invalid SNS event (report)", func(tt *testing.T) {
-		var reports []*deepalert.Report
-		ctx := context.Background()
-		handler := func(ctx context.Context, report deepalert.Report) error {
-			reports = append(reports, &report)
-			return nil
-		}
-
 		event := events.SNSEvent{
 			Records: []events.SNSEventRecord{
 				{
@@ -62,8 +49,8 @@ func TestEmitter(t *testing.T) {
 			},
 		}
 
-		err := startWithSNSEvent(ctx, handler, event)
-		require.Error(tt, err)
-		assert.Equal(tt, 0, len(reports))
+		reports, err := emitter.SNSEventToReport(event)
+		require.Error(t, err)
+		assert.Equal(t, 0, len(reports))
 	})
 }

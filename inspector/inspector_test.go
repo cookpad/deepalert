@@ -81,7 +81,7 @@ func TestSQS(t *testing.T) {
 		},
 	}
 
-	err := inspector.HandleTask(context.Background(), args, task)
+	err := inspector.HandleTask(context.Background(), &task, args)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(mock.InputMap))
 	require.Equal(t, 1, len(mock.InputMap[attrURL]))

@@ -16,6 +16,7 @@ func TestInspectorExample(t *testing.T) {
 	contentURL := "https://sqs.ap-northeast-1.amazonaws.com/123456789xxx/content-queue"
 
 	args := inspector.Arguments{
+		Context:         context.Background(),
 		Handler:         main.Handler,
 		Author:          "blue",
 		AttrQueueURL:    attrURL,
@@ -26,7 +27,7 @@ func TestInspectorExample(t *testing.T) {
 		mock, newSQS := inspector.NewSQSMock()
 		args.NewSQS = newSQS
 
-		task := deepalert.Task{
+		task := &deepalert.Task{
 			ReportID: deepalert.ReportID(uuid.New().String()),
 			Attribute: &deepalert.Attribute{
 				Type:  deepalert.TypeIPAddr,
@@ -35,7 +36,7 @@ func TestInspectorExample(t *testing.T) {
 			},
 		}
 
-		err := inspector.HandleTask(context.Background(), args, task)
+		err := inspector.HandleTask(context.Background(), task, args)
 		require.NoError(tt, err)
 		sections, err := mock.GetSections(contentURL)
 		require.NoError(tt, err)
@@ -46,7 +47,7 @@ func TestInspectorExample(t *testing.T) {
 		mock, newSQS := inspector.NewSQSMock()
 		args.NewSQS = newSQS
 
-		task := deepalert.Task{
+		task := &deepalert.Task{
 			ReportID: deepalert.ReportID(uuid.New().String()),
 			Attribute: &deepalert.Attribute{
 				Type:  deepalert.TypeUserName,
@@ -55,7 +56,7 @@ func TestInspectorExample(t *testing.T) {
 			},
 		}
 
-		err := inspector.HandleTask(context.Background(), args, task)
+		err := inspector.HandleTask(context.Background(), task, args)
 		require.NoError(tt, err)
 		sections, err := mock.GetSections(contentURL)
 		require.NoError(tt, err)

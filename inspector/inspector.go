@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/sirupsen/logrus"
@@ -42,6 +41,10 @@ func ReportIDFromCtx(ctx context.Context) (*deepalert.ReportID, bool) {
 
 // Arguments is parameters to invoke Start().
 type Arguments struct {
+	Context context.Context
+
+	Tasks []*deepalert.Task
+
 	// Handler is callback function of Start(). Handler mayu be called multiply. (Required)
 	Handler InspectHandler
 
@@ -62,52 +65,58 @@ type Arguments struct {
 }
 
 // Start is a wrapper of Inspector.
-func Start(args Arguments) {
-	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
-		return handleSNSEvent(ctx, args, event)
-	})
+func Start(args Arguments) error {
+	for _, task := range args.Tasks {
+		if err := HandleTask(args.Context, task, args); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func handleSNSEvent(ctx context.Context, args Arguments, event events.SNSEvent) error {
-	Logger.WithFields(logrus.Fields{
-		"event":           event,
-		"Author":          args.Author,
-		"AttrQueueURL":    args.AttrQueueURL,
-		"ContentQueueURL": args.ContentQueueURL,
-	}).Info("Start inspector")
+// SNSEventToTasks extracts deepalert.Task from SNS Event
+func SNSEventToTasks(event events.SNSEvent) ([]*deepalert.Task, error) {
+	var results []*deepalert.Task
 
 	for _, record := range event.Records {
 		var task deepalert.Task
 		msg := record.SNS.Message
 		if err := json.Unmarshal([]byte(msg), &task); err != nil {
-			return errors.Wrap(err, "Fail to unmarshal task").With("msg", msg)
+			return nil, errors.Wrap(err, "Fail to unmarshal task").With("msg", msg)
 		}
 
-		if err := HandleTask(ctx, args, task); err != nil {
-			return err
-		}
+		results = append(results, &task)
 	}
 
-	Logger.Info("Exit inspector normally")
-	return nil
+	return results, nil
 }
 
 // HandleTask is called with task by task. It's exported for testing
-func HandleTask(ctx context.Context, args Arguments, task deepalert.Task) error {
-	Logger.WithField("task", task).Trace("Start handler")
+func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error {
+	Logger.WithFields(logrus.Fields{
+		"task":            task,
+		"ctx":             ctx,
+		"Author":          args.Author,
+		"AttrQueueURL":    args.AttrQueueURL,
+		"ContentQueueURL": args.ContentQueueURL,
+	}).Info("Start inspector")
 
 	// Check Arguments
 	if args.Handler == nil {
-		return fmt.Errorf("Handler is not set in emitter.Argument")
+		return fmt.Errorf("Handler is not set in inspector.Argument")
 	}
 	if args.Author == "" {
-		return fmt.Errorf("Author is not set in emitter.Argument")
+		return fmt.Errorf("Author is not set in inspector.Argument")
 	}
 	if args.AttrQueueURL == "" {
-		return fmt.Errorf("AttrQueueURL is not set in emitter.Argument")
+		return fmt.Errorf("AttrQueueURL is not set in inspector.Argument")
 	}
 	if args.ContentQueueURL == "" {
-		return fmt.Errorf("ContentQueueURL is not set in emitter.Argument")
+		return fmt.Errorf("ContentQueueURL is not set in inspector.Argument")
+	}
+	if task == nil {
+		return fmt.Errorf("Task is nil")
 	}
 
 	if args.NewSQS == nil {
