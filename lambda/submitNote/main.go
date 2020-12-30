@@ -7,39 +7,49 @@ import (
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/logging"
+	"github.com/m-mizutani/golambda"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 func main() {
-	handler.StartLambda(handleRequest)
+	golambda.Start(func(event golambda.Event) (interface{}, error) {
+		args := handler.NewArguments()
+		if err := args.BindEnvVars(); err != nil {
+			return nil, err
+		}
+
+		if err := handleRequest(args, event); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 }
 
-func handleRequest(args *handler.Arguments) (handler.Response, error) {
-	messages, err := args.DecapSQSEvent()
+func handleRequest(args *handler.Arguments, event golambda.Event) error {
+	messages, err := event.DecapSQSBody()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	repo, err := args.Repository()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	now := time.Now()
 
 	for _, msg := range messages {
 		var ir deepalert.Note
 		if err := json.Unmarshal(msg, &ir); err != nil {
-			return nil, errors.Wrap(err, "Fail to unmarshal Note from SubmitNotification").With("msg", string(msg))
+			return errors.Wrap(err, "Fail to unmarshal Note from SubmitNotification").With("msg", string(msg))
 		}
-		logger.WithField("inspectReport", ir).Debug("Handling inspect report")
+		logger.With("inspectReport", ir).Debug("Handling inspect report")
 
 		if err := repo.SaveNote(ir, now); err != nil {
-			return nil, errors.Wrap(err, "Fail to save Note").With("report", ir)
+			return errors.Wrap(err, "Fail to save Note").With("report", ir)
 		}
-		logger.WithField("section", ir).Info("Saved content")
+		logger.With("section", ir).Info("Saved content")
 	}
 
-	return nil, nil
+	return nil
 }

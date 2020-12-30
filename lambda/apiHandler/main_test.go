@@ -9,6 +9,7 @@ import (
 	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/deepalert/deepalert/internal/mock"
+	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,14 +34,14 @@ func TestReceptAlert(t *testing.T) {
 				InspectorMashine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
 				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:orange",
 			},
-			Event: events.APIGatewayProxyRequest{
-				HTTPMethod: "POST",
-				Path:       "/api/v1/alert",
-				Body:       string(raw),
-			},
 		}
 
-		resp, err := handleRequest(args)
+		event := events.APIGatewayProxyRequest{
+			HTTPMethod: "POST",
+			Path:       "/api/v1/alert",
+			Body:       string(raw),
+		}
+		resp, err := handleRequest(args, golambda.Event{Origin: event})
 		require.NoError(tt, err)
 		assert.NotNil(tt, resp)
 		httpResp, ok := resp.(events.APIGatewayProxyResponse)

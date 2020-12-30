@@ -10,6 +10,7 @@ import (
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/deepalert/deepalert/internal/mock"
 	"github.com/google/uuid"
+	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -24,8 +25,6 @@ func TestReceptAlert(t *testing.T) {
 			RuleName: "fifth",
 			Detector: "ao",
 		}
-		raw, err := json.Marshal(alert)
-		require.NoError(tt, err)
 
 		dummySFn, _ := mock.NewSFnClient("")
 		dummyRepo := mock.NewRepository("", "")
@@ -36,16 +35,12 @@ func TestReceptAlert(t *testing.T) {
 				InspectorMashine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
 				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:orange",
 			},
-			Event: events.SQSEvent{
-				Records: []events.SQSMessage{
-					{
-						Body: string(raw),
-					},
-				},
-			},
 		}
 
-		resp, err := main.HandleRequest(args)
+		var event golambda.Event
+		require.NoError(t, event.EncapSQS(alert))
+
+		resp, err := main.HandleRequest(args, event)
 		require.NoError(tt, err)
 		assert.Nil(tt, resp)
 
@@ -66,8 +61,9 @@ func TestReceptAlert(t *testing.T) {
 		require.NoError(tt, err)
 
 		snsEntity := &events.SNSEntity{Message: string(raw)}
-		body, err := json.Marshal(snsEntity)
-		require.NoError(t, err)
+
+		var event golambda.Event
+		require.NoError(t, event.EncapSQS(snsEntity))
 
 		dummySFn, _ := mock.NewSFnClient("")
 		dummyRepo := mock.NewRepository("", "")
@@ -78,16 +74,9 @@ func TestReceptAlert(t *testing.T) {
 				InspectorMashine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
 				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:orange",
 			},
-			Event: events.SQSEvent{
-				Records: []events.SQSMessage{
-					{
-						Body: string(body),
-					},
-				},
-			},
 		}
 
-		resp, err := main.HandleRequest(args)
+		resp, err := main.HandleRequest(args, event)
 		require.NoError(tt, err)
 		assert.Nil(tt, resp)
 

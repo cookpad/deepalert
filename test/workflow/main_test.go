@@ -19,9 +19,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudformation"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/logging"
 	"github.com/deepalert/deepalert/test/workflow"
 	"github.com/google/uuid"
+	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,13 +31,12 @@ const (
 )
 
 var (
-	logger        = logging.Logger
+	logger        = golambda.Logger
 	mainStackName = "DeepAlertTestStack"
 	testStackName = "DeepAlertTestWorkflowStack"
 )
 
 func init() {
-	logging.SetLogLevel(os.Getenv("LOG_LEVEL"))
 	if v, ok := os.LookupEnv("DEEPALERT_TEST_STACK_NAME"); ok {
 		mainStackName = v
 	}
@@ -312,7 +311,7 @@ var errRetryMaxExceeded = fmt.Errorf("RetryMax is exceeded")
 func expBackOff(retryMax uint, callback func(count uint) bool) error {
 
 	for i := uint(0); i < retryMax; i++ {
-		logger.Tracef("Callback(%d, %p)", i, callback)
+		logger.With("callback", callback).With("i", i).Trace("Callback")
 		if exit := callback(i); exit {
 			return nil
 		}
@@ -340,6 +339,6 @@ func newRepository(region string) (*workflow.Repository, error) {
 		return nil, fmt.Errorf("Invalid number of AWS::DynamoDB::Table")
 	}
 
-	logger.WithField("table", *tables[0]).Debug("Test table")
+	logger.With("table", *tables[0]).Debug("Test table")
 	return workflow.NewRepository(region, *tables[0].PhysicalResourceId)
 }

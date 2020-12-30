@@ -4,19 +4,29 @@ import (
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/logging"
+	"github.com/m-mizutani/golambda"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 func main() {
-	handler.StartLambda(handleRequest)
+	golambda.Start(func(event golambda.Event) (interface{}, error) {
+		args := handler.NewArguments()
+		if err := args.BindEnvVars(); err != nil {
+			return nil, err
+		}
+
+		if err := handleRequest(args, event); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
 }
 
-func handleRequest(args *handler.Arguments) (handler.Response, error) {
+func handleRequest(args *handler.Arguments, event golambda.Event) error {
 	var report deepalert.Report
-	if err := args.BindEvent(&report); err != nil {
-		return nil, err
+	if err := event.Bind(&report); err != nil {
+		return err
 	}
 
 	report.Status = deepalert.StatusPublished
@@ -26,13 +36,13 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	logger.WithField("report", report).Info("Publishing report")
+	logger.With("report", report).Info("Publishing report")
 	if err := repo.PutReport(&report); err != nil {
-		return nil, errors.Wrap(err, "Fail to submit report")
+		return errors.Wrap(err, "Fail to submit report")
 	}
 
-	return nil, nil
+	return nil
 }

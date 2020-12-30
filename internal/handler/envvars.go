@@ -1,6 +1,9 @@
 package handler
 
-import "github.com/Netflix/go-env"
+import (
+	"github.com/Netflix/go-env"
+	"github.com/m-mizutani/golambda"
+)
 
 // EnvVars has all environment variables that should be given to Lambda function
 type EnvVars struct {
@@ -25,8 +28,7 @@ type EnvVars struct {
 // BindEnvVars loads environments variables and set them to EnvVars
 func (x *EnvVars) BindEnvVars() error {
 	if _, err := env.UnmarshalFromEnviron(x); err != nil {
-		logger.WithError(err).Error("Failed UnmarshalFromEviron")
-		return err
+		return golambda.WrapError(err)
 	}
 
 	return nil

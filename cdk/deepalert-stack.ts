@@ -52,7 +52,6 @@ export class DeepAlertStack extends cdk.Stack {
   dummyReviewer: lambda.Function;
   submitReport: lambda.Function;
   publishReport: lambda.Function;
-  lambdaError: lambda.Function;
   apiHandler: lambda.Function;
 
   // StepFunctions
@@ -195,11 +194,6 @@ export class DeepAlertStack extends cdk.Stack {
           }),
         ],
         setToStack: (f :lambda.Function) => { this.publishReport = f; },
-      },
-      {
-        funcName: 'lambdaError',
-        events: [new SqsEventSource(this.deadLetterQueue)],
-        setToStack: (f :lambda.Function) => { this.lambdaError = f; },
       },
     ];
 

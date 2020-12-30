@@ -6,15 +6,23 @@ import (
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/m-mizutani/golambda"
 )
 
 func main() {
-	handler.StartLambda(handleRequest)
+	golambda.Start(func(event golambda.Event) (interface{}, error) {
+		args := handler.NewArguments()
+		if err := args.BindEnvVars(); err != nil {
+			return nil, err
+		}
+
+		return handleRequest(args, event)
+	})
 }
 
-func handleRequest(args *handler.Arguments) (handler.Response, error) {
+func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, error) {
 	var report deepalert.Report
-	if err := args.BindEvent(&report); err != nil {
+	if err := event.Bind(&report); err != nil {
 		return nil, err
 	}
 

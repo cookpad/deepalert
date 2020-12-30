@@ -4,21 +4,27 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/m-mizutani/golambda"
 
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/logging"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 func main() {
-	handler.StartLambda(handleRequest)
+	golambda.Start(func(event golambda.Event) (interface{}, error) {
+		args := handler.NewArguments()
+		if err := args.BindEnvVars(); err != nil {
+			return nil, err
+		}
+
+		return handleRequest(args, event)
+	})
 }
 
-func handleRequest(args *handler.Arguments) (handler.Response, error) {
+func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, error) {
 	snsSvc := args.SNSService()
 	repo, err := args.Repository()
 	if err != nil {
@@ -27,7 +33,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 
 	now := time.Now()
 
-	sqsMessages, err := args.DecapSQSEvent()
+	sqsMessages, err := event.DecapSQSBody()
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +44,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 			return nil, errors.Wrap(err, "Unmarshal ReportAttribute").With("msg", string(msg))
 		}
 
-		logger.WithField("reportedAttr", reportedAttr).Info("unmarshaled reported attribute")
+		logger.With("reportedAttr", reportedAttr).Info("unmarshaled reported attribute")
 
 		for _, attr := range reportedAttr.Attributes {
 			sendable, err := repo.PutAttributeCache(reportedAttr.ReportID, *attr, now)
@@ -46,7 +52,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 				return nil, errors.Wrap(err, "Fail to manage attribute cache").With("attr", attr)
 			}
 
-			logger.WithFields(logrus.Fields{"sendable": sendable, "attr": attr}).Info("attribute")
+			logger.With("sendable", sendable).With("attr", attr).Info("attribute")
 			if !sendable {
 				continue
 			}

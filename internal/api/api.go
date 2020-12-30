@@ -6,9 +6,9 @@ import (
 
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/logging"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/m-mizutani/golambda"
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,20 +19,20 @@ const (
 	paramAlertID       = "alert_id"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 func getArguments(c *gin.Context) *handler.Arguments {
 	// In API code, handler.Arguments must be retrieved. If failed, the process must fail
 	ptr, ok := c.Get(contextArgumentKey)
 	if !ok {
-		logger.Fatalf("Config is not set in API as '%s'", contextArgumentKey)
-		return nil
+		logger.With("key", contextArgumentKey).Error("Config is not set in API")
+		panic("Config is not set in API")
 	}
 
 	args, ok := ptr.(*handler.Arguments)
 	if !ok {
-		logger.Fatalf("Config data as '%s' can not be casted", contextArgumentKey)
-		return nil
+		logger.With("key", contextArgumentKey).Error("Config data can not be casted")
+		panic("Config data can not be casted")
 	}
 
 	return args
@@ -42,12 +42,14 @@ func getRequestID(c *gin.Context) string {
 	// In API code, requestID must be retrieved. If failed, the process must fail
 	ptr, ok := c.Get(contextRequestID)
 	if !ok {
-		logger.Fatalf("RequestID is not set in API as '%s'", contextRequestID)
+		logger.With("contextRequestID", contextRequestID).Error("RequestID is not set in API")
+		panic("RequestID is not set in API")
 	}
 
 	reqID, ok := ptr.(string)
 	if !ok {
-		logger.Fatalf("RequestID as '%s' can not be casted", contextRequestID)
+		logger.With("contextRequestID", contextRequestID).Error("RequestID can not be casted")
+		panic("RequestID can not be casted")
 	}
 
 	return reqID
@@ -71,7 +73,7 @@ func resp(c *gin.Context, data interface{}) {
 			for k, v := range e.Values {
 				fields[k] = v
 			}
-			logger.WithFields(fields).WithError(err).Error("Request Error")
+			logger.With("fields", fields).With("err", err).Error("Request Error")
 
 			if 400 <= e.StatusCode && e.StatusCode < 500 {
 				c.JSON(e.StatusCode, wrapErr(e.Error()))
@@ -79,7 +81,7 @@ func resp(c *gin.Context, data interface{}) {
 				c.JSON(http.StatusInternalServerError, wrapErr("Internal Server Error"))
 			}
 		} else {
-			logger.WithError(err).Error("Request Error (not errors.Error")
+			logger.With("err", err).Error("Request Error (not errors.Error")
 
 			c.JSON(http.StatusInternalServerError, wrapErr("SystemError"))
 		}
@@ -92,13 +94,13 @@ func resp(c *gin.Context, data interface{}) {
 func SetupRoute(r *gin.RouterGroup, args *handler.Arguments) {
 	r.Use(func(c *gin.Context) {
 		reqID := uuid.New().String()
-		logger.WithFields(logrus.Fields{
-			"path":       c.FullPath(),
-			"params":     c.Params,
-			"request_id": reqID,
-			"remote":     c.ClientIP(),
-			"ua":         c.Request.UserAgent(),
-		}).Info("API request")
+		logger.
+			With("path", c.FullPath()).
+			With("params", c.Params).
+			With("request_id", reqID).
+			With("remote", c.ClientIP()).
+			With("ua", c.Request.UserAgent()).
+			Info("API request")
 
 		c.Set(contextRequestID, reqID)
 		c.Set(contextArgumentKey, args)

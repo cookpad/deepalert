@@ -4,26 +4,33 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/logging"
 	"github.com/deepalert/deepalert/internal/models"
 	"github.com/deepalert/deepalert/internal/service"
+	"github.com/m-mizutani/golambda"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 func main() {
-	handler.StartLambda(handleRequest)
+	golambda.Start(func(event golambda.Event) (interface{}, error) {
+		args := handler.NewArguments()
+		if err := args.BindEnvVars(); err != nil {
+			return nil, err
+		}
+
+		return handleRequest(args, event)
+	})
 }
 
-func handleRequest(args *handler.Arguments) (handler.Response, error) {
-	var event events.DynamoDBEvent
+func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, error) {
+	var dynamoEvent events.DynamoDBEvent
 
-	if err := args.BindEvent(&event); err != nil {
+	if err := event.Bind(&dynamoEvent); err != nil {
 		return nil, err
 	}
 
-	for _, record := range event.Records {
-		logger.WithField("event", event).Info("Recv DynamoDB event")
+	for _, record := range dynamoEvent.Records {
+		logger.With("event", event).Info("Recv DynamoDB event")
 
 		if !service.IsReportStreamEvent(&record) {
 			continue
@@ -42,7 +49,7 @@ func handleRequest(args *handler.Arguments) (handler.Response, error) {
 			return nil, err
 		}
 
-		logger.WithField("report", report).Info("Publishing report")
+		logger.With("report", report).Info("Publishing report")
 
 		if err := args.SNSService().Publish(args.ReportTopic, &report); err != nil {
 			return nil, errors.Wrap(err, "Fail to publish report")

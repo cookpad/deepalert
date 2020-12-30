@@ -8,10 +8,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/errors"
-	"github.com/deepalert/deepalert/internal/logging"
+	"github.com/m-mizutani/golambda"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 // SNSService is accessor to SQS
 type SNSService struct {
@@ -63,7 +63,7 @@ func (x *SNSService) Publish(topicARN string, msg interface{}) error {
 		return errors.Wrap(err, "Fail to send SQS message").With("input", input)
 	}
 
-	logger.WithField("resp", resp).Trace("Sent SQS message")
+	logger.With("resp", resp).Trace("Sent SQS message")
 
 	return nil
 }

@@ -7,16 +7,14 @@ import (
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/logging"
-
-	"github.com/sirupsen/logrus"
+	"github.com/m-mizutani/golambda"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 // HandleAlert creates a report from alert and invoke delay machines
 func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time) (*deepalert.Report, error) {
-	logger.WithField("alert", alert).Info("Taking report")
+	logger.With("alert", alert).Info("Taking report")
 
 	if err := alert.Validate(); err != nil {
 		return nil, errors.Wrap(err, "Invalid alert format").
@@ -39,12 +37,12 @@ func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time)
 
 	}
 
-	logger.WithFields(logrus.Fields{
-		"ReportID": report.ID,
-		"Status":   report.Status,
-		"Error":    err,
-		"AlertID":  alert.AlertID(),
-	}).Info("ReportID has been retrieved")
+	logger.
+		With("ReportID", report.ID).
+		With("Status", report.Status).
+		With("Error", err).
+		With("AlertID", alert.AlertID()).
+		Info("ReportID has been retrieved")
 
 	report.Alerts = []*deepalert.Alert{alert}
 

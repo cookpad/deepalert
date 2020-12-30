@@ -9,6 +9,7 @@ import (
 	"github.com/deepalert/deepalert/internal/mock"
 	"github.com/deepalert/deepalert/internal/service"
 	"github.com/google/uuid"
+	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,13 +38,12 @@ func TestHandleReport(t *testing.T) {
 	require.NoError(t, repo.SaveNote(r, now))
 
 	args := &handler.Arguments{
-		Event: &deepalert.Report{
-			ID: reportID,
-		},
 		NewRepository: newMockRepo,
 	}
 
-	resp, err := handleRequest(args)
+	resp, err := handleRequest(args, golambda.Event{Origin: &deepalert.Report{
+		ID: reportID,
+	}})
 	require.NoError(t, err)
 	updatedReport := resp.(*deepalert.Report)
 	assert.Greater(t, len(updatedReport.Sections), 0)

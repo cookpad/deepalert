@@ -4,25 +4,32 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
+	"github.com/m-mizutani/golambda"
 
 	"github.com/deepalert/deepalert/internal/api"
 	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/logging"
 )
 
-var logger = logging.Logger
+var logger = golambda.Logger
 
 func main() {
-	handler.StartLambda(handleRequest)
+	golambda.Start(func(event golambda.Event) (interface{}, error) {
+		args := handler.NewArguments()
+		if err := args.BindEnvVars(); err != nil {
+			return nil, err
+		}
+
+		return handleRequest(args, event)
+	})
 }
 
-func handleRequest(args *handler.Arguments) (handler.Response, error) {
+func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, error) {
 	var req events.APIGatewayProxyRequest
-	if err := args.BindEvent(&req); err != nil {
+	if err := event.Bind(&req); err != nil {
 		return nil, err
 	}
 
-	logger.WithField("request", req).Info("HTTP request")
+	logger.With("request", req).Info("HTTP request")
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
