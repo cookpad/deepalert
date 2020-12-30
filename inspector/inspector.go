@@ -4,30 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert"
 	"github.com/m-mizutani/golambda"
-	"github.com/sirupsen/logrus"
 )
 
 // InspectHandler is a function type of callback of inspector.
 type InspectHandler func(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error)
 
-// Logger is github.com/sirupsen/logrus logger and exported to be controlled from external module.
-var Logger = logrus.New()
-
-func init() {
-	// If running as Lambda function
-	if os.Getenv("AWS_LAMBDA_FUNCTION_NAME") != "" {
-		Logger.SetFormatter(&logrus.JSONFormatter{})
-		Logger.SetLevel(logrus.InfoLevel)
-	} else {
-		Logger.SetLevel(logrus.WarnLevel)
-		Logger.SetFormatter(&logrus.TextFormatter{})
-	}
-}
+// Logger is github.com/m-mizutani/golambda logger and exported to be controlled from external module.
+var Logger = golambda.Logger
 
 type reportIDKey struct{}
 
@@ -94,13 +81,13 @@ func SNSEventToTasks(event events.SNSEvent) ([]*deepalert.Task, error) {
 
 // HandleTask is called with task by task. It's exported for testing
 func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error {
-	Logger.WithFields(logrus.Fields{
-		"task":            task,
-		"ctx":             ctx,
-		"Author":          args.Author,
-		"AttrQueueURL":    args.AttrQueueURL,
-		"ContentQueueURL": args.ContentQueueURL,
-	}).Info("Start inspector")
+	Logger.
+		With("task", task).
+		With("ctx", ctx).
+		With("Author", args.Author).
+		With("AttrQueueURL", args.AttrQueueURL).
+		With("ContentQueueURL", args.ContentQueueURL).
+		Info("Start inspector")
 
 	// Check Arguments
 	if args.Handler == nil {
@@ -143,7 +130,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 			Type:      entity.Type(),
 			Content:   entity,
 		}
-		Logger.WithField("note", note).Trace("Sending note")
+		Logger.With("note", note).Trace("Sending note")
 
 		if err := sendSQS(args.NewSQS, note, args.ContentQueueURL); err != nil {
 			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.ContentQueueURL).With("note", note)
@@ -167,7 +154,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 			Author:     args.Author,
 		}
 
-		Logger.WithField("ReportAttribute", attrReport).Trace("Sending new attributes")
+		Logger.With("ReportAttribute", attrReport).Trace("Sending new attributes")
 		if err := sendSQS(args.NewSQS, attrReport, args.AttrQueueURL); err != nil {
 			return golambda.WrapError(err, "Fail to publish ReportAttribute").With("url", args.AttrQueueURL).With("report", attrReport)
 		}

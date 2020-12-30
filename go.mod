@@ -12,6 +12,5 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/guregu/dynamo v1.6.1
 	github.com/m-mizutani/golambda v1.0.2
-	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.6.1
 )

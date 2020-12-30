@@ -64,7 +64,7 @@ func sendSQS(newSQS SQSClientFactory, msg interface{}, targetURL string) error {
 		return golambda.WrapError(err, "Failed to send SQS message").With("input", input)
 	}
 
-	Logger.WithField("resp", resp).Trace("Sent SQS message")
+	Logger.With("resp", resp).Trace("Sent SQS message")
 
 	return nil
 }

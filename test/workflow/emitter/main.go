@@ -1,58 +1,41 @@
 package main
 
 import (
-	"context"
 	"os"
 
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/emitter"
 	"github.com/deepalert/deepalert/test/workflow"
 	"github.com/m-mizutani/golambda"
-	"github.com/sirupsen/logrus"
 )
 
-var logger = logrus.New()
-
-func emit(ctx context.Context, report deepalert.Report) error {
-	logger.WithField("report", report).Debug("Start emitter")
-
-	repo, err := workflow.NewRepository(os.Getenv("AWS_REGION"), os.Getenv("RESULT_TABLE"))
-	if err != nil {
-		return golambda.WrapError(err, "Failed workflow.NewRepository")
-	}
-
-	if err := repo.PutEmitterResult(&report); err != nil {
-		return err
-	}
-
-	return nil
-}
+var logger = golambda.Logger
 
 func main() {
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	logger.SetLevel(logrus.InfoLevel)
-
-	lambda.Start(func(ctx context.Context, event events.SNSEvent) error {
-		reports, err := emitter.SNSEventToReport(event)
+	golambda.Start(func(event golambda.Event) (interface{}, error) {
+		messages, err := event.DecapSNSMessage()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		logger.WithField("report", reports).Debug("Start emitter")
-
-		repo, err := workflow.NewRepository(os.Getenv("AWS_REGION"), os.Getenv("RESULT_TABLE"))
+		awsRegion := os.Getenv("AWS_REGION")
+		tableName := os.Getenv("RESULT_TABLE")
+		repo, err := workflow.NewRepository(awsRegion, tableName)
 		if err != nil {
-			return golambda.WrapError(err, "Failed workflow.NewRepository")
+			return nil, golambda.WrapError(err).With("region", awsRegion).With("table", tableName)
 		}
 
-		for _, report := range reports {
-			if err := repo.PutEmitterResult(report); err != nil {
-				return err
+		for _, msg := range messages {
+			var report deepalert.Report
+			if err := msg.Bind(&report); err != nil {
+				return nil, err
+			}
+
+			logger.With("report", report).Debug("Start emitter")
+			if err := repo.PutEmitterResult(&report); err != nil {
+				return nil, err
 			}
 		}
 
-		return nil
+		return nil, nil
 	})
 }
