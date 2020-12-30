@@ -361,7 +361,7 @@ function buildReviewMachine(
 
 function getAPIKey(apiKeyPath?: string): string {
   if (apiKeyPath === undefined) {
-    apiKeyPath = path.join(__dirname, 'apikey.json');
+    apiKeyPath = path.join(process.cwd(), 'apikey.json');
   }
 
   if (fs.existsSync(apiKeyPath)) {
@@ -377,22 +377,4 @@ function getAPIKey(apiKeyPath?: string): string {
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
   }
-}
-
-function goAsset(funcName:string, pkgPath:string):lambda.AssetCode {
-  const rootPath = path.resolve(__dirname, '..');
-
-  return lambda.Code.fromAsset(rootPath, {
-    bundling: {
-      image: lambda.Runtime.GO_1_X.bundlingDockerImage,
-      user: 'root',
-
-      command: [
-        'bash',
-        '-c',
-        `GOOS=linux GOARCH=amd64 go build -o /asset-output/${funcName} ${pkgPath}`,
-      ],
-    },
-    exclude: ['node_modules', '*/node_modules', 'cdk.out', '*/cdk.out'],
-  });
 }

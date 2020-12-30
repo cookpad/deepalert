@@ -1,14 +1,10 @@
 {
-  "name": "deepalert",
-  "version": "2.0.0",
+  "name": "@deepalert/deepalert",
+  "version": "2.0.0-alpha",
   "scripts": {
-    "build": "make; tsc",
     "watch": "tsc -w",
-    "test": "jest",
-    "deploy": "make; tsc; cdk deploy",
-    "cdk": "cdk",
-    "prepare": "tsc",
-    "install": "make"
+    "install": "tsc",
+    "prepare": "tsc"
   },
   "main": "./cdk/deepalert-stack.js",
   "type": "./cdk/deepalert-stack.d.ts",
@@ -18,14 +14,15 @@
     "*.go",
     "internal",
     "lambda",
-    "cdk"
+    "cdk",
+    "tsconfig.json"
   ],
   "devDependencies": {
     "@aws-cdk/assert": "1.75.0",
-    "@types/jest": "^25.2.1",
+    "@types/jest": "^26.6.3",
     "@types/node": "10.17.5",
-    "jest": "^25.5.0",
-    "ts-jest": "^25.3.1",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.6.3",
     "aws-cdk": "1.75.0",
     "ts-node": "^8.1.0",
     "typescript": "~3.7.2"
@@ -57,5 +54,20 @@
         "node": ">= 12"
       }
     }
-  }
+  },
+  "description": "Serverless SOAR (Security Orchestration, Automation and Response) framework for automatic inspection and evaluation of security alert.",
+  "directories": {
+    "example": "examples",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepalert/deepalert.git"
+  },
+  "author": "Masayoshi Mizutani",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/deepalert/deepalert/issues"
+  },
+  "homepage": "https://github.com/deepalert/deepalert"
 }
