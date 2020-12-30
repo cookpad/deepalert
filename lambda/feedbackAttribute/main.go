@@ -7,7 +7,6 @@ import (
 	"github.com/m-mizutani/golambda"
 
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 )
 
@@ -41,7 +40,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 	for _, msg := range sqsMessages {
 		var reportedAttr deepalert.ReportAttribute
 		if err := json.Unmarshal(msg, &reportedAttr); err != nil {
-			return nil, errors.Wrap(err, "Unmarshal ReportAttribute").With("msg", string(msg))
+			return nil, golambda.WrapError(err, "Unmarshal ReportAttribute").With("msg", string(msg))
 		}
 
 		logger.With("reportedAttr", reportedAttr).Info("unmarshaled reported attribute")
@@ -49,7 +48,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 		for _, attr := range reportedAttr.Attributes {
 			sendable, err := repo.PutAttributeCache(reportedAttr.ReportID, *attr, now)
 			if err != nil {
-				return nil, errors.Wrap(err, "Fail to manage attribute cache").With("attr", attr)
+				return nil, golambda.WrapError(err, "Fail to manage attribute cache").With("attr", attr)
 			}
 
 			logger.With("sendable", sendable).With("attr", attr).Info("attribute")

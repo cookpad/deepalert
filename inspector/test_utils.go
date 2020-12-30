@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/google/uuid"
+	"github.com/m-mizutani/golambda"
 )
 
 // StartTest emulates inspector.Start, but
@@ -23,7 +23,7 @@ func StartTest(args Arguments, attr deepalert.Attribute) (*deepalert.TaskResult,
 
 	result, err := args.Handler(ctx, attr)
 	if err != nil {
-		return nil, errors.Wrap(err, "Fail to run Handler")
+		return nil, golambda.WrapError(err, "Fail to run Handler")
 	}
 
 	return result, nil

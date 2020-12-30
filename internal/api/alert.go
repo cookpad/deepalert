@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/usecase"
 	"github.com/gin-gonic/gin"
+	"github.com/m-mizutani/golambda"
 )
 
 func postAlert(c *gin.Context) {
@@ -16,52 +16,47 @@ func postAlert(c *gin.Context) {
 
 	var alert deepalert.Alert
 	if err := c.BindJSON(&alert); err != nil {
-		resp(c, errors.Wrap(err, "Failed to pase deepalert.Alert").Status(http.StatusBadRequest))
+		resp(c, http.StatusBadRequest, err)
 		return
 	}
 
 	report, err := usecase.HandleAlert(args, &alert, now)
 	if err != nil {
-		resp(c, err)
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp(c, report)
+	resp(c, http.StatusOK, report)
 }
 
 func getReportByAlertID(c *gin.Context) {
 	args := getArguments(c)
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to create Repository").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	alertID := c.Param(paramAlertID)
 	reportID, err := repo.GetReportID(alertID)
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed repository access").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 	if reportID == deepalert.NullReportID {
-		resp(c, errors.New("No such alert").
-			With("alert_id", alertID).
-			Status(http.StatusNotFound))
+		resp(c, http.StatusNotFound, golambda.NewError("No such alert").With("alert_id", alertID))
 		return
 	}
 
 	report, err := repo.GetReport(reportID)
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed GetReport").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 	if report == nil {
-		resp(c, errors.Wrap(err, "Report data is not found, still in transaction").Status(http.StatusNotFound))
+		resp(c, http.StatusNotFound, golambda.NewError("No such report").With("alert_id", alertID).With("reportID", reportID))
 		return
 	}
 
-	resp(c, report)
+	resp(c, http.StatusOK, report)
 }

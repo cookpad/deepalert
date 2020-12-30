@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/m-mizutani/golambda"
 )
 
 // MockSQSClient is for testing. Just storing sqs.SendMessageInput
@@ -49,7 +49,7 @@ func (x *MockSQSClient) GetSections(url string) ([]*deepalert.Section, error) {
 	for _, q := range queues {
 		var section deepalert.Section
 		if err := json.Unmarshal([]byte(*q.MessageBody), &section); err != nil {
-			return nil, errors.Wrap(err, "Failed to parse section queue")
+			return nil, golambda.WrapError(err, "Failed to parse section queue")
 		}
 
 		output = append(output, &section)
@@ -68,7 +68,7 @@ func (x *MockSQSClient) GetAttributes(url string) ([]*deepalert.ReportAttribute,
 	for _, q := range queues {
 		var attr deepalert.ReportAttribute
 		if err := json.Unmarshal([]byte(*q.MessageBody), &attr); err != nil {
-			return nil, errors.Wrap(err, "Failed to parse attribute queue")
+			return nil, golambda.WrapError(err, "Failed to parse attribute queue")
 		}
 
 		output = append(output, &attr)

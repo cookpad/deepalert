@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/gin-gonic/gin"
+	"github.com/m-mizutani/golambda"
 )
 
 func getReport(c *gin.Context) {
@@ -14,19 +14,17 @@ func getReport(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to create Repository").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	report, err := repo.GetReport(reportID)
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed GetReport").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, golambda.WrapError(err, "Failed GetReport"))
 		return
 	}
 
-	resp(c, report)
+	resp(c, http.StatusOK, report)
 }
 
 func getReportAlerts(c *gin.Context) {
@@ -35,24 +33,21 @@ func getReportAlerts(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to set up Repository").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	alerts, err := repo.FetchAlertCache(reportID)
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to fetch alerts").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 	if alerts == nil {
-		resp(c, errors.New("alerts not found").
-			Status(http.StatusNotFound))
+		resp(c, http.StatusNotFound, golambda.NewError("alerts not found"))
 		return
 	}
 
-	resp(c, alerts)
+	resp(c, http.StatusOK, alerts)
 }
 
 func getSections(c *gin.Context) {
@@ -61,24 +56,21 @@ func getSections(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to set up Repository").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	sections, err := repo.FetchSection(reportID)
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to fetch sections").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 	if sections == nil {
-		resp(c, errors.New("sections not found").
-			Status(http.StatusNotFound))
+		resp(c, http.StatusNotFound, golambda.NewError("sections not found"))
 		return
 	}
 
-	resp(c, sections)
+	resp(c, http.StatusOK, sections)
 }
 
 func getReportAttributes(c *gin.Context) {
@@ -87,22 +79,19 @@ func getReportAttributes(c *gin.Context) {
 
 	repo, err := args.Repository()
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to set up Repository").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	attributes, err := repo.FetchAttributeCache(reportID)
 	if err != nil {
-		resp(c, errors.Wrap(err, "Failed to fetch attributes").
-			Status(http.StatusInternalServerError))
+		resp(c, http.StatusInternalServerError, err)
 		return
 	}
 	if attributes == nil {
-		resp(c, errors.New("attributes not found").
-			Status(http.StatusNotFound))
+		resp(c, http.StatusNotFound, golambda.NewError("attributes not found"))
 		return
 	}
 
-	resp(c, attributes)
+	resp(c, http.StatusOK, attributes)
 }

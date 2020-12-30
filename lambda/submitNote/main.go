@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/m-mizutani/golambda"
 )
@@ -41,12 +40,12 @@ func handleRequest(args *handler.Arguments, event golambda.Event) error {
 	for _, msg := range messages {
 		var ir deepalert.Note
 		if err := json.Unmarshal(msg, &ir); err != nil {
-			return errors.Wrap(err, "Fail to unmarshal Note from SubmitNotification").With("msg", string(msg))
+			return golambda.WrapError(err, "Fail to unmarshal Note from SubmitNotification").With("msg", string(msg))
 		}
 		logger.With("inspectReport", ir).Debug("Handling inspect report")
 
 		if err := repo.SaveNote(ir, now); err != nil {
-			return errors.Wrap(err, "Fail to save Note").With("report", ir)
+			return golambda.WrapError(err, "Fail to save Note").With("report", ir)
 		}
 		logger.With("section", ir).Info("Saved content")
 	}

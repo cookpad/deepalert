@@ -8,9 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/google/uuid"
 	"github.com/guregu/dynamo"
+	"github.com/m-mizutani/golambda"
 )
 
 // Repository is accessor to DynamoDB
@@ -28,7 +28,7 @@ type baseResult struct {
 func NewRepository(region, tableName string) (*Repository, error) {
 	ssn, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed session.NewSession")
+		return nil, golambda.WrapError(err, "Failed session.NewSession")
 	}
 
 	db := dynamo.New(ssn, &aws.Config{Region: aws.String(region)})
@@ -48,7 +48,7 @@ type EmitterResult struct {
 func (x *Repository) PutEmitterResult(report *deepalert.Report) error {
 	raw, err := json.Marshal(report)
 	if err != nil {
-		return errors.Wrap(err, "Failed to marshal report").With("report", report)
+		return golambda.WrapError(err, "Failed to marshal report").With("report", report)
 	}
 
 	value := EmitterResult{
@@ -61,7 +61,7 @@ func (x *Repository) PutEmitterResult(report *deepalert.Report) error {
 	}
 
 	if err := x.table.Put(value).Run(); err != nil {
-		return errors.Wrap(err, "Fail to put result").With("value", value)
+		return golambda.WrapError(err, "Fail to put result").With("value", value)
 	}
 
 	return nil
@@ -78,7 +78,7 @@ func (x *Repository) GetEmitterResult(reportID deepalert.ReportID) ([]*EmitterRe
 	for i := 0; i < maxRetry; i++ {
 		if err := x.table.Get("pk", pk).All(&values); err != nil {
 			if err != dynamo.ErrNotFound {
-				return nil, errors.Wrap(err, "Fail to get result").With("pk", pk)
+				return nil, golambda.WrapError(err, "Fail to get result").With("pk", pk)
 			}
 
 			sleep := math.Pow(1.1, float64(i))
@@ -93,5 +93,5 @@ func (x *Repository) GetEmitterResult(reportID deepalert.ReportID) ([]*EmitterRe
 
 	end := time.Now()
 	sec := end.Sub(start).Seconds()
-	return nil, errors.New("Timeout to get value").With("waited", sec).With("pk", pk)
+	return nil, golambda.NewError("Timeout to get value").With("waited", sec).With("pk", pk)
 }

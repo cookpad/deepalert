@@ -9,9 +9,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/models"
 	"github.com/google/uuid"
+	"github.com/m-mizutani/golambda"
 )
 
 /*
@@ -84,7 +84,7 @@ func (x *RepositoryService) TakeReport(alert deepalert.Alert, now time.Time) (*d
 		if x.repo.IsConditionalCheckErr(err) {
 			existedEntry, err := x.repo.GetAlertEntry(entry.PKey, entry.SKey)
 			if err != nil {
-				return nil, errors.Wrap(err, "Fail to get cached reportID").With("AlertID", alertID)
+				return nil, golambda.WrapError(err, "Fail to get cached reportID").With("AlertID", alertID)
 			}
 
 			return &deepalert.Report{
@@ -94,7 +94,7 @@ func (x *RepositoryService) TakeReport(alert deepalert.Alert, now time.Time) (*d
 			}, nil
 		}
 
-		return nil, errors.Wrap(err, "Fail to create new alert entry").
+		return nil, golambda.WrapError(err, "Fail to create new alert entry").
 			With("AlertID", alertID).With("repo", x.repo)
 	}
 
@@ -109,7 +109,7 @@ func (x *RepositoryService) GetReportID(alertID string) (deepalert.ReportID, err
 
 	existedEntry, err := x.repo.GetAlertEntry(toAlertMapPKey(alertID), alertMapfixedKey)
 	if err != nil {
-		return deepalert.NullReportID, errors.Wrap(err, "Fail to get cached reportID").With("AlertID", alertID)
+		return deepalert.NullReportID, golambda.WrapError(err, "Fail to get cached reportID").With("AlertID", alertID)
 	} else if existedEntry == nil {
 		return deepalert.NullReportID, nil
 	}
@@ -128,7 +128,7 @@ func toAlertCacheKey(reportID deepalert.ReportID) (string, string) {
 func (x *RepositoryService) SaveAlertCache(reportID deepalert.ReportID, alert deepalert.Alert, now time.Time) error {
 	raw, err := json.Marshal(alert)
 	if err != nil {
-		return errors.Wrap(err, "Fail to marshal alert").With("alert", alert)
+		return golambda.WrapError(err, "Fail to marshal alert").With("alert", alert)
 	}
 
 	pk, sk := toAlertCacheKey(reportID)
@@ -154,13 +154,13 @@ func (x *RepositoryService) FetchAlertCache(reportID deepalert.ReportID) ([]*dee
 
 	caches, err := x.repo.GetAlertCaches(pk)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetAlertCaches").With("reportID", reportID)
+		return nil, golambda.WrapError(err, "GetAlertCaches").With("reportID", reportID)
 	}
 
 	for _, cache := range caches {
 		var alert deepalert.Alert
 		if err := json.Unmarshal(cache.AlertData, &alert); err != nil {
-			return nil, errors.Wrap(err, "Fail to unmarshal alert").With("data", string(cache.AlertData))
+			return nil, golambda.WrapError(err, "Fail to unmarshal alert").With("data", string(cache.AlertData))
 		}
 		alerts = append(alerts, &alert)
 	}
@@ -184,7 +184,7 @@ func toNoteKeys(reportID deepalert.ReportID, inspect *deepalert.Note) (string, s
 func (x *RepositoryService) SaveNote(section deepalert.Note, now time.Time) error {
 	raw, err := json.Marshal(section)
 	if err != nil {
-		return errors.Wrap(err, "Fail to marshal Section").With("section", section)
+		return golambda.WrapError(err, "Fail to marshal Section").With("section", section)
 	}
 
 	pk, sk := toNoteKeys(section.ReportID, &section)
@@ -198,7 +198,7 @@ func (x *RepositoryService) SaveNote(section deepalert.Note, now time.Time) erro
 	}
 
 	if err := x.repo.PutInspectorReport(record); err != nil {
-		return errors.Wrap(err, "Fail to put report record")
+		return golambda.WrapError(err, "Fail to put report record")
 	}
 
 	return nil
@@ -216,7 +216,7 @@ func (x *RepositoryService) FetchSection(reportID deepalert.ReportID) ([]*deepal
 	for _, record := range records {
 		var section deepalert.Note
 		if err := json.Unmarshal(record.Data, &section); err != nil {
-			return nil, errors.Wrap(err, "Fail to unmarshal report content").
+			return nil, golambda.WrapError(err, "Fail to unmarshal report content").
 				With("record", record).
 				With("data", string(record.Data))
 		}
@@ -226,7 +226,7 @@ func (x *RepositoryService) FetchSection(reportID deepalert.ReportID) ([]*deepal
 
 	sections, err := remapSection(reports)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to remap Note")
+		return nil, golambda.WrapError(err, "Failed to remap Note")
 	}
 	return sections, nil
 }
@@ -234,10 +234,10 @@ func (x *RepositoryService) FetchSection(reportID deepalert.ReportID) ([]*deepal
 func rebuildCotent(src interface{}, dst interface{}) error {
 	raw, err := json.Marshal(src)
 	if err != nil {
-		return errors.New("Failed to marshal content")
+		return golambda.NewError("Failed to marshal content")
 	}
 	if err := json.Unmarshal(raw, dst); err != nil {
-		return errors.Wrap(err, "Failed to unmarshal marshaled content").With("raw", string(raw))
+		return golambda.WrapError(err, "Failed to unmarshal marshaled content").With("raw", string(raw))
 	}
 
 	return nil
@@ -259,21 +259,21 @@ func remapSection(inspectReports []*deepalert.Note) ([]*deepalert.Section, error
 		case deepalert.ContentTypeHost:
 			var c deepalert.ContentHost
 			if err := rebuildCotent(ir.Content, &c); err != nil {
-				return nil, errors.Wrap(err, "Invalid deepalert.ContentHost data")
+				return nil, golambda.WrapError(err, "Invalid deepalert.ContentHost data")
 			}
 			section.Hosts = append(section.Hosts, &c)
 
 		case deepalert.ContentTypeUser:
 			var c deepalert.ContentUser
 			if err := rebuildCotent(ir.Content, &c); err != nil {
-				return nil, errors.Wrap(err, "Invalid deepalert.ContentUser data")
+				return nil, golambda.WrapError(err, "Invalid deepalert.ContentUser data")
 			}
 			section.Users = append(section.Users, &c)
 
 		case deepalert.ContentTypeBinary:
 			var c deepalert.ContentBinary
 			if err := rebuildCotent(ir.Content, &c); err != nil {
-				return nil, errors.Wrap(err, "Invalid deepalert.ContentBinary data")
+				return nil, golambda.WrapError(err, "Invalid deepalert.ContentBinary data")
 			}
 			section.Binaries = append(section.Binaries, &c)
 		}
@@ -336,7 +336,7 @@ func (x *RepositoryService) PutAttributeCache(reportID deepalert.ReportID, attr 
 			return false, nil
 		}
 
-		return false, errors.Wrap(err, "Fail to put attr cache").
+		return false, golambda.WrapError(err, "Fail to put attr cache").
 			With("reportID", reportID).
 			With("attr", attr)
 	}
@@ -350,7 +350,7 @@ func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]
 
 	caches, err := x.repo.GetAttributeCaches(pk)
 	if err != nil {
-		return nil, errors.Wrap(err, "Fail to retrieve attributeCache").With("reportID", reportID)
+		return nil, golambda.WrapError(err, "Fail to retrieve attributeCache").With("reportID", reportID)
 	}
 
 	var attrs []*deepalert.Attribute

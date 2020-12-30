@@ -8,9 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/models"
 	"github.com/guregu/dynamo"
+	"github.com/m-mizutani/golambda"
 )
 
 type DynamoDBRepositry struct {
@@ -24,7 +24,7 @@ type DynamoDBRepositry struct {
 func NewDynamoDB(region, tableName string) (adaptor.Repository, error) {
 	ssn, err := session.NewSession(&aws.Config{Region: aws.String(region)})
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed session.NewSession for DynamoDB").With("region", region)
+		return nil, golambda.WrapError(err, "Failed session.NewSession for DynamoDB").With("region", region)
 	}
 	db := dynamo.New(ssn)
 	x := &DynamoDBRepositry{
@@ -61,7 +61,7 @@ func (x *DynamoDBRepositry) GetAlertEntry(pk, sk string) (*models.AlertEntry, er
 
 func (x *DynamoDBRepositry) PutAlertCache(cache *models.AlertCache) error {
 	if err := x.table.Put(cache).Run(); err != nil {
-		return errors.Wrap(err, "Failed PutAlertCache").With("cache", cache)
+		return golambda.WrapError(err, "Failed PutAlertCache").With("cache", cache)
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (x *DynamoDBRepositry) GetAlertCaches(pk string) ([]*models.AlertCache, err
 			return nil, nil
 		}
 
-		return nil, errors.Wrap(err, "Failed GetAlertCaches").With("pk", pk)
+		return nil, golambda.WrapError(err, "Failed GetAlertCaches").With("pk", pk)
 	}
 
 	return caches, nil
@@ -83,7 +83,7 @@ func (x *DynamoDBRepositry) GetAlertCaches(pk string) ([]*models.AlertCache, err
 
 func (x *DynamoDBRepositry) PutInspectorReport(record *models.InspectorReportRecord) error {
 	if err := x.table.Put(record).Run(); err != nil {
-		return errors.Wrap(err, "Failed PutInspectorReport").With("record", record)
+		return golambda.WrapError(err, "Failed PutInspectorReport").With("record", record)
 	}
 
 	return nil
@@ -93,7 +93,7 @@ func (x *DynamoDBRepositry) GetInspectorReports(pk string) ([]*models.InspectorR
 	var records []*models.InspectorReportRecord
 
 	if err := x.table.Get("pk", pk).All(&records); err != nil {
-		return nil, errors.Wrap(err, "Failed GetInspectorReports").With("pk", pk)
+		return nil, golambda.WrapError(err, "Failed GetInspectorReports").With("pk", pk)
 	}
 
 	return records, nil
@@ -111,7 +111,7 @@ func (x *DynamoDBRepositry) GetAttributeCaches(pk string) ([]*models.AttributeCa
 	var attrs []*models.AttributeCache
 
 	if err := x.table.Get("pk", pk).All(&attrs); err != nil {
-		return nil, errors.Wrap(err, "Failed GetAttributeCaches").With("pk", pk)
+		return nil, golambda.WrapError(err, "Failed GetAttributeCaches").With("pk", pk)
 	}
 
 	return attrs, nil
@@ -137,7 +137,7 @@ func (x *DynamoDBRepositry) GetReport(pk string) (*deepalert.Report, error) {
 		if err == dynamo.ErrNotFound {
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "Failed to get report").With("pk", pk)
+		return nil, golambda.WrapError(err, "Failed to get report").With("pk", pk)
 	}
 
 	report, err := entry.Export()

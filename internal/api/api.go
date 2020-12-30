@@ -1,15 +1,12 @@
 package api
 
 import (
-	"fmt"
-	"net/http"
+	"errors"
 
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/m-mizutani/golambda"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -61,33 +58,24 @@ func wrapErr(msg string) map[string]string {
 	}
 }
 
-func resp(c *gin.Context, data interface{}) {
+func resp(c *gin.Context, status int, data interface{}) {
 	reqID := getRequestID(c)
 	c.Header("DeepAlert-Request-ID", reqID)
 
 	if err, ok := data.(error); ok {
-		if e, ok := err.(*errors.Error); ok {
-			fields := logrus.Fields{
-				"trace": fmt.Sprintf("%+v", e),
-			}
-			for k, v := range e.Values {
-				fields[k] = v
-			}
-			logger.With("fields", fields).With("err", err).Error("Request Error")
+		entry := golambda.Logger.Entry()
 
-			if 400 <= e.StatusCode && e.StatusCode < 500 {
-				c.JSON(e.StatusCode, wrapErr(e.Error()))
-			} else {
-				c.JSON(http.StatusInternalServerError, wrapErr("Internal Server Error"))
-			}
-		} else {
-			logger.With("err", err).Error("Request Error (not errors.Error")
-
-			c.JSON(http.StatusInternalServerError, wrapErr("SystemError"))
+		var e *golambda.Error
+		if errors.As(err, &e) {
+			entry.With("error.values", e.Values())
+			entry.With("error.stacktrace", e.Stacks())
 		}
-	} else {
-		c.JSON(http.StatusOK, data)
+
+		entry.Error(err.Error())
+		data = wrapErr(err.Error())
 	}
+
+	c.JSON(status, data)
 }
 
 // SetupRoute binds route of gin and API

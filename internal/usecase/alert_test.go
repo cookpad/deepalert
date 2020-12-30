@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -78,6 +79,49 @@ func TestHandleAlert(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, 1, len(report.Alerts))
 			assert.Equal(t, alert, report.Alerts[0])
+		})
+
+	})
+
+	t.Run("Error cases", func(t *testing.T) {
+		t.Run("Alert without Detector field is not allowed", func(t *testing.T) {
+			alert := &deepalert.Alert{
+				AlertKey: "5",
+				RuleID:   "five",
+				RuleName: "fifth",
+				Detector: "",
+			}
+
+			args, dummySFn, _ := basicSetup()
+
+			report, err := usecase.HandleAlert(args, alert, time.Now())
+			require.Error(t, err)
+			assert.True(t, errors.Is(err, deepalert.ErrInvalidAlert))
+			assert.Nil(t, report)
+
+			sfn, ok := dummySFn.(*mock.SFnClient)
+			require.True(t, ok)
+			require.Equal(t, 0, len(sfn.Input))
+		})
+
+		t.Run("Alert without RuleID field is not allowed", func(t *testing.T) {
+			alert := &deepalert.Alert{
+				AlertKey: "5",
+				RuleID:   "",
+				RuleName: "fifth",
+				Detector: "ao",
+			}
+
+			args, dummySFn, _ := basicSetup()
+
+			report, err := usecase.HandleAlert(args, alert, time.Now())
+			require.Error(t, err)
+			assert.True(t, errors.Is(err, deepalert.ErrInvalidAlert))
+			assert.Nil(t, report)
+
+			sfn, ok := dummySFn.(*mock.SFnClient)
+			require.True(t, ok)
+			require.Equal(t, 0, len(sfn.Input))
 		})
 	})
 

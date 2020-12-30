@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/m-mizutani/golambda"
 )
 
@@ -25,12 +24,12 @@ func NewSNSService(newSNS adaptor.SNSClientFactory) *SNSService {
 	}
 }
 
-func extractSNSRegion(topicARN string) (string, *errors.Error) {
+func extractSNSRegion(topicARN string) (string, error) {
 	// topicARN sample: arn:aws:sns:us-east-1:111122223333:my-topic
 	arnParts := strings.Split(topicARN, ":")
 
 	if len(arnParts) != 6 {
-		return "", errors.New("Invalid SNS topic ARN").With("ARN", topicARN)
+		return "", golambda.NewError("Invalid SNS topic ARN").With("ARN", topicARN)
 	}
 
 	return arnParts[3], nil
@@ -50,7 +49,7 @@ func (x *SNSService) Publish(topicARN string, msg interface{}) error {
 
 	raw, err := json.Marshal(msg)
 	if err != nil {
-		return errors.Wrap(err, "Fail to marshal message").With("msg", msg)
+		return golambda.WrapError(err, "Fail to marshal message").With("msg", msg)
 	}
 
 	input := sns.PublishInput{
@@ -60,7 +59,7 @@ func (x *SNSService) Publish(topicARN string, msg interface{}) error {
 	resp, err := client.Publish(&input)
 
 	if err != nil {
-		return errors.Wrap(err, "Fail to send SQS message").With("input", input)
+		return golambda.WrapError(err, "Fail to send SQS message").With("input", input)
 	}
 
 	logger.With("resp", resp).Trace("Sent SQS message")

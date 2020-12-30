@@ -8,8 +8,8 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/emitter"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/test/workflow"
+	"github.com/m-mizutani/golambda"
 	"github.com/sirupsen/logrus"
 )
 
@@ -20,7 +20,7 @@ func emit(ctx context.Context, report deepalert.Report) error {
 
 	repo, err := workflow.NewRepository(os.Getenv("AWS_REGION"), os.Getenv("RESULT_TABLE"))
 	if err != nil {
-		return errors.Wrap(err, "Failed workflow.NewRepository")
+		return golambda.WrapError(err, "Failed workflow.NewRepository")
 	}
 
 	if err := repo.PutEmitterResult(&report); err != nil {
@@ -44,7 +44,7 @@ func main() {
 
 		repo, err := workflow.NewRepository(os.Getenv("AWS_REGION"), os.Getenv("RESULT_TABLE"))
 		if err != nil {
-			return errors.Wrap(err, "Failed workflow.NewRepository")
+			return golambda.WrapError(err, "Failed workflow.NewRepository")
 		}
 
 		for _, report := range reports {

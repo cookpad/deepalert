@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/m-mizutani/golambda"
 )
@@ -36,7 +35,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 		for _, attr := range alert.Attributes {
 			sendable, err := repo.PutAttributeCache(report.ID, attr, now)
 			if err != nil {
-				return nil, errors.Wrap(err, "Fail to manage attribute cache").With("attr", attr)
+				return nil, golambda.WrapError(err, "Fail to manage attribute cache").With("attr", attr)
 			}
 
 			if !sendable {
@@ -53,7 +52,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 			}
 
 			if err := snsSvc.Publish(args.TaskTopic, &task); err != nil {
-				return nil, errors.Wrap(err, "Fail to publihsh task notification").With("task", task)
+				return nil, golambda.WrapError(err, "Fail to publihsh task notification").With("task", task)
 			}
 		}
 	}

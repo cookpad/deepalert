@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/m-mizutani/golambda"
 )
@@ -41,7 +40,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) error {
 
 	logger.With("report", report).Info("Publishing report")
 	if err := repo.PutReport(&report); err != nil {
-		return errors.Wrap(err, "Fail to submit report")
+		return golambda.WrapError(err, "Fail to submit report")
 	}
 
 	return nil

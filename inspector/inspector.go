@@ -8,7 +8,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/m-mizutani/golambda"
 	"github.com/sirupsen/logrus"
 )
 
@@ -83,7 +83,7 @@ func SNSEventToTasks(event events.SNSEvent) ([]*deepalert.Task, error) {
 		var task deepalert.Task
 		msg := record.SNS.Message
 		if err := json.Unmarshal([]byte(msg), &task); err != nil {
-			return nil, errors.Wrap(err, "Fail to unmarshal task").With("msg", msg)
+			return nil, golambda.WrapError(err, "Fail to unmarshal task").With("msg", msg)
 		}
 
 		results = append(results, &task)
@@ -127,7 +127,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 
 	result, err := args.Handler(newCtx, *task.Attribute)
 	if err != nil {
-		return errors.Wrap(err, "Fail to handle task").With("task", task)
+		return golambda.WrapError(err, "Fail to handle task").With("task", task)
 	}
 
 	if result == nil {
@@ -146,7 +146,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		Logger.WithField("note", note).Trace("Sending note")
 
 		if err := sendSQS(args.NewSQS, note, args.ContentQueueURL); err != nil {
-			return errors.Wrap(err, "Fail to publish ReportContent").With("url", args.ContentQueueURL).With("note", note)
+			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.ContentQueueURL).With("note", note)
 		}
 	}
 
@@ -169,7 +169,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 
 		Logger.WithField("ReportAttribute", attrReport).Trace("Sending new attributes")
 		if err := sendSQS(args.NewSQS, attrReport, args.AttrQueueURL); err != nil {
-			return errors.Wrap(err, "Fail to publish ReportAttribute").With("url", args.AttrQueueURL).With("report", attrReport)
+			return golambda.WrapError(err, "Fail to publish ReportAttribute").With("url", args.AttrQueueURL).With("report", attrReport)
 		}
 	}
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/deepalert/deepalert/internal/models"
 	"github.com/deepalert/deepalert/internal/service"
@@ -52,7 +51,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 		logger.With("report", report).Info("Publishing report")
 
 		if err := args.SNSService().Publish(args.ReportTopic, &report); err != nil {
-			return nil, errors.Wrap(err, "Fail to publish report")
+			return nil, golambda.WrapError(err, "Fail to publish report")
 		}
 	}
 

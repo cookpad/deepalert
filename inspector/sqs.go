@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/m-mizutani/golambda"
 )
 
 // SQSClient is interface of AWS SDK SQS. Need to have only SendMessage()
@@ -46,12 +46,12 @@ func sendSQS(newSQS SQSClientFactory, msg interface{}, targetURL string) error {
 
 	client, err := newSQS(*region)
 	if err != nil {
-		return errors.Wrap(err, "Failed to create a new SQS client")
+		return golambda.WrapError(err, "Failed to create a new SQS client")
 	}
 
 	raw, err := json.Marshal(msg)
 	if err != nil {
-		return errors.Wrap(err, "Failed to marshal message").With("msg", msg)
+		return golambda.WrapError(err, "Failed to marshal message").With("msg", msg)
 	}
 
 	input := sqs.SendMessageInput{
@@ -61,7 +61,7 @@ func sendSQS(newSQS SQSClientFactory, msg interface{}, targetURL string) error {
 	resp, err := client.SendMessage(&input)
 
 	if err != nil {
-		return errors.Wrap(err, "Failed to send SQS message").With("input", input)
+		return golambda.WrapError(err, "Failed to send SQS message").With("input", input)
 	}
 
 	Logger.WithField("resp", resp).Trace("Sent SQS message")

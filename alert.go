@@ -4,12 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/m-mizutani/golambda"
 )
 
 // AttrType shows type of alert attribute.
@@ -132,13 +133,18 @@ func (x *Alert) AlertID() string {
 	return fmt.Sprintf("alert:%x", hasher.Sum(nil))
 }
 
+var (
+	// ErrInvalidAlert represents not enough parameter(s) for Alert
+	ErrInvalidAlert = golambda.NewError("Invalid Alert parameter")
+)
+
 // Validate checks own parameters of Alert and returns error if something wrong
 func (x *Alert) Validate() error {
 	if x.Detector == "" {
-		return errors.New("Alert.Detector is required")
+		return golambda.WrapError(ErrInvalidAlert, "Alert.Detector is required")
 	}
 	if x.RuleID == "" {
-		return errors.New("Alert.RuleID is required")
+		return golambda.WrapError(ErrInvalidAlert, "Alert.RuleID is required")
 	}
 	return nil
 }

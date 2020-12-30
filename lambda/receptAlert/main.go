@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/errors"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/deepalert/deepalert/internal/usecase"
 	"github.com/m-mizutani/golambda"
@@ -36,7 +35,7 @@ func HandleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 	for _, msg := range messages {
 		var ev map[string]interface{}
 		if err := msg.Bind(&ev); err != nil {
-			return nil, errors.Wrap(err, "Failed to bind event").With("msg", msg)
+			return nil, golambda.WrapError(err, "Failed to bind event").With("msg", msg)
 		}
 
 		var data []byte
@@ -50,7 +49,7 @@ func HandleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 
 		var alert deepalert.Alert
 		if err := json.Unmarshal(data, &alert); err != nil {
-			return nil, errors.Wrap(err, "Fail to unmarshal alert").With("alert", string(msg))
+			return nil, golambda.WrapError(err, "Fail to unmarshal alert").With("alert", string(msg))
 		}
 
 		_, err = usecase.HandleAlert(args, &alert, now)

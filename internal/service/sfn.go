@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/errors"
+	"github.com/m-mizutani/golambda"
 )
 
 // SFnService is utility to use AWS StepFunctions
@@ -26,7 +26,7 @@ func NewSFnService(newSFn adaptor.SFnClientFactory) *SFnService {
 func (x *SFnService) Exec(arn string, data interface{}) error {
 	raw, err := json.Marshal(data)
 	if err != nil {
-		return errors.Wrap(err, "Fail to marshal report data")
+		return golambda.WrapError(err, "Fail to marshal report data")
 	}
 
 	region, daErr := extractSFnRegion(arn)
@@ -36,7 +36,7 @@ func (x *SFnService) Exec(arn string, data interface{}) error {
 
 	svc, err := x.newSFn(region)
 	if err != nil {
-		return errors.Wrap(err, "Failed to create new SFn adaptor")
+		return golambda.WrapError(err, "Failed to create new SFn adaptor")
 	}
 
 	input := sfn.StartExecutionInput{
@@ -45,18 +45,18 @@ func (x *SFnService) Exec(arn string, data interface{}) error {
 	}
 
 	if _, err := svc.StartExecution(&input); err != nil {
-		return errors.Wrap(err, "Fail to execute state machine").With("arn", arn).With("data", string(raw))
+		return golambda.WrapError(err, "Fail to execute state machine").With("arn", arn).With("data", string(raw))
 	}
 
 	return nil
 }
 
-func extractSFnRegion(arn string) (string, *errors.Error) {
+func extractSFnRegion(arn string) (string, error) {
 	// arn sample: arn:aws:states:us-east-1:111122223333:stateMachine:machine-name
 	arnParts := strings.Split(arn, ":")
 
 	if len(arnParts) != 7 {
-		return "", errors.New("Invalid state machine ARN").With("ARN", arn)
+		return "", golambda.NewError("Invalid state machine ARN").With("ARN", arn)
 	}
 
 	return arnParts[3], nil
