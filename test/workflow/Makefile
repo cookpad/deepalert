@@ -1,3 +1,5 @@
+BASE_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 COMMON=result.go
 ASSETS=build/inspector build/emitter
 CDKOUT=cdk.out/cdk.out
@@ -17,7 +19,7 @@ clean:
 	rm $(ASSETS)
 
 $(CDKOUT): build $(DEEPALERT_CODES) $(ASSETS)
-	make -f ../../Makefile
+	cd ../.. && tsc && cd $(BASE_DIR)
 	cdk deploy "*"
 
 deploy: $(CDKOUT)

@@ -1,24 +1,24 @@
-import * as cdk from "@aws-cdk/core";
-import * as lambda from "@aws-cdk/aws-lambda";
-import * as iam from "@aws-cdk/aws-iam";
-import * as sns from "@aws-cdk/aws-sns";
-import * as sqs from "@aws-cdk/aws-sqs";
-import * as dynamodb from "@aws-cdk/aws-dynamodb";
-import * as sfn from "@aws-cdk/aws-stepfunctions";
-import * as tasks from "@aws-cdk/aws-stepfunctions-tasks";
-import * as apigateway from "@aws-cdk/aws-apigateway";
+import * as cdk from '@aws-cdk/core';
+import * as lambda from '@aws-cdk/aws-lambda';
+import * as iam from '@aws-cdk/aws-iam';
+import * as sns from '@aws-cdk/aws-sns';
+import * as sqs from '@aws-cdk/aws-sqs';
+import * as dynamodb from '@aws-cdk/aws-dynamodb';
+import * as sfn from '@aws-cdk/aws-stepfunctions';
+import * as tasks from '@aws-cdk/aws-stepfunctions-tasks';
+import * as apigateway from '@aws-cdk/aws-apigateway';
 import {
   SqsEventSource,
   DynamoEventSource,
-} from "@aws-cdk/aws-lambda-event-sources";
+} from '@aws-cdk/aws-lambda-event-sources';
 import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 
-import * as path from "path";
-import * as fs from "fs";
+import * as path from 'path';
+import * as fs from 'fs';
 
 // import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
 
-export interface property extends cdk.StackProps {
+export interface Property extends cdk.StackProps {
   lambdaRoleARN?: string;
   sfnRoleARN?: string;
   reviewer?: lambda.Function;
@@ -44,22 +44,22 @@ export class DeepAlertStack extends cdk.Stack {
   readonly deadLetterQueue: sqs.Queue;
 
   // Lambda
-  readonly receptAlert: lambda.Function;
-  readonly dispatchInspection: lambda.Function;
-  readonly submitNote: lambda.Function;
-  readonly feedbackAttribute: lambda.Function;
-  readonly compileReport: lambda.Function;
-  readonly dummyReviewer: lambda.Function;
-  readonly submitReport: lambda.Function;
-  readonly publishReport: lambda.Function;
-  readonly lambdaError: lambda.Function;
-  readonly apiHandler: lambda.Function;
+  receptAlert: lambda.Function;
+  dispatchInspection: lambda.Function;
+  submitNote: lambda.Function;
+  feedbackAttribute: lambda.Function;
+  compileReport: lambda.Function;
+  dummyReviewer: lambda.Function;
+  submitReport: lambda.Function;
+  publishReport: lambda.Function;
+  lambdaError: lambda.Function;
+  apiHandler: lambda.Function;
 
   // StepFunctions
   readonly inspectionMachine: sfn.StateMachine;
   readonly reviewMachine: sfn.StateMachine;
 
-  constructor(scope: cdk.Construct, id: string, props: property) {
+  constructor(scope: cdk.Construct, id: string, props: Property) {
     super(scope, id, props);
 
     const lambdaRole = props.lambdaRoleARN
@@ -121,82 +121,89 @@ export class DeepAlertStack extends cdk.Stack {
       SENTRY_ENVIRONMENT: props.sentryEnv || "",
       LOG_LEVEL: props.logLevel || "",
     };
-    const buildPath = lambda.Code.fromAsset(path.join(__dirname, "../build"));
 
-    this.submitNote = new lambda.Function(this, "submitNote", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "submitNote",
-      code: buildPath,
-      role: lambdaRole,
-      events: [new SqsEventSource(this.noteQueue)],
-      environment: baseEnvVars,
-      deadLetterQueue: this.deadLetterQueue,
-    });
+    interface LambdaConfig {
+      funcName: string;
+      events?: lambda.IEventSource[];
+      timeout?: cdk.Duration;
+      environment?: { [key: string]: string; };
+      setToStack: {
+        (f :lambda.Function):void;
+      };
+    }
 
-    this.feedbackAttribute = new lambda.Function(this, "feedbackAttribute", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "feedbackAttribute",
-      code: buildPath,
-      timeout: attributeQueueTimeout,
-      role: lambdaRole,
-      events: [new SqsEventSource(this.attributeQueue)],
-      environment: baseEnvVars,
-      deadLetterQueue: this.deadLetterQueue,
+    const rootPath = path.resolve(__dirname, '..');
+    const asset = lambda.Code.fromAsset(rootPath, {
+      bundling: {
+        image: lambda.Runtime.GO_1_X.bundlingDockerImage,
+        user: 'root',
+        command: ['make', 'asset'],
+      },
+      exclude: ['*/node_modules', '*/cdk.out'],
     });
 
-    this.dispatchInspection = new lambda.Function(this, "dispatchInspection", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "dispatchInspection",
-      code: buildPath,
-      role: lambdaRole,
-      environment: baseEnvVars,
-      deadLetterQueue: this.deadLetterQueue,
-    });
-    this.compileReport = new lambda.Function(this, "compileReport", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "compileReport",
-      code: buildPath,
-      role: lambdaRole,
-      environment: baseEnvVars,
-      deadLetterQueue: this.deadLetterQueue,
-    });
-    this.dummyReviewer = new lambda.Function(this, "dummyReviewer", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "dummyReviewer",
-      code: buildPath,
-      role: lambdaRole,
-      deadLetterQueue: this.deadLetterQueue,
-    });
-    this.submitReport = new lambda.Function(this, "submitReport", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "submitReport",
-      code: buildPath,
-      role: lambdaRole,
-      environment: baseEnvVars,
-      deadLetterQueue: this.deadLetterQueue,
-    });
-    this.publishReport = new lambda.Function(this, "publishReport", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "publishReport",
-      code: buildPath,
-      role: lambdaRole,
-      environment: baseEnvVars,
-      deadLetterQueue: this.deadLetterQueue,
-      events: [
-        new DynamoEventSource(this.cacheTable, {
-          startingPosition: lambda.StartingPosition.LATEST,
-          batchSize: 1,
-        }),
-      ],
-    });
-    this.lambdaError = new lambda.Function(this, "lambdaError", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "lambdaError",
-      code: buildPath,
-      role: lambdaRole,
-      environment: baseEnvVars,
-      events: [new SqsEventSource(this.deadLetterQueue)],
-    });
+    const buildLambdaFunction = (config: LambdaConfig) => {
+      const f = new lambda.Function(this, config.funcName, {
+        runtime: lambda.Runtime.GO_1_X,
+        handler: config.funcName,
+        code: asset,
+        role: lambdaRole,
+        events: config.events,
+        timeout: config.timeout,
+        environment: config.environment || baseEnvVars,
+        deadLetterQueue: this.deadLetterQueue,
+      });
+      config.setToStack(f);
+    };
+
+    // receptAlert and apiHandler is configured later because they requires StepFunctions
+    // in environment variables.
+    const lambdaConfigs :LambdaConfig[] = [
+      {
+        funcName: 'submitNote',
+        events: [new SqsEventSource(this.noteQueue)],
+        setToStack: (f :lambda.Function) => { this.submitNote = f; }
+      },
+      {
+        funcName: 'feedbackAttribute',
+        events: [new SqsEventSource(this.attributeQueue)],
+        timeout: attributeQueueTimeout,
+        setToStack: (f :lambda.Function) => { this.feedbackAttribute = f; }
+      },
+      {
+        funcName: 'dispatchInspection',
+        setToStack: (f :lambda.Function) => { this.dispatchInspection = f; }
+      },
+      {
+        funcName: 'compileReport',
+        setToStack: (f :lambda.Function) => { this.compileReport = f; },
+      },
+      {
+        funcName: 'dummyReviewer',
+        setToStack: (f :lambda.Function) => { this.dummyReviewer = f; },
+      },
+      {
+        funcName: 'submitReport',
+        setToStack: (f :lambda.Function) => { this.submitReport = f; },
+      },
+      {
+        funcName: 'publishReport',
+        events: [
+          new DynamoEventSource(this.cacheTable, {
+            startingPosition: lambda.StartingPosition.LATEST,
+            batchSize: 1,
+          }),
+        ],
+        setToStack: (f :lambda.Function) => { this.publishReport = f; },
+      },
+      {
+        funcName: 'lambdaError',
+        events: [new SqsEventSource(this.deadLetterQueue)],
+        setToStack: (f :lambda.Function) => { this.lambdaError = f; },
+      },
+    ];
+
+    lambdaConfigs.forEach(buildLambdaFunction);
 
     this.inspectionMachine = buildInspectionMachine(
       this,
@@ -214,32 +221,25 @@ export class DeepAlertStack extends cdk.Stack {
       sfnRole
     );
 
-    this.receptAlert = new lambda.Function(this, "receptAlert", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "receptAlert",
-      code: buildPath,
+    const envVarsWithSF = Object.assign(baseEnvVars, {
+      INSPECTOR_MACHINE: this.inspectionMachine.stateMachineArn,
+      REVIEW_MACHINE: this.reviewMachine.stateMachineArn,
+    });
+    buildLambdaFunction({
+      funcName: 'receptAlert',
       timeout: alertQueueTimeout,
-      role: lambdaRole,
       events: [new SqsEventSource(this.alertQueue)],
-      environment: Object.assign(baseEnvVars, {
-        INSPECTOR_MACHINE: this.inspectionMachine.stateMachineArn,
-        REVIEW_MACHINE: this.reviewMachine.stateMachineArn,
-      }),
-      deadLetterQueue: this.deadLetterQueue,
-    });
+      environment: envVarsWithSF,
+      setToStack: (f :lambda.Function) => { this.receptAlert = f; },
+    })
 
-    // API handler
-    this.apiHandler = new lambda.Function(this, "apiHandler", {
-      runtime: lambda.Runtime.GO_1_X,
-      handler: "apiHandler",
-      code: buildPath,
-      role: lambdaRole,
-      timeout: cdk.Duration.seconds(120),
-      memorySize: 2048,
-      environment: baseEnvVars,
-    });
+    buildLambdaFunction({
+      funcName: 'apiHandler',
+      environment: envVarsWithSF,
+      setToStack: (f :lambda.Function) => { this.apiHandler = f; },
+    })
 
-    const api = new apigateway.LambdaRestApi(this, "deepalertAPI", {
+    const api = new apigateway.LambdaRestApi(this, 'deepalertAPI', {
       handler: this.apiHandler,
       proxy: false,
       cloudWatchRole: false,
@@ -247,8 +247,8 @@ export class DeepAlertStack extends cdk.Stack {
       policy: new iam.PolicyDocument({
         statements: [
           new iam.PolicyStatement({
-            actions: ["execute-api:Invoke"],
-            resources: ["execute-api:/*/*"],
+            actions: ['execute-api:Invoke'],
+            resources: ['execute-api:/*/*'],
             effect: iam.Effect.ALLOW,
             principals: [new iam.AnyPrincipal()],
           }),
@@ -259,23 +259,23 @@ export class DeepAlertStack extends cdk.Stack {
       value: getAPIKey(props.apiKeyPath),
     })
     api.addUsagePlan('UsagePlan', {
-      apiKey: apiKey,
+      apiKey,
     }).addApiStage({
       stage: api.deploymentStage,
     })
 
     const apiOpt = { apiKeyRequired: true};
-    const v1 = api.root.addResource("api").addResource("v1",);
-    const alertAPI = v1.addResource("alert");
-    alertAPI.addMethod("POST", undefined, apiOpt);
-    alertAPI.addResource("{alert_id}").addResource("report").addMethod("GET", undefined, apiOpt);
+    const v1 = api.root.addResource('api').addResource('v1',);
+    const alertAPI = v1.addResource('alert');
+    alertAPI.addMethod('POST', undefined, apiOpt);
+    alertAPI.addResource('{alert_id}').addResource('report').addMethod('GET', undefined, apiOpt);
 
-    const reportAPI = v1.addResource("report");
-    const reportAPIwithID = reportAPI.addResource("{report_id}");
-    reportAPIwithID.addMethod("GET", undefined, apiOpt);
-    reportAPIwithID.addResource("alert").addMethod("GET", undefined, apiOpt);
-    reportAPIwithID.addResource("attribute").addMethod("GET", undefined, apiOpt);
-    reportAPIwithID.addResource("section").addMethod("GET", undefined, apiOpt);
+    const reportAPI = v1.addResource('report');
+    const reportAPIwithID = reportAPI.addResource('{report_id}');
+    reportAPIwithID.addMethod('GET', undefined, apiOpt);
+    reportAPIwithID.addResource('alert').addMethod('GET', undefined, apiOpt);
+    reportAPIwithID.addResource('attribute').addMethod('GET', undefined, apiOpt);
+    reportAPIwithID.addResource('section').addMethod('GET', undefined, apiOpt);
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);
@@ -306,18 +306,18 @@ function buildInspectionMachine(
 ): sfn.StateMachine {
   const waitTime = delay || cdk.Duration.minutes(5);
 
-  const wait = new sfn.Wait(scope, "WaitDispatch", {
+  const wait = new sfn.Wait(scope, 'WaitDispatch', {
     time: sfn.WaitTime.duration(waitTime),
   });
   const invokeDispatcher = new tasks.LambdaInvoke(
     scope,
-    "InvokeDispatchInspection",
+    'InvokeDispatchInspection',
     { lambdaFunction: dispatchInspection }
   );
 
   const definition = wait.next(invokeDispatcher);
 
-  return new sfn.StateMachine(scope, "InspectionMachine", {
+  return new sfn.StateMachine(scope, 'InspectionMachine', {
     definition,
     role: sfnRole,
   });
@@ -333,33 +333,33 @@ function buildReviewMachine(
 ): sfn.StateMachine {
   const waitTime = delay || cdk.Duration.minutes(10);
 
-  const wait = new sfn.Wait(scope, "WaitCompile", {
+  const wait = new sfn.Wait(scope, 'WaitCompile', {
     time: sfn.WaitTime.duration(waitTime),
   });
 
   const definition = wait
     .next(
-      new tasks.LambdaInvoke(scope, "invokeCompileReport", {
+      new tasks.LambdaInvoke(scope, 'invokeCompileReport', {
         lambdaFunction: compileReport,
-        outputPath: "$",
+        outputPath: '$',
         payloadResponseOnly: true,
       })
     )
     .next(
-      new tasks.LambdaInvoke(scope, "invokeReviewer", {
+      new tasks.LambdaInvoke(scope, 'invokeReviewer', {
         lambdaFunction: reviewer,
-        resultPath: "$.result",
-        outputPath: "$",
+        resultPath: '$.result',
+        outputPath: '$',
         payloadResponseOnly: true,
       })
     )
     .next(
-      new tasks.LambdaInvoke(scope, "invokeSubmitReport", {
+      new tasks.LambdaInvoke(scope, 'invokeSubmitReport', {
         lambdaFunction: submitReport,
       })
     );
 
-  return new sfn.StateMachine(scope, "ReviewMachine", {
+  return new sfn.StateMachine(scope, 'ReviewMachine', {
     definition,
     role: sfnRole,
   });
@@ -367,20 +367,38 @@ function buildReviewMachine(
 
 function getAPIKey(apiKeyPath?: string): string {
   if (apiKeyPath === undefined) {
-    apiKeyPath = path.join(__dirname, "apikey.json");
+    apiKeyPath = path.join(__dirname, 'apikey.json');
   }
 
   if (fs.existsSync(apiKeyPath)) {
-    console.log("Read API key from: ", apiKeyPath);
+    console.log('Read API key from: ', apiKeyPath);
     const buf = fs.readFileSync(apiKeyPath)
     const keyData = JSON.parse(buf.toString());
     return keyData['X-API-KEY'];
   } else {
-    const literals = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const literals = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const length = 32;
     const apiKey = Array.from(Array(length)).map(()=>literals[Math.floor(Math.random()*literals.length)]).join('');
     fs.writeFileSync(apiKeyPath, JSON.stringify({'X-API-KEY': apiKey}))
-    console.log("Generatedd and wrote API key to: ", apiKeyPath);
+    console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
   }
+}
+
+function goAsset(funcName:string, pkgPath:string):lambda.AssetCode {
+  const rootPath = path.resolve(__dirname, '..');
+
+  return lambda.Code.fromAsset(rootPath, {
+    bundling: {
+      image: lambda.Runtime.GO_1_X.bundlingDockerImage,
+      user: 'root',
+
+      command: [
+        'bash',
+        '-c',
+        `GOOS=linux GOARCH=amd64 go build -o /asset-output/${funcName} ${pkgPath}`,
+      ],
+    },
+    exclude: ['node_modules', '*/node_modules', 'cdk.out', '*/cdk.out'],
+  });
 }

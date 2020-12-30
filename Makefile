@@ -47,7 +47,12 @@ $(CODE_DIR)/build/feedbackAttribute: $(CODE_DIR)/lambda/feedbackAttribute/*.go $
 
 
 # Base Tasks -------------------------------------
-build: $(FUNCTIONS) $(CDK_STACK)
+# build: $(FUNCTIONS) $(CDK_STACK)
+build: $(FUNCTIONS)
+
+# Use in cdk deploy (bundling of lambda.Code.fromAsset)
+asset:
+	cp $(CODE_DIR)/build/* /asset-output
 
 $(CDK_STACK): $(CODE_DIR)/cdk/*.ts
 	cd $(CODE_DIR) && tsc && cd $(CWD)
