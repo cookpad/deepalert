@@ -12,7 +12,7 @@ DeepAlert receives a security alert that is event of interest from security view
 
 ![Overview](https://user-images.githubusercontent.com/605953/76850323-80914100-688a-11ea-9c9a-96030094af2c.png)
 
-## How to use
+## Deployment
 
 ### Prerequisite
 
@@ -30,48 +30,98 @@ At first, you need to create AWS CDK repository and install deepalert as a npm m
 
 ```bash
 $ mkdir your-stack
+$ cd your-stack
 $ cdk init --language typescript
 $ npm i @deepalert/deepalert
 ```
 
+Then, edit `./bin/your-stack.ts` as following.
 
+```ts
+#!/usr/bin/env node
+import 'source-map-support/register';
+import * as cdk from '@aws-cdk/core';
+import { DeepAlertStack } from '@deepalert/deepalert';
 
-### Configuration and deploy DeepAlert
-
-Clone this repository and create two config files, `deploy.jsonnet` and `stack.jsonnet` under `deepalert` directory.
-
+const app = new cdk.App();
+new DeepAlertStack(app, 'YourDeepAlert', {});
 ```
-$ git clone https://github.com/deepalert/deepalert.git
-$ cd deepalert
+
+### Deploy your stack
+
+```bash
+$ cdk deploy
 ```
 
-**deploy.jsonnet** is for AWS SAM deployment by aws command.
+## Alerting
 
-```js
+### Alert data schema
+
+```json
 {
-  StackName: 'deepalert',          // You can change the stack name.
-  CodeS3Bucket: 'YOUR_S3_BUCKET',  // S3 bucket to save code materials for deployment
-  CodeS3Prefix: 'functions',       // Prefix of S3 path if youn need (optional)
-  Region: 'ap-northeast-1',        // Region to deploy the stack
+  "detector": "your-anti-virus",
+  "rule_name": "detected malware",
+  "rule_id": "detect-malware-by-av",
+  "alert_key": "xxxxxxxx",
+  "timestamp": "2006-01-02T15:03:04Z",
+  "attributes": [
+    {
+      "type": "ipaddr",
+      "key": "IP address of detected machine",
+      "value": "10.2.3.4",
+      "context": [
+        "local",
+        "client"
+      ],
+    },
+  ]
 }
 ```
 
-**stack.jsonnet** is for building stack template.
 
-```js
-local template = import 'template.libsonnet';
+- `detector`: Subject name of monitoring system
+- `rule_id`: Machine readable rule identity
+- `timestamp`: Detected timestamp
+- `rule_name` (optional): Human readable rule name
+- `alert_key` (optional): Alert aggregation key if you need
+- `attributes` (optional): List of `attribute`
+  - `type`: Choose from `ipaddr`, `domain`, `username`, `filehashvalue`, `json` and `url`
+  - `key`: Label of the value
+  - `value`: Actual value
+  - `context`: One or multiple tags describe context of the attribute. See `AttrContext` in [alert.go](alert.go)
 
-// Set Lambda Function's ARN that you deployed as Reviewer
-local reviewerArn = 'arn:aws:lambda:ap-northeast-1:123456789xx:function:YOUR_REVIEWER_ARN';
+### Emit alert via API
 
-template.build(ReviewerLambdaArn=reviewerArn)
+`apikey.json` is created in CWD when running `cdk deploy` and it has `X-API-KEY` to access deepalert API.
+
+```bash
+$ export AWS_REGION=ap-northeast-1 # set your region
+$ export API_KEY=`cat apikey.json  | jq '.["X-API-KEY"]' -r`
+$ export API_ID=`aws cloudformation describe-stack-resources --stack-name YourDeepAlert | jq -r '.StackResources[] | select(.ResourceType == "AWS::ApiGateway::RestApi") | .PhysicalResourceId'`
+$ curl -X POST \
+  -H "X-API-KEY: $API_KEY" \
+  https://$API_ID.execute-api.$AWS_REGION.amazonaws.com/prod/api/v1/alert \
+  -d '{
+  "detector": "your-anti-virus",
+  "rule_name": "detected malware",
+  "rule_id": "detect-malware-by-av",
+  "alert_key": "xxxxxxxx"
+}'
 ```
 
-Then, deploy DeepAlert stack.
 
+### Emit alert via SQS
+
+```bash
+$ export QUEUE_URL=`aws cloudformation describe-stack-resources --stack-name YourDeepAlert | jq -r '.StackResources[] | select(.LogicalResourceId | startswith("alertQueue")) | .PhysicalResourceId'`
+$ aws sqs send-message --queue-url $QUEUE_URL --message-body '{
+  "detector": "your-anti-virus",
+  "rule_name": "detected malware",
+  "rule_id": "detect-malware-by-av",
+  "alert_key": "xxxxxxxx"
+}'
 ```
-$ make deploy
-```
+
 
 ### Build and deploy Reviewer
 
@@ -84,33 +134,22 @@ See examples and deploy it as Lambda Function.
 
 ### Architecture
 
-![Architecture](https://user-images.githubusercontent.com/605953/76850184-34460100-688a-11ea-92fe-cd8a1226174f.png)
+![architecture overview](https://user-images.githubusercontent.com/605953/103391370-8677ba80-4b5c-11eb-8b96-d44e1d3263a5.png)
+
 
 ### Unit Test
 
 ```
-$ make test
+$ go test ./...
 ```
 
 ### Integration Test
 
-At first, deploy DeepAlert stack for test. Then, create a config file into `remote/`.
+Move to `./test/workflow/` and run below. Then deploy test stack and execute integration test.
 
-```json
-{
-    "StackName": "deepalert-test-stack",
-    "CodeS3Bucket": "YOUR_S3_BUCKET",
-    "CodeS3Prefix": "SET_IF_YOU_NEED",
-    "Region": "ap-northeast-1",
-    "DeepAlertStackName": "DEPLOYED_DEEPALERT_STACK_NAME",
-    "LambdaRoleArn": "arn:aws:iam::123456xxx:role/YOUR_LAMBDA_ROLE"
-}
-```
-
-After that, deploy test stack and run test.
-
-```
-$ cd remote/
+```bash
+$ npm i
+$ make deploy
 $ make test
 ```
 
