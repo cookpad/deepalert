@@ -38,7 +38,7 @@ func main() {
 			return err
 		}
 
-		inspector.Start(inspector.Arguments{
+		return inspector.Start(inspector.Arguments{
 			Context:         ctx,
 			Tasks:           tasks,
 			Handler:         dummyInspector,
@@ -46,6 +46,5 @@ func main() {
 			AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
 			ContentQueueURL: os.Getenv("CONTENT_QUEUE"),
 		})
-		return nil
 	})
 }

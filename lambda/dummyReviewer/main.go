@@ -6,8 +6,6 @@ import (
 	"github.com/deepalert/deepalert"
 )
 
-var logger = golambda.Logger
-
 func main() {
 	golambda.Start(func(event golambda.Event) (interface{}, error) {
 		return deepalert.ReportResult{

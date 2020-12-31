@@ -6,8 +6,8 @@ Serverless SOAR (Security Orchestration, Automation and Response) framework for 
 
 DeepAlert receives a security alert that is event of interest from security view point and responses the alert automatically. DeepAlert has 3 parts of automatic response.
 
-- **Inspector** investigates entities that are appeaered in the alert including IP address, Domain name and store a result: reputation, history of malicious activities, associated cloud instance and etc. Following components are already provided to integrate with your DeepAlert environment. Also you can create own inspector to check logs that is stored into original log storage or log search system.
-- **Reviewer** receives the alert with result(s) of Inspector and evaluate severity of the alert. Reviewer should be written by each security operator/administrator of your organization because security policies are differ from organazation to organization.
+- **Inspector** investigates entities that are appeared in the alert including IP address, Domain name and store a result: reputation, history of malicious activities, associated cloud instance and etc. Following components are already provided to integrate with your DeepAlert environment. Also you can create own inspector to check logs that is stored into original log storage or log search system.
+- **Reviewer** receives the alert with result(s) of Inspector and evaluate severity of the alert. Reviewer should be written by each security operator/administrator of your organization because security policies are differ from organization to organization.
 - **Emitter** finally receives the alert with result of Reviewer's severity evaluation. After that, Emitter sends external integrated system. E.g. PagerDuty, Slack, Github Enterprise, etc. Also automatic quarantine can be configured by AWS Lambda function.
 
 ![Overview](https://user-images.githubusercontent.com/605953/76850323-80914100-688a-11ea-9c9a-96030094af2c.png)
@@ -17,15 +17,24 @@ DeepAlert receives a security alert that is event of interest from security view
 ### Prerequisite
 
 - Tools
-  - `awscli` >= 1.16.140
+  - `aws-cdk` >= 1.75.0
   - `go` >= 1.14
-  - `GNU Make` >= 3.81
+  - `node` >= 14.7.0
+  - `npm` >= 6.14.9
 - Credential
   - AWS CLI credential to deploy CloudFormation. See [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) for more detail.
 
-### Build and deploy Reviewer
+### Configure your stack
 
-See [example](./examples/reviewer) and deploy it as Lambda Function.
+At first, you need to create AWS CDK repository and install deepalert as a npm module.
+
+```bash
+$ mkdir your-stack
+$ cdk init --language typescript
+$ npm i @deepalert/deepalert
+```
+
+
 
 ### Configuration and deploy DeepAlert
 
