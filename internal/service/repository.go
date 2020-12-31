@@ -172,7 +172,7 @@ func (x *RepositoryService) FetchAlertCache(reportID deepalert.ReportID) ([]*dee
 // Control reportRecord to manage report contents by inspector
 //
 
-func toNoteKeys(reportID deepalert.ReportID, inspect *deepalert.Note) (string, string) {
+func toFindingKeys(reportID deepalert.ReportID, inspect *deepalert.Finding) (string, string) {
 	pk := fmt.Sprintf("content/%s", reportID)
 	sk := ""
 	if inspect != nil {
@@ -181,13 +181,13 @@ func toNoteKeys(reportID deepalert.ReportID, inspect *deepalert.Note) (string, s
 	return pk, sk
 }
 
-func (x *RepositoryService) SaveNote(section deepalert.Note, now time.Time) error {
+func (x *RepositoryService) SaveFinding(section deepalert.Finding, now time.Time) error {
 	raw, err := json.Marshal(section)
 	if err != nil {
 		return golambda.WrapError(err, "Fail to marshal Section").With("section", section)
 	}
 
-	pk, sk := toNoteKeys(section.ReportID, &section)
+	pk, sk := toFindingKeys(section.ReportID, &section)
 	record := &models.InspectorReportRecord{
 		RecordBase: models.RecordBase{
 			PKey:      pk,
@@ -205,16 +205,16 @@ func (x *RepositoryService) SaveNote(section deepalert.Note, now time.Time) erro
 }
 
 func (x *RepositoryService) FetchSection(reportID deepalert.ReportID) ([]*deepalert.Section, error) {
-	pk, _ := toNoteKeys(reportID, nil)
+	pk, _ := toFindingKeys(reportID, nil)
 
 	records, err := x.repo.GetInspectorReports(pk)
 	if err != nil {
 		return nil, err
 	}
 
-	var reports []*deepalert.Note
+	var reports []*deepalert.Finding
 	for _, record := range records {
-		var section deepalert.Note
+		var section deepalert.Finding
 		if err := json.Unmarshal(record.Data, &section); err != nil {
 			return nil, golambda.WrapError(err, "Fail to unmarshal report content").
 				With("record", record).
@@ -226,7 +226,7 @@ func (x *RepositoryService) FetchSection(reportID deepalert.ReportID) ([]*deepal
 
 	sections, err := remapSection(reports)
 	if err != nil {
-		return nil, golambda.WrapError(err, "Failed to remap Note")
+		return nil, golambda.WrapError(err, "Failed to remap Finding")
 	}
 	return sections, nil
 }
@@ -243,7 +243,7 @@ func rebuildCotent(src interface{}, dst interface{}) error {
 	return nil
 }
 
-func remapSection(inspectReports []*deepalert.Note) ([]*deepalert.Section, error) {
+func remapSection(inspectReports []*deepalert.Finding) ([]*deepalert.Section, error) {
 	sections := map[string]*deepalert.Section{}
 
 	for _, ir := range inspectReports {

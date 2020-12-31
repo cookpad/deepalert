@@ -39,14 +39,14 @@ export class DeepAlertStack extends cdk.Stack {
   readonly attributeTopic: sns.Topic;
   readonly reportTopic: sns.Topic;
   readonly alertQueue: sqs.Queue;
-  readonly noteQueue: sqs.Queue;
+  readonly findingQueue: sqs.Queue;
   readonly attributeQueue: sqs.Queue;
   readonly deadLetterQueue: sqs.Queue;
 
   // Lambda
   receptAlert: lambda.Function;
   dispatchInspection: lambda.Function;
-  submitNote: lambda.Function;
+  submitFinding: lambda.Function;
   feedbackAttribute: lambda.Function;
   compileReport: lambda.Function;
   dummyReviewer: lambda.Function;
@@ -97,9 +97,9 @@ export class DeepAlertStack extends cdk.Stack {
       alertTopic.addSubscription(new SqsSubscription(this.alertQueue));
     }
 
-    const noteQueueTimeout = cdk.Duration.seconds(30);
-    this.noteQueue = new sqs.Queue(this, "noteQueue", {
-      visibilityTimeout: noteQueueTimeout,
+    const findingQueueTimeout = cdk.Duration.seconds(30);
+    this.findingQueue = new sqs.Queue(this, "findingQueue", {
+      visibilityTimeout: findingQueueTimeout,
     });
 
     const attributeQueueTimeout = cdk.Duration.seconds(30);
@@ -159,9 +159,9 @@ export class DeepAlertStack extends cdk.Stack {
     // in environment variables.
     const lambdaConfigs :LambdaConfig[] = [
       {
-        funcName: 'submitNote',
-        events: [new SqsEventSource(this.noteQueue)],
-        setToStack: (f :lambda.Function) => { this.submitNote = f; }
+        funcName: 'submitFinding',
+        events: [new SqsEventSource(this.findingQueue)],
+        setToStack: (f :lambda.Function) => { this.submitFinding = f; }
       },
       {
         funcName: 'feedbackAttribute',
@@ -283,7 +283,7 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.receptAlert);
       this.cacheTable.grantReadWriteData(this.dispatchInspection);
       this.cacheTable.grantReadWriteData(this.feedbackAttribute);
-      this.cacheTable.grantReadWriteData(this.submitNote);
+      this.cacheTable.grantReadWriteData(this.submitFinding);
       this.cacheTable.grantReadWriteData(this.compileReport);
       this.cacheTable.grantReadWriteData(this.submitReport);
       this.cacheTable.grantReadWriteData(this.publishReport);

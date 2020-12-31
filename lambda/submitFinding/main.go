@@ -38,14 +38,14 @@ func handleRequest(args *handler.Arguments, event golambda.Event) error {
 	now := time.Now()
 
 	for _, msg := range messages {
-		var ir deepalert.Note
+		var ir deepalert.Finding
 		if err := json.Unmarshal(msg, &ir); err != nil {
-			return golambda.WrapError(err, "Fail to unmarshal Note from SubmitNotification").With("msg", string(msg))
+			return golambda.WrapError(err, "Fail to unmarshal Finding from SubmitNotification").With("msg", string(msg))
 		}
 		logger.With("inspectReport", ir).Debug("Handling inspect report")
 
-		if err := repo.SaveNote(ir, now); err != nil {
-			return golambda.WrapError(err, "Fail to save Note").With("report", ir)
+		if err := repo.SaveFinding(ir, now); err != nil {
+			return golambda.WrapError(err, "Fail to save Finding").With("report", ir)
 		}
 		logger.With("section", ir).Info("Saved content")
 	}

@@ -68,8 +68,8 @@ type Section struct {
 	Binaries   []*ContentBinary `json:"binaries,omitempty"`
 }
 
-// Note is a result of inspector. a Note has one Content and metadata.
-type Note struct {
+// Finding is a result of inspector. a Finding has one Content and metadata.
+type Finding struct {
 	ReportID  ReportID          `json:"report_id"`
 	Author    string            `json:"author"`
 	Attribute Attribute         `json:"attribute"`

@@ -26,7 +26,7 @@ func TestHandleReport(t *testing.T) {
 		Key:   "username",
 		Value: "blue",
 	}
-	r := deepalert.Note{
+	r := deepalert.Finding{
 		ReportID:  reportID,
 		Attribute: attr,
 		Author:    "tester",
@@ -35,7 +35,7 @@ func TestHandleReport(t *testing.T) {
 			HostName: []string{"h1"},
 		},
 	}
-	require.NoError(t, repo.SaveNote(r, now))
+	require.NoError(t, repo.SaveFinding(r, now))
 
 	args := &handler.Arguments{
 		NewRepository: newMockRepo,

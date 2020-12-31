@@ -90,7 +90,7 @@ func TestSQS(t *testing.T) {
 	cq := mock.InputMap[contentURL][0]
 	aq := mock.InputMap[attrURL][0]
 
-	var req1 deepalert.Note
+	var req1 deepalert.Finding
 	err = json.Unmarshal([]byte(*cq.MessageBody), &req1)
 	require.NoError(t, err)
 	assert.Equal(t, contentURL, aws.StringValue(cq.QueueUrl))

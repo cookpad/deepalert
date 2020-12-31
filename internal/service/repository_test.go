@@ -23,8 +23,8 @@ func testRepositoryService(t *testing.T, svc *service.RepositoryService) {
 	t.Run("AlertCache", func(tt *testing.T) {
 		testAlertCache(tt, svc)
 	})
-	t.Run("Note", func(tt *testing.T) {
-		testNote(tt, svc)
+	t.Run("Finding", func(tt *testing.T) {
+		testFinding(tt, svc)
 	})
 	t.Run("AttributeCache", func(tt *testing.T) {
 		testAttributeCache(tt, svc)
@@ -111,12 +111,12 @@ func testAlertCache(t *testing.T, svc *service.RepositoryService) {
 	})
 }
 
-func testNote(t *testing.T, svc *service.RepositoryService) {
+func testFinding(t *testing.T, svc *service.RepositoryService) {
 	t.Run("Savea and Fetch report section", func(tt *testing.T) {
 		id1 := deepalert.ReportID(uuid.New().String())
 		id2 := deepalert.ReportID(uuid.New().String())
 		now := time.Now()
-		s1 := deepalert.Note{
+		s1 := deepalert.Finding{
 			ReportID: id1,
 			Author:   "a1",
 			Attribute: deepalert.Attribute{
@@ -128,7 +128,7 @@ func testNote(t *testing.T, svc *service.RepositoryService) {
 				HostName: []string{"h1"},
 			},
 		}
-		s2 := deepalert.Note{
+		s2 := deepalert.Finding{
 			ReportID: id1,
 			Author:   "a2",
 			Attribute: deepalert.Attribute{
@@ -140,7 +140,7 @@ func testNote(t *testing.T, svc *service.RepositoryService) {
 				HostName: []string{"h2"},
 			},
 		}
-		s3 := deepalert.Note{
+		s3 := deepalert.Finding{
 			ReportID: id2,
 			Author:   "a3",
 			Attribute: deepalert.Attribute{
@@ -154,9 +154,9 @@ func testNote(t *testing.T, svc *service.RepositoryService) {
 		}
 
 		attrs := []*deepalert.Attribute{&s1.Attribute, &s2.Attribute, &s3.Attribute}
-		require.NoError(tt, svc.SaveNote(s1, now))
-		require.NoError(tt, svc.SaveNote(s2, now))
-		require.NoError(tt, svc.SaveNote(s3, now))
+		require.NoError(tt, svc.SaveFinding(s1, now))
+		require.NoError(tt, svc.SaveFinding(s2, now))
+		require.NoError(tt, svc.SaveFinding(s3, now))
 
 		sections, err := svc.FetchSection(id1)
 		require.NoError(tt, err)

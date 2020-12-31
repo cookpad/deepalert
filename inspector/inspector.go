@@ -123,17 +123,17 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 
 	// Sending entities
 	for _, entity := range result.Contents {
-		note := deepalert.Note{
+		finding := deepalert.Finding{
 			ReportID:  task.ReportID,
 			Attribute: *task.Attribute,
 			Author:    args.Author,
 			Type:      entity.Type(),
 			Content:   entity,
 		}
-		Logger.With("note", note).Trace("Sending note")
+		Logger.With("finding", finding).Trace("Sending finding")
 
-		if err := sendSQS(args.NewSQS, note, args.ContentQueueURL); err != nil {
-			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.ContentQueueURL).With("note", note)
+		if err := sendSQS(args.NewSQS, finding, args.ContentQueueURL); err != nil {
+			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.ContentQueueURL).With("finding", finding)
 		}
 	}
 

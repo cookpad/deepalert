@@ -1,3 +1,4 @@
+/*
 import {
   expect as expectCDK,
   matchTemplate,
@@ -20,3 +21,4 @@ test("Empty Stack", () => {
     )
   );
 });
+*/

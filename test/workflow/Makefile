@@ -22,7 +22,9 @@ $(CDKOUT): build $(DEEPALERT_CODES) $(ASSETS)
 	cd ../.. && tsc && cd $(BASE_DIR)
 	cdk deploy "*"
 
-deploy: $(CDKOUT)
+deploy: $(DEEPALERT_CODES) $(ASSETS)
+	cd ../.. && tsc && cd $(BASE_DIR)
+	cdk deploy "*"
 
 test: $(CDKOUT)
 	go test -count=1 -v .
