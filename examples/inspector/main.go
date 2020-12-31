@@ -51,7 +51,7 @@ func main() {
 			Tasks:           tasks,
 			Handler:         Handler,
 			Author:          "testInspector",
-			ContentQueueURL: os.Getenv("CONTENT_QUEUE"),
+			FindingQueueURL: os.Getenv("FINDING_QUEUE"),
 			AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
 		})
 

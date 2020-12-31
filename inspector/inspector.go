@@ -41,11 +41,11 @@ type Arguments struct {
 	// Author indicates owner of new attributes and contents. It does not require explicit unique name, but unique name helps your debugging and troubleshooting. (Required)
 	Author string
 
-	// AttrQueueURL is URL to send new attributes discovered inspector (e.g. a new related IP address). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-AttributeQueue to your inspector CloudFormation stack. (Requird)
+	// AttrQueueURL is URL to send new attributes discovered inspector (e.g. a new related IP address). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-AttributeQueue to your inspector CloudFormation stack. (Required)
 	AttrQueueURL string
 
-	// ContentQueueURL is also URL to send contents generated inspector (e.g. IP address is blacklisted or not). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-ContentQueue to your inspector CloudFormation stack. (Required)
-	ContentQueueURL string
+	// FindingQueueURL is also URL to send contents generated inspector (e.g. IP address is blacklisted or not). It should be exported CloudFormation value and can be imported by Fn::ImportValue: + YOU_STACK_NAME-ContentQueue to your inspector CloudFormation stack. (Required)
+	FindingQueueURL string
 
 	// NewSQS is constructor of SQSClient that is interface of AWS SDK. This function is to set stub for testing. If NewSQS is nil, use default constructor, newAwsSQSClient. (Optional)
 	NewSQS SQSClientFactory
@@ -86,7 +86,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		With("ctx", ctx).
 		With("Author", args.Author).
 		With("AttrQueueURL", args.AttrQueueURL).
-		With("ContentQueueURL", args.ContentQueueURL).
+		With("FindingQueueURL", args.FindingQueueURL).
 		Info("Start inspector")
 
 	// Check Arguments
@@ -99,8 +99,8 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 	if args.AttrQueueURL == "" {
 		return fmt.Errorf("AttrQueueURL is not set in inspector.Argument")
 	}
-	if args.ContentQueueURL == "" {
-		return fmt.Errorf("ContentQueueURL is not set in inspector.Argument")
+	if args.FindingQueueURL == "" {
+		return fmt.Errorf("FindingQueueURL is not set in inspector.Argument")
 	}
 	if task == nil {
 		return fmt.Errorf("Task is nil")
@@ -132,8 +132,8 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		}
 		Logger.With("finding", finding).Trace("Sending finding")
 
-		if err := sendSQS(args.NewSQS, finding, args.ContentQueueURL); err != nil {
-			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.ContentQueueURL).With("finding", finding)
+		if err := sendSQS(args.NewSQS, finding, args.FindingQueueURL); err != nil {
+			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.FindingQueueURL).With("finding", finding)
 		}
 	}
 

@@ -20,7 +20,7 @@ func TestInspectorExample(t *testing.T) {
 		Handler:         main.Handler,
 		Author:          "blue",
 		AttrQueueURL:    attrURL,
-		ContentQueueURL: contentURL,
+		FindingQueueURL: contentURL,
 	}
 
 	t.Run("With IPaddr attribute", func(tt *testing.T) {

@@ -33,7 +33,7 @@ export class WorkflowStack extends cdk.Stack {
       events: [new SnsEventSource(props.deepalert.taskTopic)],
       environment: {
         RESULT_TABLE: table.tableName,
-        CONTENT_QUEUE: props.deepalert.findingQueue.queueUrl,
+        FINDING_QUEUE: props.deepalert.findingQueue.queueUrl,
         ATTRIBUTE_QUEUE: props.deepalert.attributeQueue.queueUrl,
       },
     });

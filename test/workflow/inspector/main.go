@@ -44,7 +44,7 @@ func main() {
 			Handler:         dummyInspector,
 			Author:          "dummyInspector",
 			AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
-			ContentQueueURL: os.Getenv("CONTENT_QUEUE"),
+			FindingQueueURL: os.Getenv("FINDING_QUEUE"),
 		})
 	})
 }

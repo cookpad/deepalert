@@ -68,7 +68,7 @@ func TestSQS(t *testing.T) {
 		Handler:         dummyInspector,
 		Author:          "blue",
 		AttrQueueURL:    attrURL,
-		ContentQueueURL: contentURL,
+		FindingQueueURL: contentURL,
 		NewSQS:          newSQS,
 	}
 
