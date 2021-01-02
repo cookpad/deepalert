@@ -32,7 +32,7 @@ type Arguments struct {
 
 	Tasks []*deepalert.Task
 
-	// Handler is callback function of Start(). Handler mayu be called multiply. (Required)
+	// Handler is callback function of Start(). Handler may be called multiply. (Required)
 	Handler InspectHandler
 
 	// HandlerData is data for Handler. deepalert/inspector never access HandlerData and set additional argument if you need in Handler (optional)
