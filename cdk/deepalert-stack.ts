@@ -86,10 +86,15 @@ export class DeepAlertStack extends cdk.Stack {
     this.attributeTopic = new sns.Topic(this, "attributeTopic");
     this.reportTopic = new sns.Topic(this, "reportTopic");
 
-    const alertQueueTimeout = cdk.Duration.seconds(30);
+    this.deadLetterQueue = new sqs.Queue(this, "deadLetterQueue");
 
+    const alertQueueTimeout = cdk.Duration.seconds(30);
     this.alertQueue = new sqs.Queue(this, "alertQueue", {
       visibilityTimeout: alertQueueTimeout,
+      deadLetterQueue: {
+        maxReceiveCount: 5,
+        queue: this.deadLetterQueue,
+      },
     });
 
     if (props.alertTopicARN !== undefined) {
@@ -100,14 +105,21 @@ export class DeepAlertStack extends cdk.Stack {
     const findingQueueTimeout = cdk.Duration.seconds(30);
     this.findingQueue = new sqs.Queue(this, "findingQueue", {
       visibilityTimeout: findingQueueTimeout,
+      deadLetterQueue: {
+        maxReceiveCount: 5,
+        queue: this.deadLetterQueue,
+      },
     });
 
     const attributeQueueTimeout = cdk.Duration.seconds(30);
     this.attributeQueue = new sqs.Queue(this, "attributeQueue", {
       visibilityTimeout: attributeQueueTimeout,
+      deadLetterQueue: {
+        maxReceiveCount: 5,
+        queue: this.deadLetterQueue,
+      },
     });
 
-    this.deadLetterQueue = new sqs.Queue(this, "deadLetterQueue");
 
     // ----------------------------------------------------------------
     // Lambda Functions
