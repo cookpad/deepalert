@@ -52,8 +52,10 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 			}
 
 			if err := snsSvc.Publish(args.TaskTopic, &task); err != nil {
-				return nil, golambda.WrapError(err, "Fail to publihsh task notification").With("task", task)
+				return nil, golambda.WrapError(err, "Fail to publish task notification").With("task", task)
 			}
+
+			golambda.Logger.With("task", task).Debug("Dispatched event")
 		}
 	}
 
