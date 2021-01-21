@@ -68,7 +68,7 @@ func TestReportEntry(t *testing.T) {
 			},
 			Sections: []*deepalert.Section{
 				{
-					OriginAttr: &deepalert.Attribute{
+					Attr: deepalert.Attribute{
 						Type: deepalert.TypeIPAddr,
 						Context: deepalert.AttrContexts{
 							deepalert.CtxLocal,

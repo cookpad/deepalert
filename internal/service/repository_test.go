@@ -153,7 +153,7 @@ func testFinding(t *testing.T, svc *service.RepositoryService) {
 			},
 		}
 
-		attrs := []*deepalert.Attribute{&s1.Attribute, &s2.Attribute, &s3.Attribute}
+		attrs := []deepalert.Attribute{s1.Attribute, s2.Attribute, s3.Attribute}
 		require.NoError(tt, svc.SaveFinding(s1, now))
 		require.NoError(tt, svc.SaveFinding(s2, now))
 		require.NoError(tt, svc.SaveFinding(s3, now))
@@ -161,8 +161,8 @@ func testFinding(t *testing.T, svc *service.RepositoryService) {
 		sections, err := svc.FetchSection(id1)
 		require.NoError(tt, err)
 		require.Equal(tt, 2, len(sections))
-		assert.Contains(tt, attrs, sections[0].OriginAttr)
-		assert.Contains(tt, attrs, sections[1].OriginAttr)
+		assert.Contains(tt, attrs, sections[0].Attr)
+		assert.Contains(tt, attrs, sections[1].Attr)
 	})
 }
 
@@ -300,7 +300,7 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 			},
 			Sections: []*deepalert.Section{
 				{
-					OriginAttr: &deepalert.Attribute{
+					Attr: deepalert.Attribute{
 						Type: deepalert.TypeIPAddr,
 						Context: deepalert.AttrContexts{
 							deepalert.CtxLocal,

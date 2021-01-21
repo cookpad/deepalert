@@ -62,10 +62,10 @@ type Report struct {
 
 // Section is set of Report content (user, host and binary)
 type Section struct {
-	OriginAttr *Attribute       `json:"origin_attr"`
-	Users      []*ContentUser   `json:"users,omitempty"`
-	Hosts      []*ContentHost   `json:"hosts,omitempty"`
-	Binaries   []*ContentBinary `json:"binaries,omitempty"`
+	Attr     Attribute        `json:"attr"`
+	Users    []*ContentUser   `json:"users,omitempty"`
+	Hosts    []*ContentHost   `json:"hosts,omitempty"`
+	Binaries []*ContentBinary `json:"binaries,omitempty"`
 }
 
 // Finding is a result of inspector. a Finding has one Content and metadata.

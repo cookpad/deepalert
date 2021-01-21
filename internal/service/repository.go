@@ -251,7 +251,7 @@ func remapSection(inspectReports []*deepalert.Finding) ([]*deepalert.Section, er
 		section, ok := sections[hv]
 		if !ok {
 			section = &deepalert.Section{
-				OriginAttr: &ir.Attribute,
+				Attr: ir.Attribute,
 			}
 			sections[hv] = section
 		}
