@@ -25,6 +25,7 @@ export interface Property extends cdk.StackProps {
   inspectDelay?: cdk.Duration;
   reviewDelay?: cdk.Duration;
 
+  enableAPI?: boolean;
   apiKeyPath?: string;
   sentryDsn?: string;
   sentryEnv?: string;
@@ -212,14 +213,14 @@ export class DeepAlertStack extends cdk.Stack {
     lambdaConfigs.forEach(buildLambdaFunction);
 
     this.inspectionMachine = buildInspectionMachine(
-      this,
+      this, id,
       this.dispatchInspection,
       props.inspectDelay,
       sfnRole
     );
 
     this.reviewMachine = buildReviewMachine(
-      this,
+      this, id,
       this.compileReport,
       props.reviewer || this.dummyReviewer,
       this.submitReport,
@@ -239,49 +240,51 @@ export class DeepAlertStack extends cdk.Stack {
       setToStack: (f :lambda.Function) => { this.receptAlert = f; },
     })
 
-    buildLambdaFunction({
-      funcName: 'apiHandler',
-      environment: envVarsWithSF,
-      setToStack: (f :lambda.Function) => { this.apiHandler = f; },
-    })
+    if (props.enableAPI) {
+      buildLambdaFunction({
+        funcName: 'apiHandler',
+        environment: envVarsWithSF,
+        setToStack: (f :lambda.Function) => { this.apiHandler = f; },
+      })
 
-    const api = new apigateway.LambdaRestApi(this, 'deepalertAPI', {
-      handler: this.apiHandler,
-      proxy: false,
-      cloudWatchRole: false,
-      endpointTypes: [apigateway.EndpointType.REGIONAL],
-      policy: new iam.PolicyDocument({
-        statements: [
-          new iam.PolicyStatement({
-            actions: ['execute-api:Invoke'],
-            resources: ['execute-api:/*/*'],
-            effect: iam.Effect.ALLOW,
-            principals: [new iam.AnyPrincipal()],
-          }),
-        ],
-      }),
-    });
-    const apiKey = api.addApiKey('APIKey', {
-      value: getAPIKey(props.apiKeyPath),
-    })
-    api.addUsagePlan('UsagePlan', {
-      apiKey,
-    }).addApiStage({
-      stage: api.deploymentStage,
-    })
+      const api = new apigateway.LambdaRestApi(this, 'deepalertAPI', {
+        handler: this.apiHandler,
+        proxy: false,
+        cloudWatchRole: false,
+        endpointTypes: [apigateway.EndpointType.REGIONAL],
+        policy: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              actions: ['execute-api:Invoke'],
+              resources: ['execute-api:/*/*'],
+              effect: iam.Effect.ALLOW,
+              principals: [new iam.AnyPrincipal()],
+            }),
+          ],
+        }),
+      });
+      const apiKey = api.addApiKey('APIKey', {
+        value: getAPIKey(props.apiKeyPath),
+      })
+      api.addUsagePlan('UsagePlan', {
+        apiKey,
+      }).addApiStage({
+        stage: api.deploymentStage,
+      })
 
-    const apiOpt = { apiKeyRequired: true};
-    const v1 = api.root.addResource('api').addResource('v1',);
-    const alertAPI = v1.addResource('alert');
-    alertAPI.addMethod('POST', undefined, apiOpt);
-    alertAPI.addResource('{alert_id}').addResource('report').addMethod('GET', undefined, apiOpt);
+      const apiOpt = { apiKeyRequired: true};
+      const v1 = api.root.addResource('api').addResource('v1',);
+      const alertAPI = v1.addResource('alert');
+      alertAPI.addMethod('POST', undefined, apiOpt);
+      alertAPI.addResource('{alert_id}').addResource('report').addMethod('GET', undefined, apiOpt);
 
-    const reportAPI = v1.addResource('report');
-    const reportAPIwithID = reportAPI.addResource('{report_id}');
-    reportAPIwithID.addMethod('GET', undefined, apiOpt);
-    reportAPIwithID.addResource('alert').addMethod('GET', undefined, apiOpt);
-    reportAPIwithID.addResource('attribute').addMethod('GET', undefined, apiOpt);
-    reportAPIwithID.addResource('section').addMethod('GET', undefined, apiOpt);
+      const reportAPI = v1.addResource('report');
+      const reportAPIwithID = reportAPI.addResource('{report_id}');
+      reportAPIwithID.addMethod('GET', undefined, apiOpt);
+      reportAPIwithID.addResource('alert').addMethod('GET', undefined, apiOpt);
+      reportAPIwithID.addResource('attribute').addMethod('GET', undefined, apiOpt);
+      reportAPIwithID.addResource('section').addMethod('GET', undefined, apiOpt);
+    }
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);
@@ -306,6 +309,7 @@ export class DeepAlertStack extends cdk.Stack {
 
 function buildInspectionMachine(
   scope: cdk.Construct,
+  stackID: string,
   dispatchInspection: lambda.Function,
   delay?: cdk.Duration,
   sfnRole?: iam.IRole
@@ -324,6 +328,7 @@ function buildInspectionMachine(
   const definition = wait.next(invokeDispatcher);
 
   return new sfn.StateMachine(scope, 'InspectionMachine', {
+    stateMachineName: stackID + '-InspectionMachine',
     definition,
     role: sfnRole,
   });
@@ -331,6 +336,7 @@ function buildInspectionMachine(
 
 function buildReviewMachine(
   scope: cdk.Construct,
+  stackID: string,
   compileReport: lambda.Function,
   reviewer: lambda.Function,
   submitReport: lambda.Function,
@@ -366,6 +372,7 @@ function buildReviewMachine(
     );
 
   return new sfn.StateMachine(scope, 'ReviewMachine', {
+    stateMachineName: stackID + '-ReviewMachine',
     definition,
     role: sfnRole,
   });
