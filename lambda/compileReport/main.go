@@ -28,26 +28,11 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 		return nil, err
 	}
 
-	sections, err := svc.FetchSection(report.ID)
+	compiledReport, err := svc.GetReport(report.ID)
 	if err != nil {
-		return nil, golambda.WrapError(err, "FetchSection").With("report", report)
+		return nil, err
 	}
+	golambda.Logger.With("report", compiledReport).Info("Compiled report")
 
-	alerts, err := svc.FetchAlertCache(report.ID)
-	if err != nil {
-		return nil, golambda.WrapError(err, "FetchAlertCache").With("report", report)
-	}
-
-	attrs, err := svc.FetchAttributeCache(report.ID)
-	if err != nil {
-		return nil, golambda.WrapError(err, "FetchAttributeCache").With("report", report)
-	}
-
-	report.Alerts = alerts
-	report.Attributes = attrs
-	report.Sections = sections
-
-	golambda.Logger.With("report", report).Info("Compiled report")
-
-	return &report, nil
+	return compiledReport, nil
 }

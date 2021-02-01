@@ -369,7 +369,7 @@ func (x *RepositoryService) FetchAttributeCache(reportID deepalert.ReportID) ([]
 	return attrs, nil
 }
 
-// PutReport puts report with a key based on report.ID
+// PutReport puts report with a key based on report.ID and DOES NOT save attributes and alerts because attributes and alerts management must not be depended to report management.
 func (x *RepositoryService) PutReport(report *deepalert.Report) error {
 	pk := toReportKey(report.ID)
 	if err := x.repo.PutReport(pk, report); err != nil {
@@ -378,12 +378,35 @@ func (x *RepositoryService) PutReport(report *deepalert.Report) error {
 	return nil
 }
 
-// GetReport gets a report by a key based on report.ID
+// GetReport gets a report by a key based on report.ID with attributes, alerts and sections.
 func (x *RepositoryService) GetReport(reportID deepalert.ReportID) (*deepalert.Report, error) {
 	pk := toReportKey(reportID)
 	report, err := x.repo.GetReport(pk)
 	if err != nil {
 		return nil, err
 	}
+	if report == nil {
+		return nil, nil
+	}
+
+	sections, err := x.FetchSection(report.ID)
+	if err != nil {
+		return nil, golambda.WrapError(err, "FetchSection").With("report", report)
+	}
+
+	alerts, err := x.FetchAlertCache(report.ID)
+	if err != nil {
+		return nil, golambda.WrapError(err, "FetchAlertCache").With("report", report)
+	}
+
+	attrs, err := x.FetchAttributeCache(report.ID)
+	if err != nil {
+		return nil, golambda.WrapError(err, "FetchAttributeCache").With("report", report)
+	}
+
+	report.Alerts = alerts
+	report.Attributes = attrs
+	report.Sections = sections
+
 	return report, nil
 }

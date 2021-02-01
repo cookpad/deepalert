@@ -16,8 +16,8 @@ import (
 
 func TestHandleReport(t *testing.T) {
 	// Setup dummy repository
-	_, newMockRepo := mock.NewMockRepositorySet()
-	repo := service.NewRepositoryService(newMockRepo("nowhere", "test"), 10)
+	mockRepo, newMockRepo := mock.NewMockRepositorySet()
+	repo := service.NewRepositoryService(mockRepo, 10)
 	now := time.Now()
 
 	reportID := deepalert.ReportID(uuid.New().String())
@@ -26,7 +26,7 @@ func TestHandleReport(t *testing.T) {
 		Key:   "username",
 		Value: "blue",
 	}
-	r := deepalert.Finding{
+	finding := deepalert.Finding{
 		ReportID:  reportID,
 		Attribute: attr,
 		Author:    "tester",
@@ -35,16 +35,32 @@ func TestHandleReport(t *testing.T) {
 			HostName: []string{"h1"},
 		},
 	}
-	require.NoError(t, repo.SaveFinding(r, now))
+
+	alert := deepalert.Alert{
+		Detector: "tester",
+		RuleName: "testRule",
+		RuleID:   "testID",
+	}
+
+	report := &deepalert.Report{
+		ID: reportID,
+	}
+
+	require.NoError(t, repo.PutReport(report))
+	require.NoError(t, repo.SaveFinding(finding, now))
+	require.NoError(t, repo.SaveAlertCache(reportID, alert, now))
+	_, err := repo.PutAttributeCache(reportID, attr, now)
+	require.NoError(t, err)
 
 	args := &handler.Arguments{
 		NewRepository: newMockRepo,
 	}
 
-	resp, err := handleRequest(args, golambda.Event{Origin: &deepalert.Report{
-		ID: reportID,
-	}})
+	resp, err := handleRequest(args, golambda.Event{Origin: report})
 	require.NoError(t, err)
 	updatedReport := resp.(*deepalert.Report)
-	assert.Greater(t, len(updatedReport.Sections), 0)
+	require.NotNil(t, updatedReport)
+	assert.Equal(t, len(updatedReport.Sections), 1)
+	assert.Equal(t, len(updatedReport.Alerts), 1)
+	assert.Equal(t, len(updatedReport.Attributes), 1)
 }

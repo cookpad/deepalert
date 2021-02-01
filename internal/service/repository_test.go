@@ -167,7 +167,7 @@ func testFinding(t *testing.T, svc *service.RepositoryService) {
 }
 
 func testAttributeCache(t *testing.T, svc *service.RepositoryService) {
-	t.Run("Put and Fetch attributes", func(tt *testing.T) {
+	t.Run("Put and Fetch attributes", func(t *testing.T) {
 		id1 := deepalert.ReportID(uuid.New().String())
 		id2 := deepalert.ReportID(uuid.New().String())
 		now := time.Now()
@@ -192,19 +192,19 @@ func testAttributeCache(t *testing.T, svc *service.RepositoryService) {
 		}
 
 		b1, err := svc.PutAttributeCache(id1, attr1, now)
-		require.NoError(tt, err)
-		assert.True(tt, b1)
+		require.NoError(t, err)
+		assert.True(t, b1)
 
 		b2, err := svc.PutAttributeCache(id1, attr2, now)
-		require.NoError(tt, err)
-		assert.True(tt, b2)
+		require.NoError(t, err)
+		assert.True(t, b2)
 
 		b3, err := svc.PutAttributeCache(id2, attr3, now)
-		require.NoError(tt, err)
-		assert.True(tt, b3)
+		require.NoError(t, err)
+		assert.True(t, b3)
 
 		attrs, err := svc.FetchAttributeCache(id1)
-		require.NoError(tt, err)
+		require.NoError(t, err)
 
 		var attrList []*deepalert.Attribute
 		for _, attr := range attrs {
@@ -212,12 +212,12 @@ func testAttributeCache(t *testing.T, svc *service.RepositoryService) {
 			a.Timestamp = nil
 			attrList = append(attrList, a)
 		}
-		assert.Contains(tt, attrList, &attr1)
-		assert.Contains(tt, attrList, &attr2)
-		assert.NotContains(tt, attrList, &attr3)
+		assert.Contains(t, attrList, &attr1)
+		assert.Contains(t, attrList, &attr2)
+		assert.NotContains(t, attrList, &attr3)
 	})
 
-	t.Run("Duplicated attribute", func(tt *testing.T) {
+	t.Run("Duplicated attribute", func(t *testing.T) {
 		id1 := deepalert.ReportID(uuid.New().String())
 		now := time.Now()
 
@@ -228,19 +228,19 @@ func testAttributeCache(t *testing.T, svc *service.RepositoryService) {
 			Value:   "10.0.0.2",
 		}
 		b1, err := svc.PutAttributeCache(id1, attr1, now)
-		require.NoError(tt, err)
-		assert.True(tt, b1)
+		require.NoError(t, err)
+		assert.True(t, b1)
 
 		// No error by second PutAttributeCache. But returns false to indicate the attribute already exists
 		b1d, err := svc.PutAttributeCache(id1, attr1, now)
-		require.NoError(tt, err)
-		assert.False(tt, b1d)
+		require.NoError(t, err)
+		assert.False(t, b1d)
 
 		attrs, err := svc.FetchAttributeCache(id1)
-		require.NoError(tt, err)
-		assert.Equal(tt, 1, len(attrs))
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(attrs))
 		attrs[0].Timestamp = nil
-		assert.Equal(tt, attr1, *attrs[0])
+		assert.Equal(t, attr1, *attrs[0])
 	})
 }
 
@@ -333,7 +333,7 @@ func testRpoert(t *testing.T, svc *service.RepositoryService) {
 		r2, err := svc.GetReport(r1.ID)
 		require.NoError(tt, err)
 		assert.Equal(tt, r1.ID, r2.ID)
-		assert.Contains(tt, r2.Attributes, r1.Attributes[1])
+		require.Equal(tt, 0, len(r2.Attributes)) // PutReport does not save attributes
 	})
 
 	t.Run("Not found", func(tt *testing.T) {
