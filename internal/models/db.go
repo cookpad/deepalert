@@ -55,7 +55,7 @@ type ReportEntry struct {
 }
 
 // ErrRecordIsNotReport means DynamoDB record is not event of add/modify report.
-var ErrRecordIsNotReport = golambda.NewError("Reocrd is not report")
+var ErrRecordIsNotReport = golambda.NewError("Record is not report")
 
 // ImportDynamoRecord copies values from record data in DynamoDB stream
 func (x *ReportEntry) ImportDynamoRecord(record *events.DynamoDBEventRecord) error {
@@ -77,7 +77,7 @@ func (x *ReportEntry) ImportDynamoRecord(record *events.DynamoDBEventRecord) err
 
 	createdAtValue, ok := record.Change.NewImage["created_at"]
 	if !ok {
-		return golambda.NewError("created_at is not available in DynamDB event").With("record", record)
+		return golambda.NewError("created_at is not available in DynamoDB event").With("record", record)
 	}
 
 	v, err := strconv.ParseInt(createdAtValue.Number(), 10, 64)

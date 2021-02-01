@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/deepalert/deepalert"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/deepalert/deepalert/internal/models"
 	"github.com/deepalert/deepalert/internal/service"
@@ -22,8 +23,12 @@ func main() {
 }
 
 func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, error) {
-	var dynamoEvent events.DynamoDBEvent
+	repo, err := args.Repository()
+	if err != nil {
+		return nil, err
+	}
 
+	var dynamoEvent events.DynamoDBEvent
 	if err := event.Bind(&dynamoEvent); err != nil {
 		return nil, err
 	}
@@ -43,7 +48,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 			continue
 		}
 
-		report, err := reportEntry.Export()
+		report, err := repo.GetReport(deepalert.ReportID(reportEntry.ID))
 		if err != nil {
 			return nil, err
 		}
