@@ -8,9 +8,9 @@ require (
 	github.com/aws/aws-sdk-go v1.36.12
 	github.com/awslabs/aws-lambda-go-api-proxy v0.8.0
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.9.0
 	github.com/google/uuid v1.1.2
 	github.com/guregu/dynamo v1.6.1
 	github.com/m-mizutani/golambda v1.0.2
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.8.1
 )
