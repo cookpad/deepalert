@@ -36,7 +36,17 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 	r := gin.New()
 	r.Use(gin.CustomRecovery(func(c *gin.Context, rec interface{}) {
 		logger.With("panic", rec).Error("Panic recovered")
-		c.AbortWithStatus(http.StatusInternalServerError)
+
+		// Propagate request ID when available and return a JSON error response
+		reqID := c.Request.Header.Get("DeepAlert-Request-ID")
+		if reqID != "" {
+			c.Header("DeepAlert-Request-ID", reqID)
+		}
+
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message":   "internal server error",
+			"requestId": reqID,
+		})
 	}))
 
 	v1 := r.Group("/api/v1")

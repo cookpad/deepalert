@@ -110,9 +110,14 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		args.NewSQS = newAwsSQSClient
 	}
 
-	sqsClient, err := newSQSClient(args.NewSQS, args.FindingQueueURL)
+	findingSQSClient, err := newSQSClient(args.NewSQS, args.FindingQueueURL)
 	if err != nil {
-		return golambda.WrapError(err, "Failed to create SQS client")
+		return golambda.WrapError(err, "Failed to create SQS client for finding queue")
+	}
+
+	attrSQSClient, err := newSQSClient(args.NewSQS, args.AttrQueueURL)
+	if err != nil {
+		return golambda.WrapError(err, "Failed to create SQS client for attribute queue")
 	}
 
 	newCtx := context.WithValue(ctx, contextKey, &task.ReportID)
@@ -137,7 +142,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		}
 		Logger.With("finding", finding).Trace("Sending finding")
 
-		if err := sendSQS(sqsClient, finding, args.FindingQueueURL); err != nil {
+		if err := sendSQS(findingSQSClient, finding, args.FindingQueueURL); err != nil {
 			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.FindingQueueURL).With("finding", finding)
 		}
 	}
@@ -160,7 +165,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		}
 
 		Logger.With("ReportAttribute", attrReport).Trace("Sending new attributes")
-		if err := sendSQS(sqsClient, attrReport, args.AttrQueueURL); err != nil {
+		if err := sendSQS(attrSQSClient, attrReport, args.AttrQueueURL); err != nil {
 			return golambda.WrapError(err, "Fail to publish ReportAttribute").With("url", args.AttrQueueURL).With("report", attrReport)
 		}
 	}

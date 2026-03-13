@@ -280,13 +280,32 @@ func remapSection(inspectReports []*deepalert.Finding) ([]*deepalert.Section, er
 		}
 	}
 
-	var sectionList []*deepalert.Section
+	// Build a slice of sections with their precomputed hash to avoid
+	// recomputing Attr.Hash() on every comparison during sorting.
+	sectionListWithHash := make([]struct {
+		section *deepalert.Section
+		hash    string
+	}, 0, len(sections))
+
 	for _, section := range sections {
-		sectionList = append(sectionList, section)
+		sectionListWithHash = append(sectionListWithHash, struct {
+			section *deepalert.Section
+			hash    string
+		}{
+			section: section,
+			hash:    section.Attr.Hash(),
+		})
 	}
-	sort.Slice(sectionList, func(i, j int) bool {
-		return sectionList[i].Attr.Hash() < sectionList[j].Attr.Hash()
+
+	sort.Slice(sectionListWithHash, func(i, j int) bool {
+		return sectionListWithHash[i].hash < sectionListWithHash[j].hash
 	})
+
+	sectionList := make([]*deepalert.Section, len(sectionListWithHash))
+	for i, sh := range sectionListWithHash {
+		sectionList[i] = sh.section
+	}
+
 	return sectionList, nil
 }
 
