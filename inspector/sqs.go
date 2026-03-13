@@ -35,7 +35,7 @@ func extractRegionFromURL(url string) (*string, error) {
 	if m := regexSqsURL.FindStringSubmatch(url); len(m) == 2 {
 		return &m[1], nil
 	}
-	return nil, fmt.Errorf("Invalid SQS URL foramt: %v", url)
+	return nil, fmt.Errorf("invalid SQS URL format: %v", url)
 }
 
 func newSQSClient(newSQS SQSClientFactory, queueURL string) (SQSClient, error) {

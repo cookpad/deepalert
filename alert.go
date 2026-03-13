@@ -1,3 +1,4 @@
+// Package deepalert provides types and utilities for the DeepAlert security alert aggregation pipeline.
 package deepalert
 
 import (
