@@ -27,4 +27,4 @@ deploy: $(DEEPALERT_CODES) $(ASSETS)
 	cdk deploy "*"
 
 test: $(CDKOUT)
-	go test -count=1 -v .
+	go test -tags integration -count=1 -v .

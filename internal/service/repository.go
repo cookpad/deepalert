@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -231,7 +232,7 @@ func (x *RepositoryService) FetchSection(reportID deepalert.ReportID) ([]*deepal
 	return sections, nil
 }
 
-func rebuildCotent(src interface{}, dst interface{}) error {
+func rebuildContent(src interface{}, dst interface{}) error {
 	raw, err := json.Marshal(src)
 	if err != nil {
 		return golambda.NewError("Failed to marshal content")
@@ -258,31 +259,53 @@ func remapSection(inspectReports []*deepalert.Finding) ([]*deepalert.Section, er
 		switch ir.Type {
 		case deepalert.ContentTypeHost:
 			var c deepalert.ContentHost
-			if err := rebuildCotent(ir.Content, &c); err != nil {
+			if err := rebuildContent(ir.Content, &c); err != nil {
 				return nil, golambda.WrapError(err, "Invalid deepalert.ContentHost data")
 			}
 			section.Hosts = append(section.Hosts, &c)
 
 		case deepalert.ContentTypeUser:
 			var c deepalert.ContentUser
-			if err := rebuildCotent(ir.Content, &c); err != nil {
+			if err := rebuildContent(ir.Content, &c); err != nil {
 				return nil, golambda.WrapError(err, "Invalid deepalert.ContentUser data")
 			}
 			section.Users = append(section.Users, &c)
 
 		case deepalert.ContentTypeBinary:
 			var c deepalert.ContentBinary
-			if err := rebuildCotent(ir.Content, &c); err != nil {
+			if err := rebuildContent(ir.Content, &c); err != nil {
 				return nil, golambda.WrapError(err, "Invalid deepalert.ContentBinary data")
 			}
 			section.Binaries = append(section.Binaries, &c)
 		}
 	}
 
-	var sectionList []*deepalert.Section
+	// Build a slice of sections with their precomputed hash to avoid
+	// recomputing Attr.Hash() on every comparison during sorting.
+	sectionListWithHash := make([]struct {
+		section *deepalert.Section
+		hash    string
+	}, 0, len(sections))
+
 	for _, section := range sections {
-		sectionList = append(sectionList, section)
+		sectionListWithHash = append(sectionListWithHash, struct {
+			section *deepalert.Section
+			hash    string
+		}{
+			section: section,
+			hash:    section.Attr.Hash(),
+		})
 	}
+
+	sort.Slice(sectionListWithHash, func(i, j int) bool {
+		return sectionListWithHash[i].hash < sectionListWithHash[j].hash
+	})
+
+	sectionList := make([]*deepalert.Section, len(sectionListWithHash))
+	for i, sh := range sectionListWithHash {
+		sectionList[i] = sh.section
+	}
+
 	return sectionList, nil
 }
 

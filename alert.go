@@ -1,3 +1,4 @@
+// Package deepalert provides types and utilities for the DeepAlert security alert aggregation pipeline.
 package deepalert
 
 import (
@@ -5,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -44,25 +44,25 @@ const (
 
 	// CtxLocal means an entity of the attribute is inside of your organization.
 	// E.g. Staff's workstation, Owned cloud instance.
-	CtxLocal = "local"
+	CtxLocal AttrContext = "local"
 
 	// CtxSubject means an entity of the attribute is subject of the event.
-	CtxSubject = "subject"
+	CtxSubject AttrContext = "subject"
 
 	// CtxObject means an entity of the attribute is target of the event.
-	CtxObject = "object"
+	CtxObject AttrContext = "object"
 
 	// CtxClient means a network entity works as client (requester).
-	CtxClient = "client"
+	CtxClient AttrContext = "client"
 
 	// CtxServer means a network entity works as server (responder).
-	CtxServer = "server"
+	CtxServer AttrContext = "server"
 
 	// CtxFile means the attribute comes from file object.
-	CtxFile = "file"
+	CtxFile AttrContext = "file"
 
 	// CtxAdditionalInfo means the attribute is meta contexts
-	CtxAdditionalInfo = "additional"
+	CtxAdditionalInfo AttrContext = "additional"
 )
 
 // Attribute is element of alert
@@ -128,7 +128,8 @@ func (x *Alert) AlertID() string {
 	hasher := sha256.New()
 	_, err := hasher.Write([]byte(key))
 	if err != nil {
-		log.Fatalf("Failed sha256.Write: %v", err)
+		golambda.Logger.With("err", err).Error("Failed sha256.Write")
+		panic(fmt.Sprintf("sha256.Write failed: %v", err))
 	}
 	return fmt.Sprintf("alert:%x", hasher.Sum(nil))
 }
@@ -138,6 +139,13 @@ var (
 	ErrInvalidAlert = golambda.NewError("Invalid Alert parameter")
 )
 
+const (
+	maxFieldLen       = 1024
+	maxDescriptionLen = 4096
+	maxBodyLen        = 65536
+	maxAttributes     = 100
+)
+
 // Validate checks own parameters of Alert and returns error if something wrong
 func (x *Alert) Validate() error {
 	if x.Detector == "" {
@@ -145,6 +153,41 @@ func (x *Alert) Validate() error {
 	}
 	if x.RuleID == "" {
 		return golambda.WrapError(ErrInvalidAlert, "Alert.RuleID is required")
+	}
+	if len(x.Detector) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.Detector exceeds maximum length")
+	}
+	if len(x.RuleID) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.RuleID exceeds maximum length")
+	}
+	if len(x.RuleName) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.RuleName exceeds maximum length")
+	}
+	if len(x.AlertKey) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.AlertKey exceeds maximum length")
+	}
+	if len(x.Description) > maxDescriptionLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.Description exceeds maximum length")
+	}
+	if len(x.Attributes) > maxAttributes {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.Attributes exceeds maximum count")
+	}
+	for _, attr := range x.Attributes {
+		if len(attr.Key) > maxFieldLen {
+			return golambda.WrapError(ErrInvalidAlert, "Attribute.Key exceeds maximum length")
+		}
+		if len(attr.Value) > maxFieldLen {
+			return golambda.WrapError(ErrInvalidAlert, "Attribute.Value exceeds maximum length")
+		}
+	}
+	if x.Body != nil {
+		raw, err := json.Marshal(x.Body)
+		if err != nil {
+			return golambda.WrapError(ErrInvalidAlert, "Alert.Body is not serializable")
+		}
+		if len(raw) > maxBodyLen {
+			return golambda.WrapError(ErrInvalidAlert, "Alert.Body exceeds maximum size")
+		}
 	}
 	return nil
 }
@@ -176,13 +219,14 @@ func (x Attribute) Hash() string {
 
 	raw, err := json.Marshal(x)
 	if err != nil {
-		// Must marshal
-		log.Fatalf("Fail to unmarshal attribute: %v %v", x, err)
+		golambda.Logger.With("err", err).With("attr", x).Error("Failed to marshal attribute")
+		panic(fmt.Sprintf("failed to marshal attribute: %v", err))
 	}
 
 	hasher := sha256.New()
 	if _, err := hasher.Write(raw); err != nil {
-		log.Fatalf("Failed sha256.Write: %v", err)
+		golambda.Logger.With("err", err).Error("Failed sha256.Write")
+		panic(fmt.Sprintf("sha256.Write failed: %v", err))
 	}
 	sha := fmt.Sprintf("%x", hasher.Sum(nil))
 

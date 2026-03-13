@@ -1,3 +1,4 @@
+// Package emitter provides utilities for consuming DeepAlert reports from SNS events.
 package emitter
 
 import (

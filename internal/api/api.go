@@ -72,7 +72,11 @@ func resp(c *gin.Context, status int, data interface{}) {
 		}
 
 		entry.Error(err.Error())
-		data = wrapErr(err.Error())
+		if status >= 500 {
+			data = wrapErr("internal server error (request ID: " + reqID + ")")
+		} else {
+			data = wrapErr(err.Error())
+		}
 	}
 
 	c.JSON(status, data)

@@ -9,7 +9,7 @@ import (
 	"github.com/deepalert/deepalert/internal/models"
 )
 
-// Repository is mock data store. Behaviour of the mock.Repository must be same with repository.DynamoDBRepositry
+// Repository is mock data store. Behaviour of the mock.Repository must be same with repository.DynamoDBRepository
 type Repository struct {
 	region    string
 	tableName string

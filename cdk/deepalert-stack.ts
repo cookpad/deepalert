@@ -15,6 +15,7 @@ import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 
 // import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
 
@@ -64,13 +65,13 @@ export class DeepAlertStack extends cdk.Stack {
 
     const lambdaRole = props.lambdaRoleARN
       ? iam.Role.fromRoleArn(this, "LambdaRole", props.lambdaRoleARN, {
-          mutable: false,
-        })
+        mutable: false,
+      })
       : undefined;
     const sfnRole = props.sfnRoleARN
       ? iam.Role.fromRoleArn(this, "SfnRole", props.sfnRoleARN, {
-          mutable: false,
-        })
+        mutable: false,
+      })
       : undefined;
 
     this.cacheTable = new dynamodb.Table(this, "cacheTable", {
@@ -140,7 +141,7 @@ export class DeepAlertStack extends cdk.Stack {
       timeout?: cdk.Duration;
       environment?: { [key: string]: string; };
       setToStack: {
-        (f :lambda.Function):void;
+        (f: lambda.Function): void;
       };
     }
 
@@ -170,33 +171,33 @@ export class DeepAlertStack extends cdk.Stack {
 
     // receptAlert and apiHandler is configured later because they requires StepFunctions
     // in environment variables.
-    const lambdaConfigs :LambdaConfig[] = [
+    const lambdaConfigs: LambdaConfig[] = [
       {
         funcName: 'submitFinding',
         events: [new SqsEventSource(this.findingQueue)],
-        setToStack: (f :lambda.Function) => { this.submitFinding = f; }
+        setToStack: (f: lambda.Function) => { this.submitFinding = f; }
       },
       {
         funcName: 'feedbackAttribute',
         events: [new SqsEventSource(this.attributeQueue)],
         timeout: attributeQueueTimeout,
-        setToStack: (f :lambda.Function) => { this.feedbackAttribute = f; }
+        setToStack: (f: lambda.Function) => { this.feedbackAttribute = f; }
       },
       {
         funcName: 'dispatchInspection',
-        setToStack: (f :lambda.Function) => { this.dispatchInspection = f; }
+        setToStack: (f: lambda.Function) => { this.dispatchInspection = f; }
       },
       {
         funcName: 'compileReport',
-        setToStack: (f :lambda.Function) => { this.compileReport = f; },
+        setToStack: (f: lambda.Function) => { this.compileReport = f; },
       },
       {
         funcName: 'dummyReviewer',
-        setToStack: (f :lambda.Function) => { this.dummyReviewer = f; },
+        setToStack: (f: lambda.Function) => { this.dummyReviewer = f; },
       },
       {
         funcName: 'submitReport',
-        setToStack: (f :lambda.Function) => { this.submitReport = f; },
+        setToStack: (f: lambda.Function) => { this.submitReport = f; },
       },
       {
         funcName: 'publishReport',
@@ -206,7 +207,7 @@ export class DeepAlertStack extends cdk.Stack {
             batchSize: 1,
           }),
         ],
-        setToStack: (f :lambda.Function) => { this.publishReport = f; },
+        setToStack: (f: lambda.Function) => { this.publishReport = f; },
       },
     ];
 
@@ -237,14 +238,14 @@ export class DeepAlertStack extends cdk.Stack {
       timeout: alertQueueTimeout,
       events: [new SqsEventSource(this.alertQueue)],
       environment: envVarsWithSF,
-      setToStack: (f :lambda.Function) => { this.receptAlert = f; },
+      setToStack: (f: lambda.Function) => { this.receptAlert = f; },
     })
 
     if (props.enableAPI) {
       buildLambdaFunction({
         funcName: 'apiHandler',
         environment: envVarsWithSF,
-        setToStack: (f :lambda.Function) => { this.apiHandler = f; },
+        setToStack: (f: lambda.Function) => { this.apiHandler = f; },
       })
 
       const api = new apigateway.LambdaRestApi(this, 'deepalertAPI', {
@@ -272,7 +273,7 @@ export class DeepAlertStack extends cdk.Stack {
         stage: api.deploymentStage,
       })
 
-      const apiOpt = { apiKeyRequired: true};
+      const apiOpt = { apiKeyRequired: true };
       const v1 = api.root.addResource('api').addResource('v1',);
       const alertAPI = v1.addResource('alert');
       alertAPI.addMethod('POST', undefined, apiOpt);
@@ -288,9 +289,7 @@ export class DeepAlertStack extends cdk.Stack {
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);
-      this.inspectionMachine.grantStartExecution(this.apiHandler);
       this.reviewMachine.grantStartExecution(this.receptAlert);
-      this.reviewMachine.grantStartExecution(this.apiHandler);
       this.taskTopic.grantPublish(this.dispatchInspection);
       this.reportTopic.grantPublish(this.publishReport);
 
@@ -302,7 +301,12 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.compileReport);
       this.cacheTable.grantReadWriteData(this.submitReport);
       this.cacheTable.grantReadWriteData(this.publishReport);
-      this.cacheTable.grantReadWriteData(this.apiHandler);
+
+      if (props.enableAPI) {
+        this.inspectionMachine.grantStartExecution(this.apiHandler);
+        this.reviewMachine.grantStartExecution(this.apiHandler);
+        this.cacheTable.grantReadWriteData(this.apiHandler);
+      }
     }
   }
 }
@@ -389,10 +393,8 @@ function getAPIKey(apiKeyPath?: string): string {
     const keyData = JSON.parse(buf.toString());
     return keyData['X-API-KEY'];
   } else {
-    const literals = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const length = 32;
-    const apiKey = Array.from(Array(length)).map(()=>literals[Math.floor(Math.random()*literals.length)]).join('');
-    fs.writeFileSync(apiKeyPath, JSON.stringify({'X-API-KEY': apiKey}))
+    const apiKey = crypto.randomBytes(24).toString('base64url');
+    fs.writeFileSync(apiKeyPath, JSON.stringify({ 'X-API-KEY': apiKey }), { mode: 0o600 })
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
   }
