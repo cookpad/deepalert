@@ -36,9 +36,12 @@ func (x *Arguments) SFnService() *service.SFnService {
 	return service.NewSFnService(adaptor.NewSFnClient)
 }
 
+// repositoryTTL is the TTL in seconds for all cached records in the repository.
+const repositoryTTL int64 = 3 * 60 * 60 // 3 hours
+
 // Repository provides data store accessor created by NewDynamoDB. If Arguments.NewRepository is set, this function returns repository object created by NewRepository.
 func (x *Arguments) Repository() (*service.RepositoryService, error) {
-	var ttl int64 = 1800
+	var ttl int64 = repositoryTTL
 	var repo adaptor.Repository
 
 	if x.NewRepository != nil {

@@ -14,10 +14,9 @@ import (
 )
 
 type DynamoDBRepository struct {
-	tableName  string
-	region     string
-	table      dynamo.Table
-	timeToLive time.Duration
+	tableName string
+	region    string
+	table     dynamo.Table
 }
 
 // NewDynamoDB is constructor of DynamoDBRepository
@@ -28,10 +27,9 @@ func NewDynamoDB(region, tableName string) (adaptor.Repository, error) {
 	}
 	db := dynamo.New(ssn)
 	x := &DynamoDBRepository{
-		tableName:  tableName,
-		region:     region,
-		table:      db.Table(tableName),
-		timeToLive: time.Hour * 3,
+		tableName: tableName,
+		region:    region,
+		table:     db.Table(tableName),
 	}
 
 	return x, nil
