@@ -97,10 +97,10 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		return fmt.Errorf("author is not set in inspector.Arguments")
 	}
 	if args.AttrQueueURL == "" {
-		return fmt.Errorf("AttrQueueURL is not set in inspector.Arguments")
+		return fmt.Errorf("attrQueueURL is not set in inspector.Arguments")
 	}
 	if args.FindingQueueURL == "" {
-		return fmt.Errorf("FindingQueueURL is not set in inspector.Arguments")
+		return fmt.Errorf("findingQueueURL is not set in inspector.Arguments")
 	}
 	if task == nil {
 		return fmt.Errorf("task is nil")
