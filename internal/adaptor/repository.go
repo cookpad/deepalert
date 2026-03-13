@@ -26,7 +26,3 @@ type Repository interface {
 	IsConditionalCheckErr(err error) bool
 }
 
-// NewRepository creates actual AWS SFn SDK client
-func NewRepository(region, tableName string) Repository {
-	return nil
-}
