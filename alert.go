@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -128,7 +127,8 @@ func (x *Alert) AlertID() string {
 	hasher := sha256.New()
 	_, err := hasher.Write([]byte(key))
 	if err != nil {
-		log.Fatalf("Failed sha256.Write: %v", err)
+		golambda.Logger.With("err", err).Error("Failed sha256.Write")
+		panic(fmt.Sprintf("sha256.Write failed: %v", err))
 	}
 	return fmt.Sprintf("alert:%x", hasher.Sum(nil))
 }
@@ -176,13 +176,14 @@ func (x Attribute) Hash() string {
 
 	raw, err := json.Marshal(x)
 	if err != nil {
-		// Must marshal
-		log.Fatalf("Fail to unmarshal attribute: %v %v", x, err)
+		golambda.Logger.With("err", err).With("attr", x).Error("Failed to marshal attribute")
+		panic(fmt.Sprintf("failed to marshal attribute: %v", err))
 	}
 
 	hasher := sha256.New()
 	if _, err := hasher.Write(raw); err != nil {
-		log.Fatalf("Failed sha256.Write: %v", err)
+		golambda.Logger.With("err", err).Error("Failed sha256.Write")
+		panic(fmt.Sprintf("sha256.Write failed: %v", err))
 	}
 	sha := fmt.Sprintf("%x", hasher.Sum(nil))
 
