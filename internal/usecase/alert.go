@@ -48,7 +48,7 @@ func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time)
 
 	}
 
-	if err := sfnSvc.Exec(args.InspectorMashine, &report); err != nil {
+	if err := sfnSvc.Exec(args.InspectorMachine, &report); err != nil {
 		return nil, golambda.WrapError(err, "Fail to execute InspectorDelayMachine")
 	}
 

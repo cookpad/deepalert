@@ -40,7 +40,7 @@ func TestCreateReport(t *testing.T) {
 			NewSFn:        mock.NewSFnClient,
 			NewSNS:        mock.NewSNSClient,
 			EnvVars: handler.EnvVars{
-				InspectorMashine: "arn:aws:states:us-east-1:111122223333:stateMachine:inspect",
+				InspectorMachine: "arn:aws:states:us-east-1:111122223333:stateMachine:inspect",
 				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:review",
 				ReportTopic:      "arn:aws:sns:us-east-1:111122223333:report",
 			},

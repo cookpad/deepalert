@@ -32,7 +32,7 @@ func TestReceptAlert(t *testing.T) {
 			NewRepository: func(string, string) adaptor.Repository { return dummyRepo },
 			NewSFn:        func(string) (adaptor.SFnClient, error) { return dummySFn, nil },
 			EnvVars: handler.EnvVars{
-				InspectorMashine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
+				InspectorMachine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
 				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:orange",
 			},
 		}
@@ -71,7 +71,7 @@ func TestReceptAlert(t *testing.T) {
 			NewRepository: func(string, string) adaptor.Repository { return dummyRepo },
 			NewSFn:        func(string) (adaptor.SFnClient, error) { return dummySFn, nil },
 			EnvVars: handler.EnvVars{
-				InspectorMashine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
+				InspectorMachine: "arn:aws:states:us-east-1:111122223333:stateMachine:blue",
 				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:orange",
 			},
 		}

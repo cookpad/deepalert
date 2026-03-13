@@ -232,7 +232,7 @@ func (x *RepositoryService) FetchSection(reportID deepalert.ReportID) ([]*deepal
 	return sections, nil
 }
 
-func rebuildCotent(src interface{}, dst interface{}) error {
+func rebuildContent(src interface{}, dst interface{}) error {
 	raw, err := json.Marshal(src)
 	if err != nil {
 		return golambda.NewError("Failed to marshal content")
@@ -259,21 +259,21 @@ func remapSection(inspectReports []*deepalert.Finding) ([]*deepalert.Section, er
 		switch ir.Type {
 		case deepalert.ContentTypeHost:
 			var c deepalert.ContentHost
-			if err := rebuildCotent(ir.Content, &c); err != nil {
+			if err := rebuildContent(ir.Content, &c); err != nil {
 				return nil, golambda.WrapError(err, "Invalid deepalert.ContentHost data")
 			}
 			section.Hosts = append(section.Hosts, &c)
 
 		case deepalert.ContentTypeUser:
 			var c deepalert.ContentUser
-			if err := rebuildCotent(ir.Content, &c); err != nil {
+			if err := rebuildContent(ir.Content, &c); err != nil {
 				return nil, golambda.WrapError(err, "Invalid deepalert.ContentUser data")
 			}
 			section.Users = append(section.Users, &c)
 
 		case deepalert.ContentTypeBinary:
 			var c deepalert.ContentBinary
-			if err := rebuildCotent(ir.Content, &c); err != nil {
+			if err := rebuildContent(ir.Content, &c); err != nil {
 				return nil, golambda.WrapError(err, "Invalid deepalert.ContentBinary data")
 			}
 			section.Binaries = append(section.Binaries, &c)

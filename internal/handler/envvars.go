@@ -13,7 +13,7 @@ type EnvVars struct {
 	CacheTable  string `env:"CACHE_TABLE"`
 
 	// Only recvAlert can use because of dependency
-	InspectorMashine string `env:"INSPECTOR_MACHINE"`
+	InspectorMachine string `env:"INSPECTOR_MACHINE"`
 	ReviewMachine    string `env:"REVIEW_MACHINE"`
 
 	// Utilities
