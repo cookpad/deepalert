@@ -44,25 +44,25 @@ const (
 
 	// CtxLocal means an entity of the attribute is inside of your organization.
 	// E.g. Staff's workstation, Owned cloud instance.
-	CtxLocal = "local"
+	CtxLocal AttrContext = "local"
 
 	// CtxSubject means an entity of the attribute is subject of the event.
-	CtxSubject = "subject"
+	CtxSubject AttrContext = "subject"
 
 	// CtxObject means an entity of the attribute is target of the event.
-	CtxObject = "object"
+	CtxObject AttrContext = "object"
 
 	// CtxClient means a network entity works as client (requester).
-	CtxClient = "client"
+	CtxClient AttrContext = "client"
 
 	// CtxServer means a network entity works as server (responder).
-	CtxServer = "server"
+	CtxServer AttrContext = "server"
 
 	// CtxFile means the attribute comes from file object.
-	CtxFile = "file"
+	CtxFile AttrContext = "file"
 
 	// CtxAdditionalInfo means the attribute is meta contexts
-	CtxAdditionalInfo = "additional"
+	CtxAdditionalInfo AttrContext = "additional"
 )
 
 // Attribute is element of alert
