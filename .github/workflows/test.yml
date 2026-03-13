@@ -1,0 +1,32 @@
+name: test
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.13.x', '1.14.x']
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+
+      - name: test
+        run: go test ./...
+        env:
+          GO111MODULE: on
