@@ -382,14 +382,6 @@ function buildReviewMachine(
   });
 }
 
-function toBase64Url(buffer: Buffer): string {
-  return buffer
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
-}
-
 function getAPIKey(apiKeyPath?: string): string {
   if (apiKeyPath === undefined) {
     apiKeyPath = path.join(process.cwd(), 'apikey.json');
@@ -401,7 +393,7 @@ function getAPIKey(apiKeyPath?: string): string {
     const keyData = JSON.parse(buf.toString());
     return keyData['X-API-KEY'];
   } else {
-    const apiKey = toBase64Url(crypto.randomBytes(24));
+    const apiKey = crypto.randomBytes(24).toString('base64url');
     fs.writeFileSync(apiKeyPath, JSON.stringify({ 'X-API-KEY': apiKey }), { mode: 0o600 })
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
