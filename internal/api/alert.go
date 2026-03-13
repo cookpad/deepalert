@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -22,7 +23,11 @@ func postAlert(c *gin.Context) {
 
 	report, err := usecase.HandleAlert(args, &alert, now)
 	if err != nil {
-		resp(c, http.StatusInternalServerError, err)
+		if errors.Is(err, deepalert.ErrInvalidAlert) {
+			resp(c, http.StatusBadRequest, err)
+		} else {
+			resp(c, http.StatusInternalServerError, err)
+		}
 		return
 	}
 

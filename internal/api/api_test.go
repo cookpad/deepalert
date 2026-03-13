@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/deepalert/deepalert"
+	"github.com/deepalert/deepalert/internal/adaptor"
 	"github.com/deepalert/deepalert/internal/api"
 	"github.com/deepalert/deepalert/internal/handler"
 	"github.com/deepalert/deepalert/internal/mock"
@@ -101,4 +103,108 @@ func TestErrorCase(t *testing.T) {
 		require.NoError(tt, err)
 		assert.Equal(tt, 404, resp.StatusCode)
 	})
+}
+
+func TestPostAlertValidation(t *testing.T) {
+	newArgs := func() *handler.Arguments {
+		_, repoFactory := mock.NewMockRepositorySet()
+		return &handler.Arguments{
+			NewRepository: repoFactory,
+			NewSFn:        mock.NewSFnClient,
+			NewSNS:        mock.NewSNSClient,
+			EnvVars: handler.EnvVars{
+				InspectorMachine: "arn:aws:states:us-east-1:111122223333:stateMachine:inspect",
+				ReviewMachine:    "arn:aws:states:us-east-1:111122223333:stateMachine:review",
+				ReportTopic:      "arn:aws:sns:us-east-1:111122223333:report",
+			},
+		}
+	}
+
+	t.Run("Missing Detector returns 400", func(tt *testing.T) {
+		alert := &deepalert.Alert{RuleID: "r1"}
+		resp, err := handleRequest(newArgs(), events.APIGatewayProxyRequest{
+			Path:       "/api/v1/alert",
+			HTTPMethod: "POST",
+			Body:       toBody(alert),
+		})
+		require.NoError(tt, err)
+		assert.Equal(tt, 400, resp.StatusCode)
+	})
+
+	t.Run("Missing RuleID returns 400", func(tt *testing.T) {
+		alert := &deepalert.Alert{Detector: "det"}
+		resp, err := handleRequest(newArgs(), events.APIGatewayProxyRequest{
+			Path:       "/api/v1/alert",
+			HTTPMethod: "POST",
+			Body:       toBody(alert),
+		})
+		require.NoError(tt, err)
+		assert.Equal(tt, 400, resp.StatusCode)
+	})
+
+	t.Run("Oversized Detector returns 400", func(tt *testing.T) {
+		alert := &deepalert.Alert{Detector: strings.Repeat("x", 1025), RuleID: "r1"}
+		resp, err := handleRequest(newArgs(), events.APIGatewayProxyRequest{
+			Path:       "/api/v1/alert",
+			HTTPMethod: "POST",
+			Body:       toBody(alert),
+		})
+		require.NoError(tt, err)
+		assert.Equal(tt, 400, resp.StatusCode)
+	})
+
+	t.Run("Oversized Attribute.Value returns 400", func(tt *testing.T) {
+		alert := &deepalert.Alert{
+			Detector: "det",
+			RuleID:   "r1",
+			Attributes: []deepalert.Attribute{
+				{Key: "k", Value: strings.Repeat("v", 1025)},
+			},
+		}
+		resp, err := handleRequest(newArgs(), events.APIGatewayProxyRequest{
+			Path:       "/api/v1/alert",
+			HTTPMethod: "POST",
+			Body:       toBody(alert),
+		})
+		require.NoError(tt, err)
+		assert.Equal(tt, 400, resp.StatusCode)
+	})
+}
+
+func TestOpaqueServerError(t *testing.T) {
+	// Use a NewSFn factory that always fails to force a 500 from postAlert.
+	failingSFn := func(region string) (adaptor.SFnClient, error) {
+		return nil, fmt.Errorf("simulated internal sfn failure: arn:aws:states:us-east-1:999:stateMachine:secret")
+	}
+	_, repoFactory := mock.NewMockRepositorySet()
+	args := &handler.Arguments{
+		NewRepository: repoFactory,
+		NewSFn:        failingSFn,
+		NewSNS:        mock.NewSNSClient,
+		EnvVars: handler.EnvVars{
+			InspectorMachine: "arn:aws:states:us-east-1:999:stateMachine:secret",
+			ReviewMachine:    "arn:aws:states:us-east-1:999:stateMachine:secret",
+			ReportTopic:      "arn:aws:sns:us-east-1:999:report",
+		},
+	}
+
+	alert := &deepalert.Alert{Detector: "det", RuleID: "r1"}
+	resp, err := handleRequest(args, events.APIGatewayProxyRequest{
+		Path:       "/api/v1/alert",
+		HTTPMethod: "POST",
+		Body:       toBody(alert),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 500, resp.StatusCode)
+
+	// Body must not contain internal details.
+	assert.NotContains(t, resp.Body, "arn:")
+	assert.NotContains(t, resp.Body, "simulated internal")
+
+	// Body must contain the request ID for operator traceability.
+	assert.Contains(t, resp.Body, "internal server error")
+	assert.Contains(t, resp.Body, "request ID")
+
+	// DeepAlert-Request-ID header must be present (ginadapter returns MultiValueHeaders).
+	assert.NotEmpty(t, resp.MultiValueHeaders["Deepalert-Request-Id"])
 }
