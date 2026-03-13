@@ -141,6 +141,8 @@ var (
 const (
 	maxFieldLen       = 1024
 	maxDescriptionLen = 4096
+	maxBodyLen        = 65536
+	maxAttributes     = 100
 )
 
 // Validate checks own parameters of Alert and returns error if something wrong
@@ -166,12 +168,24 @@ func (x *Alert) Validate() error {
 	if len(x.Description) > maxDescriptionLen {
 		return golambda.WrapError(ErrInvalidAlert, "Alert.Description exceeds maximum length")
 	}
+	if len(x.Attributes) > maxAttributes {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.Attributes exceeds maximum count")
+	}
 	for _, attr := range x.Attributes {
 		if len(attr.Key) > maxFieldLen {
 			return golambda.WrapError(ErrInvalidAlert, "Attribute.Key exceeds maximum length")
 		}
 		if len(attr.Value) > maxFieldLen {
 			return golambda.WrapError(ErrInvalidAlert, "Attribute.Value exceeds maximum length")
+		}
+	}
+	if x.Body != nil {
+		raw, err := json.Marshal(x.Body)
+		if err != nil {
+			return golambda.WrapError(ErrInvalidAlert, "Alert.Body is not serializable")
+		}
+		if len(raw) > maxBodyLen {
+			return golambda.WrapError(ErrInvalidAlert, "Alert.Body exceeds maximum size")
 		}
 	}
 	return nil

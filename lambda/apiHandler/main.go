@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/aws/aws-lambda-go/events"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
@@ -32,7 +34,10 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 	logger.With("request", req).Info("HTTP request")
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(gin.Recovery())
+	r.Use(gin.CustomRecovery(func(c *gin.Context, rec interface{}) {
+		logger.With("panic", rec).Error("Panic recovered")
+		c.AbortWithStatus(http.StatusInternalServerError)
+	}))
 
 	v1 := r.Group("/api/v1")
 	api.SetupRoute(v1, args)

@@ -394,7 +394,7 @@ function getAPIKey(apiKeyPath?: string): string {
     return keyData['X-API-KEY'];
   } else {
     const apiKey = crypto.randomBytes(24).toString('base64url');
-    fs.writeFileSync(apiKeyPath, JSON.stringify({ 'X-API-KEY': apiKey }))
+    fs.writeFileSync(apiKeyPath, JSON.stringify({ 'X-API-KEY': apiKey }), { mode: 0o600 })
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
   }

@@ -12,11 +12,11 @@ var logger = golambda.Logger
 
 // HandleAlert creates a report from alert and invoke delay machines
 func HandleAlert(args *handler.Arguments, alert *deepalert.Alert, now time.Time) (*deepalert.Report, error) {
-	logger.With("alert", alert).Info("Taking report")
-
 	if err := alert.Validate(); err != nil {
 		return nil, golambda.WrapError(err, "Invalid alert format")
 	}
+
+	logger.With("alert_id", alert.AlertID()).Info("Taking report")
 
 	sfnSvc := args.SFnService()
 	repo, err := args.Repository()

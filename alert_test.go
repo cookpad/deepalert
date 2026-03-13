@@ -114,6 +114,39 @@ func TestValidate(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorIs(t, err, da.ErrInvalidAlert)
 	})
+
+	t.Run("Attributes at count limit passes", func(t *testing.T) {
+		a := base
+		for i := 0; i < 100; i++ {
+			a.Attributes = append(a.Attributes, da.Attribute{Key: "k", Value: "v"})
+		}
+		require.NoError(t, a.Validate())
+	})
+
+	t.Run("Attributes over count limit is rejected", func(t *testing.T) {
+		a := base
+		for i := 0; i < 101; i++ {
+			a.Attributes = append(a.Attributes, da.Attribute{Key: "k", Value: "v"})
+		}
+		err := a.Validate()
+		require.Error(t, err)
+		assert.ErrorIs(t, err, da.ErrInvalidAlert)
+	})
+
+	t.Run("Body at size limit passes", func(t *testing.T) {
+		a := base
+		// JSON string of exactly 65536 bytes: `"<65534 x's>"` = 65536 chars
+		a.Body = strings.Repeat("x", 65534)
+		require.NoError(t, a.Validate())
+	})
+
+	t.Run("Body over size limit is rejected", func(t *testing.T) {
+		a := base
+		a.Body = strings.Repeat("x", 65535) // marshals to 65537 bytes as a JSON string
+		err := a.Validate()
+		require.Error(t, err)
+		assert.ErrorIs(t, err, da.ErrInvalidAlert)
+	})
 }
 
 func TestAttributeHash(t *testing.T) {
