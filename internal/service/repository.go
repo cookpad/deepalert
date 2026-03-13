@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -283,6 +284,9 @@ func remapSection(inspectReports []*deepalert.Finding) ([]*deepalert.Section, er
 	for _, section := range sections {
 		sectionList = append(sectionList, section)
 	}
+	sort.Slice(sectionList, func(i, j int) bool {
+		return sectionList[i].Attr.Hash() < sectionList[j].Attr.Hash()
+	})
 	return sectionList, nil
 }
 
