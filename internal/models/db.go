@@ -1,3 +1,4 @@
+// Package models defines DynamoDB data models for the DeepAlert cache table.
 package models
 
 import (

@@ -1,3 +1,4 @@
+// Package adaptor defines interfaces for external service dependencies.
 package adaptor
 
 import (
