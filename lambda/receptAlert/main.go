@@ -33,14 +33,13 @@ func HandleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 	now := time.Now().UTC()
 
 	for _, msg := range messages {
-		var ev map[string]interface{}
-		if err := msg.Bind(&ev); err != nil {
-			return nil, golambda.WrapError(err, "Failed to bind event").With("msg", msg)
+		var snsWrapper struct {
+			Message string `json:"Message"`
 		}
 
 		var data []byte
-		if v, ok := ev["Message"]; ok {
-			data = []byte(v.(string))
+		if err := msg.Bind(&snsWrapper); err == nil && snsWrapper.Message != "" {
+			data = []byte(snsWrapper.Message)
 		} else {
 			data = msg
 		}
