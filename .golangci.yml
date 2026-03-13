@@ -1,0 +1,21 @@
+linters-settings:
+  staticcheck:
+    checks:
+      - "all"
+      # SA1019: aws-sdk-go v1 is deprecated; migrating to v2 is tracked separately
+      - "-SA1019"
+
+linters:
+  enable-all: true
+  disable:
+    # deprecated linters removed in golangci-lint v2
+    - deadcode
+    - exhaustivestruct
+    - golint
+    - ifshort
+    - interfacer
+    - maligned
+    - nosnakecase
+    - scopelint
+    - structcheck
+    - varcheck

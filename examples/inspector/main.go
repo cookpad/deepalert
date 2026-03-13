@@ -46,14 +46,16 @@ func main() {
 			return err
 		}
 
-		inspector.Start(inspector.Arguments{
+		if err := inspector.Start(inspector.Arguments{
 			Context:         ctx,
 			Tasks:           tasks,
 			Handler:         Handler,
 			Author:          "testInspector",
 			FindingQueueURL: os.Getenv("FINDING_QUEUE"),
 			AttrQueueURL:    os.Getenv("ATTRIBUTE_QUEUE"),
-		})
+		}); err != nil {
+			return err
+		}
 
 		return nil
 	})

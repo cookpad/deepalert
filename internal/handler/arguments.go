@@ -41,7 +41,7 @@ const repositoryTTL int64 = 3 * 60 * 60 // 3 hours
 
 // Repository provides data store accessor created by NewDynamoDB. If Arguments.NewRepository is set, this function returns repository object created by NewRepository.
 func (x *Arguments) Repository() (*service.RepositoryService, error) {
-	var ttl int64 = repositoryTTL
+	ttl := repositoryTTL
 	var repo adaptor.Repository
 
 	if x.NewRepository != nil {
