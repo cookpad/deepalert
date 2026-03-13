@@ -91,16 +91,16 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 
 	// Check Arguments
 	if args.Handler == nil {
-		return fmt.Errorf("handler is not set in inspector.Argument")
+		return fmt.Errorf("handler is not set in inspector.Arguments")
 	}
 	if args.Author == "" {
-		return fmt.Errorf("author is not set in inspector.Argument")
+		return fmt.Errorf("author is not set in inspector.Arguments")
 	}
 	if args.AttrQueueURL == "" {
-		return fmt.Errorf("attrQueueURL is not set in inspector.Argument")
+		return fmt.Errorf("AttrQueueURL is not set in inspector.Arguments")
 	}
 	if args.FindingQueueURL == "" {
-		return fmt.Errorf("findingQueueURL is not set in inspector.Argument")
+		return fmt.Errorf("FindingQueueURL is not set in inspector.Arguments")
 	}
 	if task == nil {
 		return fmt.Errorf("task is nil")
