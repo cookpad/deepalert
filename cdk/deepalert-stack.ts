@@ -15,6 +15,7 @@ import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 
 // import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
 
@@ -288,9 +289,7 @@ export class DeepAlertStack extends cdk.Stack {
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);
-      this.inspectionMachine.grantStartExecution(this.apiHandler);
       this.reviewMachine.grantStartExecution(this.receptAlert);
-      this.reviewMachine.grantStartExecution(this.apiHandler);
       this.taskTopic.grantPublish(this.dispatchInspection);
       this.reportTopic.grantPublish(this.publishReport);
 
@@ -302,7 +301,12 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.compileReport);
       this.cacheTable.grantReadWriteData(this.submitReport);
       this.cacheTable.grantReadWriteData(this.publishReport);
-      this.cacheTable.grantReadWriteData(this.apiHandler);
+
+      if (props.enableAPI) {
+        this.inspectionMachine.grantStartExecution(this.apiHandler);
+        this.reviewMachine.grantStartExecution(this.apiHandler);
+        this.cacheTable.grantReadWriteData(this.apiHandler);
+      }
     }
   }
 }
@@ -389,9 +393,7 @@ function getAPIKey(apiKeyPath?: string): string {
     const keyData = JSON.parse(buf.toString());
     return keyData['X-API-KEY'];
   } else {
-    const literals = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const length = 32;
-    const apiKey = Array.from(Array(length)).map(() => literals[Math.floor(Math.random() * literals.length)]).join('');
+    const apiKey = crypto.randomBytes(24).toString('base64url');
     fs.writeFileSync(apiKeyPath, JSON.stringify({ 'X-API-KEY': apiKey }))
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;

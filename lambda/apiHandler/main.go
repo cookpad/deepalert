@@ -31,7 +31,8 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 
 	logger.With("request", req).Info("HTTP request")
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
 
 	v1 := r.Group("/api/v1")
 	api.SetupRoute(v1, args)

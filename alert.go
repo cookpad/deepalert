@@ -138,6 +138,11 @@ var (
 	ErrInvalidAlert = golambda.NewError("Invalid Alert parameter")
 )
 
+const (
+	maxFieldLen       = 1024
+	maxDescriptionLen = 4096
+)
+
 // Validate checks own parameters of Alert and returns error if something wrong
 func (x *Alert) Validate() error {
 	if x.Detector == "" {
@@ -145,6 +150,29 @@ func (x *Alert) Validate() error {
 	}
 	if x.RuleID == "" {
 		return golambda.WrapError(ErrInvalidAlert, "Alert.RuleID is required")
+	}
+	if len(x.Detector) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.Detector exceeds maximum length")
+	}
+	if len(x.RuleID) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.RuleID exceeds maximum length")
+	}
+	if len(x.RuleName) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.RuleName exceeds maximum length")
+	}
+	if len(x.AlertKey) > maxFieldLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.AlertKey exceeds maximum length")
+	}
+	if len(x.Description) > maxDescriptionLen {
+		return golambda.WrapError(ErrInvalidAlert, "Alert.Description exceeds maximum length")
+	}
+	for _, attr := range x.Attributes {
+		if len(attr.Key) > maxFieldLen {
+			return golambda.WrapError(ErrInvalidAlert, "Attribute.Key exceeds maximum length")
+		}
+		if len(attr.Value) > maxFieldLen {
+			return golambda.WrapError(ErrInvalidAlert, "Attribute.Value exceeds maximum length")
+		}
 	}
 	return nil
 }
