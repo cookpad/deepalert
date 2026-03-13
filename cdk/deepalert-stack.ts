@@ -64,13 +64,13 @@ export class DeepAlertStack extends cdk.Stack {
 
     const lambdaRole = props.lambdaRoleARN
       ? iam.Role.fromRoleArn(this, "LambdaRole", props.lambdaRoleARN, {
-          mutable: false,
-        })
+        mutable: false,
+      })
       : undefined;
     const sfnRole = props.sfnRoleARN
       ? iam.Role.fromRoleArn(this, "SfnRole", props.sfnRoleARN, {
-          mutable: false,
-        })
+        mutable: false,
+      })
       : undefined;
 
     this.cacheTable = new dynamodb.Table(this, "cacheTable", {
@@ -140,7 +140,7 @@ export class DeepAlertStack extends cdk.Stack {
       timeout?: cdk.Duration;
       environment?: { [key: string]: string; };
       setToStack: {
-        (f :lambda.Function):void;
+        (f: lambda.Function): void;
       };
     }
 
@@ -170,33 +170,33 @@ export class DeepAlertStack extends cdk.Stack {
 
     // receptAlert and apiHandler is configured later because they requires StepFunctions
     // in environment variables.
-    const lambdaConfigs :LambdaConfig[] = [
+    const lambdaConfigs: LambdaConfig[] = [
       {
         funcName: 'submitFinding',
         events: [new SqsEventSource(this.findingQueue)],
-        setToStack: (f :lambda.Function) => { this.submitFinding = f; }
+        setToStack: (f: lambda.Function) => { this.submitFinding = f; }
       },
       {
         funcName: 'feedbackAttribute',
         events: [new SqsEventSource(this.attributeQueue)],
         timeout: attributeQueueTimeout,
-        setToStack: (f :lambda.Function) => { this.feedbackAttribute = f; }
+        setToStack: (f: lambda.Function) => { this.feedbackAttribute = f; }
       },
       {
         funcName: 'dispatchInspection',
-        setToStack: (f :lambda.Function) => { this.dispatchInspection = f; }
+        setToStack: (f: lambda.Function) => { this.dispatchInspection = f; }
       },
       {
         funcName: 'compileReport',
-        setToStack: (f :lambda.Function) => { this.compileReport = f; },
+        setToStack: (f: lambda.Function) => { this.compileReport = f; },
       },
       {
         funcName: 'dummyReviewer',
-        setToStack: (f :lambda.Function) => { this.dummyReviewer = f; },
+        setToStack: (f: lambda.Function) => { this.dummyReviewer = f; },
       },
       {
         funcName: 'submitReport',
-        setToStack: (f :lambda.Function) => { this.submitReport = f; },
+        setToStack: (f: lambda.Function) => { this.submitReport = f; },
       },
       {
         funcName: 'publishReport',
@@ -206,7 +206,7 @@ export class DeepAlertStack extends cdk.Stack {
             batchSize: 1,
           }),
         ],
-        setToStack: (f :lambda.Function) => { this.publishReport = f; },
+        setToStack: (f: lambda.Function) => { this.publishReport = f; },
       },
     ];
 
@@ -237,14 +237,14 @@ export class DeepAlertStack extends cdk.Stack {
       timeout: alertQueueTimeout,
       events: [new SqsEventSource(this.alertQueue)],
       environment: envVarsWithSF,
-      setToStack: (f :lambda.Function) => { this.receptAlert = f; },
+      setToStack: (f: lambda.Function) => { this.receptAlert = f; },
     })
 
     if (props.enableAPI) {
       buildLambdaFunction({
         funcName: 'apiHandler',
         environment: envVarsWithSF,
-        setToStack: (f :lambda.Function) => { this.apiHandler = f; },
+        setToStack: (f: lambda.Function) => { this.apiHandler = f; },
       })
 
       const api = new apigateway.LambdaRestApi(this, 'deepalertAPI', {
@@ -272,7 +272,7 @@ export class DeepAlertStack extends cdk.Stack {
         stage: api.deploymentStage,
       })
 
-      const apiOpt = { apiKeyRequired: true};
+      const apiOpt = { apiKeyRequired: true };
       const v1 = api.root.addResource('api').addResource('v1',);
       const alertAPI = v1.addResource('alert');
       alertAPI.addMethod('POST', undefined, apiOpt);
@@ -391,8 +391,8 @@ function getAPIKey(apiKeyPath?: string): string {
   } else {
     const literals = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const length = 32;
-    const apiKey = Array.from(Array(length)).map(()=>literals[Math.floor(Math.random()*literals.length)]).join('');
-    fs.writeFileSync(apiKeyPath, JSON.stringify({'X-API-KEY': apiKey}))
+    const apiKey = Array.from(Array(length)).map(() => literals[Math.floor(Math.random() * literals.length)]).join('');
+    fs.writeFileSync(apiKeyPath, JSON.stringify({ 'X-API-KEY': apiKey }))
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
   }
