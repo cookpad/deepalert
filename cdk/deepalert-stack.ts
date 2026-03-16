@@ -144,10 +144,14 @@ export class DeepAlertStack extends cdk.Stack {
     }
 
     const buildLambdaFunction = (config: LambdaConfig) => {
+      const assetPath = path.join(props.assetsPath, config.funcName);
+      if (!fs.existsSync(assetPath)) {
+        throw new Error(`Lambda asset not found for "${config.funcName}": ${assetPath} (run "make build" first)`);
+      }
       const f = new lambda.Function(this, config.funcName, {
         runtime: lambda.Runtime.PROVIDED_AL2,
         handler: "bootstrap",
-        code: lambda.Code.fromAsset(props.assetsPath + config.funcName),
+        code: lambda.Code.fromAsset(assetPath),
         role: lambdaRole,
         events: config.events,
         timeout: config.timeout,
