@@ -1,6 +1,8 @@
 module github.com/deepalert/deepalert
 
-go 1.26.1
+go 1.26
+
+toolchain go1.26.1
 
 require (
 	github.com/Netflix/go-env v0.1.2
