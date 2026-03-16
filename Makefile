@@ -19,23 +19,32 @@ GO_OPT=-ldflags="-s -w" -trimpath
 
 # Functions ------------------------
 $(CODE_DIR)/build/dummyReviewer/bootstrap: $(CODE_DIR)/lambda/dummyReviewer/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/dummyReviewer/bootstrap ./lambda/dummyReviewer
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/dummyReviewer
 $(CODE_DIR)/build/dispatchInspection/bootstrap: $(CODE_DIR)/lambda/dispatchInspection/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/dispatchInspection/bootstrap ./lambda/dispatchInspection
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/dispatchInspection
 $(CODE_DIR)/build/compileReport/bootstrap: $(CODE_DIR)/lambda/compileReport/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/compileReport/bootstrap ./lambda/compileReport
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/compileReport
 $(CODE_DIR)/build/receptAlert/bootstrap: $(CODE_DIR)/lambda/receptAlert/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/receptAlert/bootstrap ./lambda/receptAlert
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/receptAlert
 $(CODE_DIR)/build/publishReport/bootstrap: $(CODE_DIR)/lambda/publishReport/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/publishReport/bootstrap ./lambda/publishReport
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/publishReport
 $(CODE_DIR)/build/submitReport/bootstrap: $(CODE_DIR)/lambda/submitReport/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/submitReport/bootstrap ./lambda/submitReport
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/submitReport
 $(CODE_DIR)/build/submitFinding/bootstrap: $(CODE_DIR)/lambda/submitFinding/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/submitFinding/bootstrap ./lambda/submitFinding
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/submitFinding
 $(CODE_DIR)/build/apiHandler/bootstrap: $(CODE_DIR)/lambda/apiHandler/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/apiHandler/bootstrap ./lambda/apiHandler
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/apiHandler
 $(CODE_DIR)/build/feedbackAttribute/bootstrap: $(CODE_DIR)/lambda/feedbackAttribute/*.go $(COMMON)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $(CODE_DIR)/build/feedbackAttribute/bootstrap ./lambda/feedbackAttribute
+	mkdir -p $(dir $@)
+	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/feedbackAttribute
 
 
 # Base Tasks -------------------------------------
