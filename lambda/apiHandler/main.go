@@ -36,7 +36,7 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 	r := gin.New()
 	r.Use(gin.CustomRecovery(func(c *gin.Context, rec interface{}) {
 		logger.With("panic", rec).Error("Panic recovered")
-		reqID, _ := c.Get("request.id")
+		reqID, _ := c.Get(api.ContextRequestID)
 		reqIDStr, _ := reqID.(string)
 		if reqIDStr != "" {
 			c.Header("DeepAlert-Request-ID", reqIDStr)
