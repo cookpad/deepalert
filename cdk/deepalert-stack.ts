@@ -15,11 +15,9 @@ import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 
 import * as path from 'path';
 import * as fs from 'fs';
-import * as crypto from 'crypto';
-
-// import { SqsSubscription } from "@aws-cdk/aws-sns-subscriptions";
-
 export interface Property extends cdk.StackProps {
+  assetsPath: string;
+
   lambdaRoleARN?: string;
   sfnRoleARN?: string;
   reviewer?: lambda.Function;
@@ -145,21 +143,11 @@ export class DeepAlertStack extends cdk.Stack {
       };
     }
 
-    const rootPath = path.resolve(__dirname, '..');
-    const asset = lambda.Code.fromAsset(rootPath, {
-      bundling: {
-        image: lambda.Runtime.GO_1_X.bundlingDockerImage,
-        user: 'root',
-        command: ['make', 'asset'],
-      },
-      exclude: ['*/node_modules', '*/cdk.out'],
-    });
-
     const buildLambdaFunction = (config: LambdaConfig) => {
       const f = new lambda.Function(this, config.funcName, {
-        runtime: lambda.Runtime.GO_1_X,
-        handler: config.funcName,
-        code: asset,
+        runtime: lambda.Runtime.PROVIDED_AL2,
+        handler: "bootstrap",
+        code: lambda.Code.fromAsset(props.assetsPath + config.funcName),
         role: lambdaRole,
         events: config.events,
         timeout: config.timeout,
@@ -264,12 +252,12 @@ export class DeepAlertStack extends cdk.Stack {
           ],
         }),
       });
-      const apiKey = api.addApiKey('APIKey', {
+      const key = api.addApiKey('APIKey', {
         value: getAPIKey(props.apiKeyPath),
       })
-      api.addUsagePlan('UsagePlan', {
-        apiKey,
-      }).addApiStage({
+      const plan = api.addUsagePlan('UsagePlan', {})
+      plan.addApiKey(key)
+      plan.addApiStage({
         stage: api.deploymentStage,
       })
 
@@ -301,12 +289,9 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.compileReport);
       this.cacheTable.grantReadWriteData(this.submitReport);
       this.cacheTable.grantReadWriteData(this.publishReport);
-
-      if (props.enableAPI) {
-        this.inspectionMachine.grantStartExecution(this.apiHandler);
-        this.reviewMachine.grantStartExecution(this.apiHandler);
-        this.cacheTable.grantReadWriteData(this.apiHandler);
-      }
+      this.inspectionMachine.grantStartExecution(this.apiHandler);
+      this.reviewMachine.grantStartExecution(this.apiHandler);
+      this.cacheTable.grantReadWriteData(this.apiHandler);
     }
   }
 }
@@ -393,8 +378,10 @@ function getAPIKey(apiKeyPath?: string): string {
     const keyData = JSON.parse(buf.toString());
     return keyData['X-API-KEY'];
   } else {
-    const apiKey = crypto.randomBytes(24).toString('base64url');
-    fs.writeFileSync(apiKeyPath, JSON.stringify({ 'X-API-KEY': apiKey }), { mode: 0o600 })
+    const literals = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const length = 32;
+    const apiKey = Array.from(Array(length)).map(()=>literals[Math.floor(Math.random()*literals.length)]).join('');
+    fs.writeFileSync(apiKeyPath, JSON.stringify({'X-API-KEY': apiKey}))
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
   }
