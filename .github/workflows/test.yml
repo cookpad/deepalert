@@ -24,6 +24,25 @@ jobs:
         with:
           version: v2.11.3
 
+  js-build:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: install
+        run: npm ci
+
+      - name: build
+        run: npm run prepare
+
   test:
     needs: lint
     permissions:
