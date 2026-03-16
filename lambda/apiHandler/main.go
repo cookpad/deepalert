@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/aws/aws-lambda-go/events"
 	ginadapter "github.com/awslabs/aws-lambda-go-api-proxy/gin"
 	"github.com/gin-gonic/gin"
@@ -31,7 +33,18 @@ func handleRequest(args *handler.Arguments, event golambda.Event) (interface{}, 
 
 	logger.With("request", req).Info("HTTP request")
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.CustomRecovery(func(c *gin.Context, rec interface{}) {
+		logger.With("panic", rec).Error("Panic recovered")
+		reqID, _ := c.Get(api.ContextRequestID)
+		reqIDStr, _ := reqID.(string)
+		if reqIDStr != "" {
+			c.Header("DeepAlert-Request-ID", reqIDStr)
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{
+			"error": "internal server error (request ID: " + reqIDStr + ")",
+		})
+	}))
 
 	v1 := r.Group("/api/v1")
 	api.SetupRoute(v1, args)

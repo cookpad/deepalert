@@ -18,7 +18,7 @@ DeepAlert receives a security alert that is event of interest from security view
 
 - Tools
   - `aws-cdk` >= 1.75.0
-  - `go` >= 1.14
+  - `go` >= 1.26
   - `node` >= 14.7.0
   - `npm` >= 6.14.9
 - Credential
@@ -145,12 +145,18 @@ $ go test ./...
 
 ### Integration Test
 
-Move to `./test/workflow/` and run below. Then deploy test stack and execute integration test.
+Integration tests require a deployed AWS stack and are excluded from `go test ./...` by default. Move to `./test/workflow/` and run the following to deploy the test stack and execute the integration tests.
 
 ```bash
 $ npm i
 $ make deploy
 $ make test
+```
+
+To run the integration tests directly without `make`:
+
+```bash
+$ go test -tags integration -count=1 -v ./test/workflow/...
 ```
 
 ## License

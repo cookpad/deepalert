@@ -1,0 +1,12 @@
+version: "2"
+
+linters:
+  settings:
+    staticcheck:
+      checks:
+        - "all"
+        # SA1019: aws-sdk-go v1 is deprecated; migrating to v2 is tracked separately
+        - "-SA1019"
+        # ST1000: package comments are not consistently present; not a functional issue
+        - "-ST1000"
+

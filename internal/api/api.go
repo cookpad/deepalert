@@ -11,7 +11,8 @@ import (
 
 const (
 	contextArgumentKey = "handler.arguments"
-	contextRequestID   = "request.id"
+	// ContextRequestID is the context key used to store the current request ID.
+	ContextRequestID   = "request.id"
 	paramReportID      = "report_id"
 	paramAlertID       = "alert_id"
 )
@@ -37,15 +38,15 @@ func getArguments(c *gin.Context) *handler.Arguments {
 
 func getRequestID(c *gin.Context) string {
 	// In API code, requestID must be retrieved. If failed, the process must fail
-	ptr, ok := c.Get(contextRequestID)
+	ptr, ok := c.Get(ContextRequestID)
 	if !ok {
-		logger.With("contextRequestID", contextRequestID).Error("RequestID is not set in API")
+		logger.With("ContextRequestID", ContextRequestID).Error("RequestID is not set in API")
 		panic("RequestID is not set in API")
 	}
 
 	reqID, ok := ptr.(string)
 	if !ok {
-		logger.With("contextRequestID", contextRequestID).Error("RequestID can not be casted")
+		logger.With("ContextRequestID", ContextRequestID).Error("RequestID can not be casted")
 		panic("RequestID can not be casted")
 	}
 
@@ -72,7 +73,11 @@ func resp(c *gin.Context, status int, data interface{}) {
 		}
 
 		entry.Error(err.Error())
-		data = wrapErr(err.Error())
+		if status >= 500 {
+			data = wrapErr("internal server error (request ID: " + reqID + ")")
+		} else {
+			data = wrapErr(err.Error())
+		}
 	}
 
 	c.JSON(status, data)
@@ -90,7 +95,7 @@ func SetupRoute(r *gin.RouterGroup, args *handler.Arguments) {
 			With("ua", c.Request.UserAgent()).
 			Info("API request")
 
-		c.Set(contextRequestID, reqID)
+		c.Set(ContextRequestID, reqID)
 		c.Set(contextArgumentKey, args)
 		c.Next()
 	})

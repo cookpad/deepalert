@@ -1,3 +1,5 @@
+//go:build integration
+
 package workflow_test
 
 import (
@@ -5,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -108,7 +109,7 @@ func TestWorkflow(t *testing.T) {
 		require.NoError(t, err)
 
 		var report deepalert.Report
-		respRaw, err := ioutil.ReadAll(resp.Body)
+		respRaw, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		// t.Log(string(respRaw))
@@ -159,7 +160,7 @@ func TestWorkflow(t *testing.T) {
 			resp, err := client.Request("GET", "alert/"+alert.AlertID()+"/report", nil)
 			require.NoError(t, err)
 
-			respRaw, err := ioutil.ReadAll(resp.Body)
+			respRaw, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			if resp.StatusCode == http.StatusOK {
@@ -176,7 +177,7 @@ func TestWorkflow(t *testing.T) {
 }
 
 func unmarshal(reader io.Reader, data interface{}) error {
-	raw, err := ioutil.ReadAll(reader)
+	raw, err := io.ReadAll(reader)
 	if err != nil {
 		return err
 	}
@@ -228,7 +229,7 @@ type httpHeader map[string]string
 
 func loadAPIKey(path string) (httpHeader, error) {
 	hdr := make(httpHeader)
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

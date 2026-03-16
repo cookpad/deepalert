@@ -91,23 +91,33 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 
 	// Check Arguments
 	if args.Handler == nil {
-		return fmt.Errorf("Handler is not set in inspector.Argument")
+		return fmt.Errorf("handler is not set in inspector.Arguments")
 	}
 	if args.Author == "" {
-		return fmt.Errorf("Author is not set in inspector.Argument")
+		return fmt.Errorf("author is not set in inspector.Arguments")
 	}
 	if args.AttrQueueURL == "" {
-		return fmt.Errorf("AttrQueueURL is not set in inspector.Argument")
+		return fmt.Errorf("attrQueueURL is not set in inspector.Arguments")
 	}
 	if args.FindingQueueURL == "" {
-		return fmt.Errorf("FindingQueueURL is not set in inspector.Argument")
+		return fmt.Errorf("findingQueueURL is not set in inspector.Arguments")
 	}
 	if task == nil {
-		return fmt.Errorf("Task is nil")
+		return fmt.Errorf("task is nil")
 	}
 
 	if args.NewSQS == nil {
 		args.NewSQS = newAwsSQSClient
+	}
+
+	findingSQSClient, err := newSQSClient(args.NewSQS, args.FindingQueueURL)
+	if err != nil {
+		return golambda.WrapError(err, "Failed to create SQS client for finding queue")
+	}
+
+	attrSQSClient, err := newSQSClient(args.NewSQS, args.AttrQueueURL)
+	if err != nil {
+		return golambda.WrapError(err, "Failed to create SQS client for attribute queue")
 	}
 
 	newCtx := context.WithValue(ctx, contextKey, &task.ReportID)
@@ -132,7 +142,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		}
 		Logger.With("finding", finding).Trace("Sending finding")
 
-		if err := sendSQS(args.NewSQS, finding, args.FindingQueueURL); err != nil {
+		if err := sendSQS(findingSQSClient, finding, args.FindingQueueURL); err != nil {
 			return golambda.WrapError(err, "Fail to publish ReportContent").With("url", args.FindingQueueURL).With("finding", finding)
 		}
 	}
@@ -155,7 +165,7 @@ func HandleTask(ctx context.Context, task *deepalert.Task, args Arguments) error
 		}
 
 		Logger.With("ReportAttribute", attrReport).Trace("Sending new attributes")
-		if err := sendSQS(args.NewSQS, attrReport, args.AttrQueueURL); err != nil {
+		if err := sendSQS(attrSQSClient, attrReport, args.AttrQueueURL); err != nil {
 			return golambda.WrapError(err, "Fail to publish ReportAttribute").With("url", args.AttrQueueURL).With("report", attrReport)
 		}
 	}

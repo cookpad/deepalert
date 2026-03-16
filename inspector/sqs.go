@@ -35,20 +35,18 @@ func extractRegionFromURL(url string) (*string, error) {
 	if m := regexSqsURL.FindStringSubmatch(url); len(m) == 2 {
 		return &m[1], nil
 	}
-	return nil, fmt.Errorf("Invalid SQS URL foramt: %v", url)
+	return nil, fmt.Errorf("invalid SQS URL format: %v", url)
 }
 
-func sendSQS(newSQS SQSClientFactory, msg interface{}, targetURL string) error {
-	region, err := extractRegionFromURL(targetURL)
+func newSQSClient(newSQS SQSClientFactory, queueURL string) (SQSClient, error) {
+	region, err := extractRegionFromURL(queueURL)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return newSQS(*region)
+}
 
-	client, err := newSQS(*region)
-	if err != nil {
-		return golambda.WrapError(err, "Failed to create a new SQS client")
-	}
-
+func sendSQS(client SQSClient, msg interface{}, targetURL string) error {
 	raw, err := json.Marshal(msg)
 	if err != nil {
 		return golambda.WrapError(err, "Failed to marshal message").With("msg", msg)
@@ -59,7 +57,6 @@ func sendSQS(newSQS SQSClientFactory, msg interface{}, targetURL string) error {
 		MessageBody: aws.String(string(raw)),
 	}
 	resp, err := client.SendMessage(&input)
-
 	if err != nil {
 		return golambda.WrapError(err, "Failed to send SQS message").With("input", input)
 	}
