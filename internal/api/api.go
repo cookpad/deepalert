@@ -11,6 +11,7 @@ import (
 
 const (
 	contextArgumentKey = "handler.arguments"
+	// ContextRequestID is the context key used to store the current request ID.
 	ContextRequestID   = "request.id"
 	paramReportID      = "report_id"
 	paramAlertID       = "alert_id"
