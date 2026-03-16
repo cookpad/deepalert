@@ -16,7 +16,7 @@ import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 import * as path from 'path';
 import * as fs from 'fs';
 export interface Property extends cdk.StackProps {
-  assetsPath: string;
+  assetsPath?: string;
 
   lambdaRoleARN?: string;
   sfnRoleARN?: string;
@@ -143,8 +143,10 @@ export class DeepAlertStack extends cdk.Stack {
       };
     }
 
+    const assetsPath = props.assetsPath ?? path.resolve(__dirname, '..', 'build');
+
     const buildLambdaFunction = (config: LambdaConfig) => {
-      const assetPath = path.join(props.assetsPath, config.funcName);
+      const assetPath = path.join(assetsPath, config.funcName);
       if (!fs.existsSync(assetPath)) {
         throw new Error(`Lambda asset not found for "${config.funcName}": ${assetPath} (run "make build" first)`);
       }

@@ -4,4 +4,4 @@ import * as cdk from "@aws-cdk/core";
 import { DeepAlertStack } from "../cdk/deepalert-stack";
 
 const app = new cdk.App();
-new DeepAlertStack(app, "DeepAlertStack", {assetsPath: "./build/"});
+new DeepAlertStack(app, "DeepAlertStack", {});
