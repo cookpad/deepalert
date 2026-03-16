@@ -295,9 +295,12 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.compileReport);
       this.cacheTable.grantReadWriteData(this.submitReport);
       this.cacheTable.grantReadWriteData(this.publishReport);
-      this.inspectionMachine.grantStartExecution(this.apiHandler);
-      this.reviewMachine.grantStartExecution(this.apiHandler);
-      this.cacheTable.grantReadWriteData(this.apiHandler);
+
+      if (props.enableAPI) {
+        this.inspectionMachine.grantStartExecution(this.apiHandler);
+        this.reviewMachine.grantStartExecution(this.apiHandler);
+        this.cacheTable.grantReadWriteData(this.apiHandler);
+      }
     }
   }
 }
