@@ -1,6 +1,6 @@
 {
   "name": "@deepalert/deepalert",
-  "version": "1.1.0-alpha",
+  "version": "1.2.0-alpha",
   "scripts": {
     "watch": "tsc -w",
     "prepare": "tsc"
@@ -17,10 +17,10 @@
     "tsconfig.json"
   ],
   "devDependencies": {
-    "@types/node": "10.17.5",
+    "@types/node": "18.19.130",
     "aws-cdk": "1.75.0",
-    "ts-node": "^8.1.0",
-    "typescript": "~3.7.2"
+    "ts-node": "9.1.1",
+    "typescript": "4.9.5"
   },
   "dependencies": {
     "@aws-cdk/aws-dynamodb": "1.75.0",
@@ -34,7 +34,7 @@
     "@aws-cdk/aws-stepfunctions": "1.75.0",
     "@aws-cdk/aws-stepfunctions-tasks": "1.75.0",
     "@aws-cdk/core": "1.75.0",
-    "source-map-support": "^0.5.16"
+    "source-map-support": "0.5.21"
   },
   "cdk-lambda": "/asset-output/index.js",
   "targets": {
