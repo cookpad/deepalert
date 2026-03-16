@@ -49,7 +49,10 @@ new DeepAlertStack(app, 'YourDeepAlert', {});
 
 ### Deploy your stack
 
+Build the Lambda binaries first, then deploy:
+
 ```bash
+$ make build
 $ cdk deploy
 ```
 
