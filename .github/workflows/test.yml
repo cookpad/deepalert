@@ -43,6 +43,9 @@ jobs:
       - name: build
         run: npm run prepare
 
+      - name: test
+        run: npm test
+
   test:
     needs: lint
     permissions:

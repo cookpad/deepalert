@@ -18,7 +18,7 @@
     "tsconfig.json"
   ],
   "devDependencies": {
-    "@aws-cdk/assert": "1.204.0",
+    "@aws-cdk/assert": "1.75.0",
     "@types/jest": "27.5.2",
     "@types/node": "18.19.130",
     "aws-cdk": "1.75.0",
