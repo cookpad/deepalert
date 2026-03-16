@@ -3,7 +3,8 @@
   "version": "1.2.0-alpha",
   "scripts": {
     "watch": "tsc -w",
-    "prepare": "tsc"
+    "prepare": "tsc",
+    "test": "jest"
   },
   "main": "./cdk/deepalert-stack.js",
   "type": "./cdk/deepalert-stack.d.ts",
@@ -17,8 +18,12 @@
     "tsconfig.json"
   ],
   "devDependencies": {
+    "@aws-cdk/assert": "1.75.0",
+    "@types/jest": "26.0.24",
     "@types/node": "18.19.130",
     "aws-cdk": "1.75.0",
+    "jest": "26.6.3",
+    "ts-jest": "26.5.6",
     "ts-node": "9.1.1",
     "typescript": "4.9.5"
   },
