@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/usecase"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/usecase"
 	"github.com/gin-gonic/gin"
 	"github.com/m-mizutani/golambda"
 )

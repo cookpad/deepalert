@@ -4,8 +4,8 @@ package adaptor
 import (
 	"time"
 
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/models"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/models"
 )
 
 // RepositoryFactory is interface Repository constructor

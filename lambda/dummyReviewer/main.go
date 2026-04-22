@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/m-mizutani/golambda"
 
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 )
 
 func main() {

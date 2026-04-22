@@ -1,4 +1,4 @@
-module github.com/deepalert/deepalert
+module github.com/cookpad/deepalert
 
 go 1.26
 

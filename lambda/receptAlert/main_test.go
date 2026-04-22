@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/mock"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/adaptor"
+	"github.com/cookpad/deepalert/internal/handler"
+	"github.com/cookpad/deepalert/internal/mock"
 	"github.com/google/uuid"
 	"github.com/m-mizutani/golambda"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	main "github.com/deepalert/deepalert/lambda/receptAlert"
+	main "github.com/cookpad/deepalert/lambda/receptAlert"
 )
 
 func TestReceptAlert(t *testing.T) {

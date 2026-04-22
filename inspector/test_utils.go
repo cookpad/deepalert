@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 	"github.com/google/uuid"
 	"github.com/m-mizutani/golambda"
 )

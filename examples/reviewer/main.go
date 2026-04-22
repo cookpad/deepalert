@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 )
 
 func main() {

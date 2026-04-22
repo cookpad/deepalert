@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/handler"
-	"github.com/deepalert/deepalert/internal/models"
-	"github.com/deepalert/deepalert/internal/service"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/handler"
+	"github.com/cookpad/deepalert/internal/models"
+	"github.com/cookpad/deepalert/internal/service"
 	"github.com/m-mizutani/golambda"
 )
 

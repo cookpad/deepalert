@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

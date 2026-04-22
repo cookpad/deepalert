@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/models"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/adaptor"
+	"github.com/cookpad/deepalert/internal/models"
 )
 
 // Repository is mock data store. Behaviour of the mock.Repository must be same with repository.DynamoDBRepository

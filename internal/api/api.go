@@ -3,7 +3,7 @@ package api
 import (
 	"errors"
 
-	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/cookpad/deepalert/internal/handler"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/m-mizutani/golambda"

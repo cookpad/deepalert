@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/deepalert/deepalert"
-	main "github.com/deepalert/deepalert/examples/inspector"
-	"github.com/deepalert/deepalert/inspector"
+	"github.com/cookpad/deepalert"
+	main "github.com/cookpad/deepalert/examples/inspector"
+	"github.com/cookpad/deepalert/inspector"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
