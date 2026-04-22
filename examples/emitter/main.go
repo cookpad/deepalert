@@ -6,7 +6,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/deepalert/deepalert/emitter"
+	"github.com/cookpad/deepalert/emitter"
 )
 
 func main() {

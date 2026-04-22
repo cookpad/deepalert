@@ -6,8 +6,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/inspector"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/inspector"
 )
 
 func dummyInspector(ctx context.Context, attr deepalert.Attribute) (*deepalert.TaskResult, error) {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 	"github.com/google/uuid"
 	"github.com/guregu/dynamo"
 	"github.com/m-mizutani/golambda"

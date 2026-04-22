@@ -5,7 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 	"github.com/m-mizutani/golambda"
 )
 

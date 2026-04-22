@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/inspector"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/inspector"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

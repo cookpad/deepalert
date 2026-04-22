@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 	"github.com/gin-gonic/gin"
 	"github.com/m-mizutani/golambda"
 )

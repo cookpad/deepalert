@@ -62,12 +62,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/deepalert/deepalert.git"
+    "url": "git+https://github.com/cookpad/deepalert.git"
   },
   "author": "Masayoshi Mizutani",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/deepalert/deepalert/issues"
+    "url": "https://github.com/cookpad/deepalert/issues"
   },
-  "homepage": "https://github.com/deepalert/deepalert"
+  "homepage": "https://github.com/cookpad/deepalert"
 }

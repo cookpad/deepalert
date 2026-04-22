@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/test/workflow"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/test/workflow"
 	"github.com/m-mizutani/golambda"
 )
 

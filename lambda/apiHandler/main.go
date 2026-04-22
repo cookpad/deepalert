@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/m-mizutani/golambda"
 
-	"github.com/deepalert/deepalert/internal/api"
-	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/cookpad/deepalert/internal/api"
+	"github.com/cookpad/deepalert/internal/handler"
 )
 
 var logger = golambda.Logger

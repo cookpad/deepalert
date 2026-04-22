@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/handler"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/handler"
 	"github.com/m-mizutani/golambda"
 )
 

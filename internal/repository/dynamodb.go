@@ -6,9 +6,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/models"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/adaptor"
+	"github.com/cookpad/deepalert/internal/models"
 	"github.com/guregu/dynamo"
 	"github.com/m-mizutani/golambda"
 )

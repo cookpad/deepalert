@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/deepalert/deepalert"
-	"github.com/deepalert/deepalert/internal/models"
+	"github.com/cookpad/deepalert"
+	"github.com/cookpad/deepalert/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

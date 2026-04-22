@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"github.com/deepalert/deepalert/internal/adaptor"
-	"github.com/deepalert/deepalert/internal/repository"
-	"github.com/deepalert/deepalert/internal/service"
+	"github.com/cookpad/deepalert/internal/adaptor"
+	"github.com/cookpad/deepalert/internal/repository"
+	"github.com/cookpad/deepalert/internal/service"
 )
 
 // Arguments has environment variables, Event record and adaptor

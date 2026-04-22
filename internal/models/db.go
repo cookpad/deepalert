@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/deepalert/deepalert"
+	"github.com/cookpad/deepalert"
 	"github.com/m-mizutani/golambda"
 )
 
