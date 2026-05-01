@@ -12,7 +12,6 @@ FUNCTIONS= \
 	$(CODE_DIR)/build/submitReport/bootstrap \
 	$(CODE_DIR)/build/publishReport/bootstrap \
 	$(CODE_DIR)/build/submitFinding/bootstrap \
-	$(CODE_DIR)/build/apiHandler/bootstrap \
 	$(CODE_DIR)/build/feedbackAttribute/bootstrap
 
 GO_OPT=-ldflags="-s -w" -trimpath
@@ -39,9 +38,6 @@ $(CODE_DIR)/build/submitReport/bootstrap: $(CODE_DIR)/lambda/submitReport/*.go $
 $(CODE_DIR)/build/submitFinding/bootstrap: $(CODE_DIR)/lambda/submitFinding/*.go $(COMMON)
 	mkdir -p $(dir $@)
 	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/submitFinding
-$(CODE_DIR)/build/apiHandler/bootstrap: $(CODE_DIR)/lambda/apiHandler/*.go $(COMMON)
-	mkdir -p $(dir $@)
-	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/apiHandler
 $(CODE_DIR)/build/feedbackAttribute/bootstrap: $(CODE_DIR)/lambda/feedbackAttribute/*.go $(COMMON)
 	mkdir -p $(dir $@)
 	env GOARCH=amd64 GOOS=linux go build $(GO_OPT) -o $@ ./lambda/feedbackAttribute

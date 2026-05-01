@@ -64,7 +64,6 @@ const workflowStackName =
 const app = new cdk.App();
 const deepalert = new DeepAlertStack(app, deepalertStackName, {
   stackName: deepalertStackName,
-  apiKeyPath: "./apikey.json",
   inspectDelay: cdk.Duration.seconds(1),
   reviewDelay: cdk.Duration.seconds(5),
   logLevel: "DEBUG",
