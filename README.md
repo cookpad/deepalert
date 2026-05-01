@@ -93,27 +93,9 @@ $ cdk deploy
   - `value`: Actual value
   - `context`: One or multiple tags describe context of the attribute. See `AttrContext` in [alert.go](alert.go)
 
-### Emit alert via API
-
-`apikey.json` is created in CWD when running `cdk deploy` and it has `X-API-KEY` to access deepalert API.
-
-```bash
-$ export AWS_REGION=ap-northeast-1 # set your region
-$ export API_KEY=`cat apikey.json  | jq '.["X-API-KEY"]' -r`
-$ export API_ID=`aws cloudformation describe-stack-resources --stack-name YourDeepAlert | jq -r '.StackResources[] | select(.ResourceType == "AWS::ApiGateway::RestApi") | .PhysicalResourceId'`
-$ curl -X POST \
-  -H "X-API-KEY: $API_KEY" \
-  https://$API_ID.execute-api.$AWS_REGION.amazonaws.com/prod/api/v1/alert \
-  -d '{
-  "detector": "your-anti-virus",
-  "rule_name": "detected malware",
-  "rule_id": "detect-malware-by-av",
-  "alert_key": "xxxxxxxx"
-}'
-```
-
-
 ### Emit alert via SQS
+
+> **Note:** The REST API (API Gateway) ingestion method was removed. Use SQS or SNS to submit alerts.
 
 ```bash
 $ export QUEUE_URL=`aws cloudformation describe-stack-resources --stack-name YourDeepAlert | jq -r '.StackResources[] | select(.LogicalResourceId | startswith("alertQueue")) | .PhysicalResourceId'`
