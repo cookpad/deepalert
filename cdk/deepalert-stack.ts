@@ -14,6 +14,7 @@ import {
 import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 
 import * as path from 'path';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 export interface Property extends cdk.StackProps {
   assetsPath?: string;
@@ -387,9 +388,7 @@ function getAPIKey(apiKeyPath?: string): string {
     const keyData = JSON.parse(buf.toString());
     return keyData['X-API-KEY'];
   } else {
-    const literals = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const length = 32;
-    const apiKey = Array.from(Array(length)).map(()=>literals[Math.floor(Math.random()*literals.length)]).join('');
+    const apiKey = crypto.randomBytes(32).toString('base64url');
     fs.writeFileSync(apiKeyPath, JSON.stringify({'X-API-KEY': apiKey}))
     console.log('Generated and wrote API key to: ', apiKeyPath);
     return apiKey;
