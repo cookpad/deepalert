@@ -19,14 +19,11 @@ const LAMBDA_FUNCTIONS = [
   "submitReport",
   "publishReport",
   "receptAlert",
-  "apiHandler",
 ];
 
 // Create a temporary directory tree with stub bootstrap binaries so
 // lambda.Code.fromAsset has real directories to fingerprint.
 let assetsPath: string;
-let apiKeyPath: string;
-
 beforeAll(() => {
   assetsPath = fs.mkdtempSync(path.join(os.tmpdir(), "deepalert-test-"));
   for (const fn of LAMBDA_FUNCTIONS) {
@@ -34,8 +31,6 @@ beforeAll(() => {
     fs.mkdirSync(dir);
     fs.writeFileSync(path.join(dir, "bootstrap"), "");
   }
-  apiKeyPath = path.join(assetsPath, "apikey.json");
-  fs.writeFileSync(apiKeyPath, JSON.stringify({ "X-API-KEY": "test-key" }));
 });
 
 afterAll(() => {
@@ -51,7 +46,7 @@ function makeStack(props: Partial<Deepalert.Property> = {}): cdk.Stack {
 }
 
 describe("DeepAlertStack", () => {
-  describe("default stack (enableAPI: false)", () => {
+  describe("default stack", () => {
     let stack: cdk.Stack;
     beforeAll(() => { stack = makeStack(); });
 
@@ -91,37 +86,8 @@ describe("DeepAlertStack", () => {
       }));
     });
 
-    test("does not create API Gateway when enableAPI is false", () => {
+    test("does not create API Gateway", () => {
       expectCDK(stack).to(countResources("AWS::ApiGateway::RestApi", 0));
-    });
-  });
-
-  describe("stack with enableAPI: true", () => {
-    let stack: cdk.Stack;
-    beforeAll(() => {
-      stack = makeStack({ enableAPI: true, apiKeyPath });
-    });
-
-    test("creates 9 Lambda functions including apiHandler", () => {
-      expectCDK(stack).to(countResources("AWS::Lambda::Function", 9));
-    });
-
-    test("creates an API Gateway REST API", () => {
-      expectCDK(stack).to(countResources("AWS::ApiGateway::RestApi", 1));
-    });
-
-    test("creates an API key and usage plan", () => {
-      expectCDK(stack).to(countResources("AWS::ApiGateway::ApiKey", 1));
-      expectCDK(stack).to(countResources("AWS::ApiGateway::UsagePlan", 1));
-    });
-
-    test("API Gateway has alert and report resource paths", () => {
-      expectCDK(stack).to(haveResourceLike("AWS::ApiGateway::Resource", {
-        PathPart: "alert",
-      }));
-      expectCDK(stack).to(haveResourceLike("AWS::ApiGateway::Resource", {
-        PathPart: "report",
-      }));
     });
   });
 

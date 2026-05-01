@@ -6,7 +6,6 @@ import * as sqs from '@aws-cdk/aws-sqs';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as sfn from '@aws-cdk/aws-stepfunctions';
 import * as tasks from '@aws-cdk/aws-stepfunctions-tasks';
-import * as apigateway from '@aws-cdk/aws-apigateway';
 import {
   SqsEventSource,
   DynamoEventSource,
@@ -14,7 +13,6 @@ import {
 import { SqsSubscription } from '@aws-cdk/aws-sns-subscriptions';
 
 import * as path from 'path';
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 export interface Property extends cdk.StackProps {
   assetsPath?: string;
@@ -25,8 +23,6 @@ export interface Property extends cdk.StackProps {
   inspectDelay?: cdk.Duration;
   reviewDelay?: cdk.Duration;
 
-  enableAPI?: boolean;
-  apiKeyPath?: string;
   sentryDsn?: string;
   sentryEnv?: string;
   logLevel?: string;
@@ -53,7 +49,6 @@ export class DeepAlertStack extends cdk.Stack {
   dummyReviewer: lambda.Function;
   submitReport: lambda.Function;
   publishReport: lambda.Function;
-  apiHandler: lambda.Function;
 
   // StepFunctions
   readonly inspectionMachine: sfn.StateMachine;
@@ -164,7 +159,7 @@ export class DeepAlertStack extends cdk.Stack {
       config.setToStack(f);
     };
 
-    // receptAlert and apiHandler is configured later because they requires StepFunctions
+    // receptAlert is configured later because it requires StepFunctions
     // in environment variables.
     const lambdaConfigs: LambdaConfig[] = [
       {
@@ -236,51 +231,6 @@ export class DeepAlertStack extends cdk.Stack {
       setToStack: (f: lambda.Function) => { this.receptAlert = f; },
     })
 
-    if (props.enableAPI) {
-      buildLambdaFunction({
-        funcName: 'apiHandler',
-        environment: envVarsWithSF,
-        setToStack: (f: lambda.Function) => { this.apiHandler = f; },
-      })
-
-      const api = new apigateway.LambdaRestApi(this, 'deepalertAPI', {
-        handler: this.apiHandler,
-        proxy: false,
-        cloudWatchRole: false,
-        endpointTypes: [apigateway.EndpointType.REGIONAL],
-        policy: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              actions: ['execute-api:Invoke'],
-              resources: ['execute-api:/*/*'],
-              effect: iam.Effect.ALLOW,
-              principals: [new iam.AnyPrincipal()],
-            }),
-          ],
-        }),
-      });
-      const key = api.addApiKey('APIKey', {
-        value: getAPIKey(props.apiKeyPath),
-      })
-      const plan = api.addUsagePlan('UsagePlan', {})
-      plan.addApiKey(key)
-      plan.addApiStage({
-        stage: api.deploymentStage,
-      })
-
-      const apiOpt = { apiKeyRequired: true };
-      const v1 = api.root.addResource('api').addResource('v1',);
-      const alertAPI = v1.addResource('alert');
-      alertAPI.addMethod('POST', undefined, apiOpt);
-      alertAPI.addResource('{alert_id}').addResource('report').addMethod('GET', undefined, apiOpt);
-
-      const reportAPI = v1.addResource('report');
-      const reportAPIwithID = reportAPI.addResource('{report_id}');
-      reportAPIwithID.addMethod('GET', undefined, apiOpt);
-      reportAPIwithID.addResource('alert').addMethod('GET', undefined, apiOpt);
-      reportAPIwithID.addResource('attribute').addMethod('GET', undefined, apiOpt);
-      reportAPIwithID.addResource('section').addMethod('GET', undefined, apiOpt);
-    }
 
     if (lambdaRole === undefined) {
       this.inspectionMachine.grantStartExecution(this.receptAlert);
@@ -297,11 +247,6 @@ export class DeepAlertStack extends cdk.Stack {
       this.cacheTable.grantReadWriteData(this.submitReport);
       this.cacheTable.grantReadWriteData(this.publishReport);
 
-      if (props.enableAPI) {
-        this.inspectionMachine.grantStartExecution(this.apiHandler);
-        this.reviewMachine.grantStartExecution(this.apiHandler);
-        this.cacheTable.grantReadWriteData(this.apiHandler);
-      }
     }
   }
 }
@@ -375,22 +320,4 @@ function buildReviewMachine(
     definition,
     role: sfnRole,
   });
-}
-
-function getAPIKey(apiKeyPath?: string): string {
-  if (apiKeyPath === undefined) {
-    apiKeyPath = path.join(process.cwd(), 'apikey.json');
-  }
-
-  if (fs.existsSync(apiKeyPath)) {
-    console.log('Read API key from: ', apiKeyPath);
-    const buf = fs.readFileSync(apiKeyPath)
-    const keyData = JSON.parse(buf.toString());
-    return keyData['X-API-KEY'];
-  } else {
-    const apiKey = crypto.randomBytes(32).toString('base64url');
-    fs.writeFileSync(apiKeyPath, JSON.stringify({'X-API-KEY': apiKey}))
-    console.log('Generated and wrote API key to: ', apiKeyPath);
-    return apiKey;
-  }
 }
