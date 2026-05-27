@@ -50,10 +50,10 @@ describe("DeepAlertStack", () => {
     let stack: cdk.Stack;
     beforeAll(() => { stack = makeStack(); });
 
-    test("creates all 8 core Lambda functions with PROVIDED_AL2 runtime", () => {
+    test("creates all 8 core Lambda functions with provided.al2023 runtime", () => {
       expectCDK(stack).to(countResources("AWS::Lambda::Function", 8));
       expectCDK(stack).to(haveResourceLike("AWS::Lambda::Function", {
-        Runtime: "provided.al2",
+        Runtime: "provided.al2023",
         Handler: "bootstrap",
       }));
     });
